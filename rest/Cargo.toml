@@ -1,0 +1,27 @@
+[package]
+name = "rest"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+env_logger = "0.9"
+log = "0.4"
+async-trait = "0.1.56"
+utoipa = "2"
+utoipa-swagger-ui = "2"
+futures = "0.3.24"
+ureq = { version = "*", features = ["json", "charset"] }
+chrono={ version = "0.4", features = ["clock"]}
+
+# API
+tokio = { version = "1.20", features = ["default", "time", "rt", "rt-multi-thread", "sync", "macros", "signal"] }
+warp = {version = "0.3.3"}
+serde = "^1.0"
+serde_json = "1.0"
+thiserror = "1.0"
+config = { version = "0.13.2" }
+
+core = {path = "../../taple-core/core"}
+commons = { path = "../../taple-core/commons" }
