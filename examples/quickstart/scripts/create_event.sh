@@ -14,7 +14,6 @@ read number
 port=$((10000+$number))
 echo
 
-
 # We ask for the subject_id of the subject to which you want to perform the event
 echo -e "${BLUE}Requesting subject.${NC}"
 echo -n -e "Enter the ID of the subject to which you want to perform an event ${RED}(example: Jjvs-Kk5FHRVwfktXEiH7y12CYZmV3sSBEyxwzECVA9Y)${NC}: "

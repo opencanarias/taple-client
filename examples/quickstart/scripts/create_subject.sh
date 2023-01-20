@@ -14,8 +14,6 @@ read number
 port=$((10000+$number))
 echo
 
-
-
 # We request the governance_id
 echo -e "${BLUE}Requesting governance.${NC}"
 echo -n -e "Enter the ID of the governance in which you want to create the subject ${RED}(example: J1ZZ57u4PpvTl3apJ0BQrRFrQ1ftMC4XXg-kd9CkZC3E)${NC}: "
@@ -71,5 +69,3 @@ response=$(curl -s --location --request POST "http://localhost:${port}/api/reque
 set +e
 
 echo -e "${BLUE}Response:${NC} ${response}"
-#subject_id=$(echo ${response} | grep -i -s -w -o -P "(?<=subject_id.{3})[^,\"]+")
-#echo -e "${GREEN}Subject ID created:${NC} ${subject_id}"
