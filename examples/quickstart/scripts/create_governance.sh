@@ -6,8 +6,8 @@ BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m' 
 
-# Preguntamos por los numeros de los nodos que van a ser miembros de la gobernanza
-# Este número servirá para identificar el nodo generado en el script anterior.
+# We ask for the numbers of the nodes that are going to be members of governance
+# This number will be used to identify the node generated in the previous script.
 selected_nodes_controllerID=()
 echo -e "${BLUE}Requesting controllerID.${NC}"
 while :
@@ -28,11 +28,10 @@ controllers_ID_string=$(IFS=',' ; echo "${selected_nodes_controllerID[*]}")
 echo
 
 members=()
-# Ahora procedemos a construir el JSON que define a los 3 miembros:
+# Now we proceed to build the JSON that defines the 3 members:
 count=1
 for controllerID in "${selected_nodes_controllerID[@]}"
 do
-    #echo ${selected_nodes_controllerID[*]}
     members+=("{
         \"id\": \"Company-$count\",
         \"tags\": {},
@@ -42,14 +41,12 @@ do
     count=$(($count+1))
 done
 members_string=$(IFS=',' ; echo "${members[*]}")
-#echo $members_string
 
 echo -e "${BLUE}Requesting HTTP PORT.${NC}"
 echo -n "Enter the number ID of the NODE where request for governance creation will be sent: "
 read number
 http_port=$((10000+$number))
 echo
-
 
 data_raw="{
         \"request\": {
@@ -165,7 +162,6 @@ data_raw="{
             }
         }
     }"
-#echo $data_raw
 
 resp=$(curl -s --location --request POST "http://localhost:$http_port/api/requests" \
     --header 'x-api-key: 1234' \

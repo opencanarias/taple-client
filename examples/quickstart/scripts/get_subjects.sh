@@ -8,7 +8,7 @@ NC='\033[0m'
 
 set -e
 # We request the node to be checked
-echo -e "${BLUE}Requesting port: ${NC}"
+echo -e "${BLUE}Requesting port.${NC}"
 echo -n -e "Enter the number ID of the node you want to check subjects on: "
 read number
 port=$((10000+$number))
