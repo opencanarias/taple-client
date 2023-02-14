@@ -23,5 +23,6 @@ serde_json = "1.0"
 thiserror = "1.0"
 config = { version = "0.13.2" }
 
-core = {path = "../../taple-core/core"}
+taple_core = {path = "../../taple-core/core", package = "core"}
 commons = { path = "../../taple-core/commons" }
+

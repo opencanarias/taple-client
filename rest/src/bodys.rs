@@ -1,6 +1,6 @@
-use core::{
+use taple_core::{
     event_request::RequestPayload, ApiError, CreateRequest, CreateType, ExternalEventRequest,
-    SignatureRequest, StateType,
+    SignatureRequest as CoreSignatureRequest, StateType, SignatureRequestContent as CoreSignatureRequestContent
 };
 
 use serde::{Deserialize, Serialize};
@@ -23,14 +23,6 @@ impl Into<RequestPayload> for Payload {
             }
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-pub struct PostSubjectBody {
-    pub governance_id: String,
-    pub schema_id: String,
-    pub namespace: String,
-    pub payload: Payload,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -58,7 +50,7 @@ impl TryInto<ExternalEventRequest> for PostEventRequestBody {
                 payload: request.payload.into(),
             },
             timestamp,
-            signature,
+            signature: signature.into(),
         })
     }
 }
@@ -106,9 +98,23 @@ pub struct PostEventBody {
     pub payload: Payload,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-pub struct PostGovernanceBody {
-    pub payload: Payload,
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct SignatureRequest {
+    pub content: SignatureRequestContent,
+    pub signature: String, // SignatureIdentifier,
+}
+
+impl Into<CoreSignatureRequest> for SignatureRequest {
+    fn into(self) -> CoreSignatureRequest {
+        CoreSignatureRequest {
+            content: CoreSignatureRequestContent {
+                signer: self.content.signer,
+                event_content_hash: self.content.event_content_hash,
+                timestamp: self.content.timestamp,
+            },
+            signature: self.signature
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

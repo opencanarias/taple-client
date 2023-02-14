@@ -14,15 +14,14 @@ log = "0.4"
 async-trait = "0.1.56"
 utoipa = "2"
 utoipa-swagger-ui = "2"
-clap = { version = "4.0.27", features = ["derive"] }
 
 tokio = { version = "1.20", features = ["default", "time", "rt", "rt-multi-thread", "sync", "macros", "signal"] }
 warp = {version = "0.3.3"}
 serde = "^1.0"
 serde_json = "1.0"
 thiserror = "1.0"
-config = { version = "0.13.2" }
 
 commons = { path = "../../taple-core/commons" }
-core = {path = "../../taple-core/core"}
+taple_core = {path = "../../taple-core/core", package = "core"}
 rest = { path = "../rest" }
+settings = { path = "../settings" }
