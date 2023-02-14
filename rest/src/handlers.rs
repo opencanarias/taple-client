@@ -3,12 +3,12 @@ use serde::Serialize;
 use warp::Rejection;
 
 use crate::bodys::PostEventRequestBody;
-use core::{ApiError, ApiModuleInterface, NodeAPI};
+use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 
 use super::{
-    bodys::{PostEventBody, PostGovernanceBody, PostSubjectBody, PutVoteBody},
+    bodys::{PostEventBody, PutVoteBody},
     error::Error,
-    querys::{GetAllSubjectsQuery, GetEventsQuery, GetSignaturesQuery},
+    querys::{GetAllSubjectsQuery, GetEventsQuery},
 };
 
 #[utoipa::path(
@@ -118,81 +118,6 @@ pub async fn get_all_subjects_handler(
 
 #[utoipa::path(
     post,
-    path = "/subjects",
-    tag = "Subjects",
-    operation_id = "Create a new Subject",
-    context_path = "/api",
-    security(("api_key" = [])),
-    request_body(content = PostSubjectBody, content_type = "application/json", description = "Schema and governance specification of the new subject. It also must contain the initial payload"),
-    responses(
-        (status = 202, description = "Subject Created", body = Event,
-        example = json!(
-            {
-                "event_content": {
-                    "subject_id": "J4LS4VgGo3SDmC4F4hFFBkw8Kgv4ItpYgjUbw0gDxNk8",
-                    "event_request": {
-                        "request": {
-                            "Create": {
-                                "governance_id": "JF3q2MSpcds-jzhNYg3tNtT2nFU0eA9e85tKGUdDvJpo",
-                                "schema_id": "Prueba",
-                                "namespace": "namespace1",
-                                "payload": {
-                                    "Json": "{\"localizacion\":\"España\",\"temperatura\":10}"
-                                }
-                            }
-                        },
-                        "timestamp": 1671544386,
-                        "signature": {
-                            "content": {
-                                "signer": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                                "event_content_hash": "JX6KgyxQGGV0X81gsFU72klOBT39PS1R1cUEUIq8Ja0I",
-                                "timestamp": 1671544386
-                            },
-                            "signature": "SESDdbUuRkyomQYN47SEFl1ZdytNg-hH7QMyzs-v0gTUxrNbMihoL13tFTBmYzLEWhkoec0xP2l9sw-fo9cpHiAQ"
-                        },
-                        "approvals": []
-                    },
-                    "sn": 0,
-                    "previous_hash": "",
-                    "state_hash": "JrmBobio8phNFI3Fxd3pDo7NhyFi3OYYmRgds8Gpa1TY",
-                    "metadata": {
-                        "namespace": "namespace1",
-                        "governance_id": "JF3q2MSpcds-jzhNYg3tNtT2nFU0eA9e85tKGUdDvJpo",
-                        "governance_version": 0,
-                        "schema_id": "Prueba",
-                        "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w"
-                    },
-                    "approved": true
-                },
-                "signature": {
-                    "content": {
-                        "signer": "ELm4bPbcZ8zVUWJf0aIACxHIiXP4cY1v-P2Evs0bE3kI",
-                        "event_content_hash": "J31pjM0RVGgGwfAa5Ptfir3ZSc_mjytEPSkXbl-1rczY",
-                        "timestamp": 1671544386
-                    },
-                    "signature": "SEMu7A5VnxaEFufuMBK39jAoLCSaeNVeEMP3RohSS4TsRZ_4l_zb802vweyok012q3LJbceMghZENVfCtHYJDoDA"
-                }
-            }
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn post_subject_handler(
-    _header: String,
-    node: NodeAPI,
-    body: PostSubjectBody,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let payload = body.payload.into();
-    let data = node
-        .create_subject(body.governance_id, body.schema_id, body.namespace, payload)
-        .await;
-    handle_data(data)
-}
-
-#[utoipa::path(
-    post,
     path = "/requests",
     tag = "Requests",
     operation_id = "Create a new Event Request",
@@ -244,30 +169,6 @@ pub async fn post_event_request_handler(
     log::info!("data: {:?}", data);
     handle_data(data)
 }
-
-// #[utoipa::path(
-//     post,
-//     path = "/requests/external",
-//     tag = "Requests",
-//     operation_id = "Send an Event Request to make and external invokation",
-//     context_path = "/api",
-//     security(("api_key" = [])),
-//     request_body(content = ExternalEventRequestBody, content_type = "application/json", description = "Event Request"),
-//     responses(
-//         (status = 202, description = "Event Request Created", body = RequestData),
-//         (status = 400, description = "Bad Request"),
-//         (status = 401, description = "Unauthorized"),
-//         (status = 500, description = "Internal Server Error"),
-//     )
-// )]
-// pub async fn post_external_request_handler(
-//     _header: String,
-//     node: NodeAPI,
-//     body: ExternalEventRequestBody,
-// ) -> Result<Box<dyn warp::Reply>, Rejection> {
-//     let data = node.external_request(body.into()).await;
-//     handle_data(data)
-// }
 
 #[utoipa::path(
     get,
@@ -455,7 +356,7 @@ pub async fn get_governance_handler(
     context_path = "/api",
     security(("api_key" = [])),
     responses(
-        (status = 200, description = "Subjets Data successfully retrieved", body = [RequestPayload],
+        (status = 200, description = "Subjets Data successfully retrieved", body = [SubjectData],
         example = json!(
             [
                 {
@@ -487,31 +388,6 @@ pub async fn get_all_governances_handler(
         None
     }
     let data = node.get_all_governances().await;
-    handle_data(data)
-}
-
-#[utoipa::path(
-    post,
-    path = "/governances",
-    tag = "Governances",
-    operation_id = "Create a new Governance",
-    context_path = "/api",
-    security(("api_key" = [])),
-    request_body(content = PostGovernanceBody, content_type = "application/json", description = "Payload of governance, with members and schemas specification"),
-    responses(
-        (status = 202, description = "Governance Created", body = String,  example = json!("\"JE-MDb4J-hwyTW8z6TU32rzacz27so3eBNt88m8qoRSY\"")),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn post_governance_handler(
-    _header: String,
-    node: NodeAPI,
-    body: PostGovernanceBody,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let payload = body.payload.into();
-    let data = node.create_governance(payload).await;
     handle_data(data)
 }
 
@@ -645,141 +521,6 @@ pub async fn get_events_of_subject_handler(
         .await;
     handle_data::<Vec<Event>>(data)
 }
-
-// #[utoipa::path(
-//     post,
-//     path = "/subjects/{id}/events",
-//     operation_id = "Create a new Event for the indicated Subject",
-//     tag = "events",
-//     security(("api_key" = [])),
-//     context_path = "/api",
-//     params(
-//         ("id" = String, Path, description = "Subject's unique id"),
-//     ),
-//     request_body(content = PostEventBody, content_type = "application/json", description = "SubjectID and payload of the event"),
-//     responses(
-//         (status = 202, description = "Event Created", body = DigestIdentifier,
-//         example = json!(
-//             {
-//                 "event_content": {
-//                     "subject_id": "JolDJa9TWSKW-vxpV9j_Kq2zfc4BXcclkNzNdkU5aHKo",
-//                     "event_request": {
-//                         "request": {
-//                             "State": {
-//                                 "subject_id": "JolDJa9TWSKW-vxpV9j_Kq2zfc4BXcclkNzNdkU5aHKo",
-//                                 "payload": {
-//                                     "Json": "{\"localizacion\":\"Argentina\",\"temperatura\":-3}"
-//                                 }
-//                             }
-//                         },
-//                         "timestamp": 1671547013,
-//                         "signature": {
-//                             "content": {
-//                                 "signer": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-//                                 "event_content_hash": "J2Qab3A-PsSl8wP6p_cS-wv5Ny7uuVf2k62f24y5FxaQ",
-//                                 "timestamp": 1671547013
-//                             },
-//                             "signature": "SEUO_cma79UlSL9XEKhZYaZkd74SjXaXTFmHcOnpdyATe-S0IU1kSLo6Sp1RvmZeAJ9p87lQ9tfLcmy0Te88wBDQ"
-//                         },
-//                         "approvals": []
-//                     },
-//                     "sn": 1,
-//                     "previous_hash": "J1E4IB_4FyQEedp8KqvZsHVTQ-xA_CAM72K3qlLyjb5s",
-//                     "state_hash": "Jw8CSITZisk23BNp5qROF6c-MWiQ5ZLQ8T3EXNFj1kjs",
-//                     "metadata": {
-//                         "namespace": "namespace1",
-//                         "governance_id": "JYn2BpGP2AmZ3wYTcj_Mp1DKVBNDVFd1_bYZEWGlSu8k",
-//                         "governance_version": 0,
-//                         "schema_id": "Prueba",
-//                         "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w"
-//                     },
-//                     "approved": true
-//                 },
-//                 "signature": {
-//                     "content": {
-//                         "signer": "EtMS_t--IIF3_1RFBuFWrdhr3v_ebggME0DNTQRIErtk",
-//                         "event_content_hash": "Jd_k2TDNmEskVwd95QjxU-19Egl7aZIcazyC0RAOcIOI",
-//                         "timestamp": 1671547013
-//                     },
-//                     "signature": "SED3HnSU6KsABUGSSlobDTLNnLY8RKJw77YAR--huLgXunhfURAskGyvazI4hfSu_sMx0HeV-pKdBoQZP-5cqpAw"
-//                 }
-//             }
-//         )),
-//         (status = 202, description = "Event Created", body = Event,
-//         example = json!(
-//             {
-//                 "event_content": {
-//                     "subject_id": "JolDJa9TWSKW-vxpV9j_Kq2zfc4BXcclkNzNdkU5aHKo",
-//                     "event_request": {
-//                         "request": {
-//                             "State": {
-//                                 "subject_id": "JolDJa9TWSKW-vxpV9j_Kq2zfc4BXcclkNzNdkU5aHKo",
-//                                 "payload": {
-//                                     "Json": "{\"localizacion\":\"Argentina\",\"temperatura\":-3}"
-//                                 }
-//                             }
-//                         },
-//                         "timestamp": 1671547013,
-//                         "signature": {
-//                             "content": {
-//                                 "signer": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-//                                 "event_content_hash": "J2Qab3A-PsSl8wP6p_cS-wv5Ny7uuVf2k62f24y5FxaQ",
-//                                 "timestamp": 1671547013
-//                             },
-//                             "signature": "SEUO_cma79UlSL9XEKhZYaZkd74SjXaXTFmHcOnpdyATe-S0IU1kSLo6Sp1RvmZeAJ9p87lQ9tfLcmy0Te88wBDQ"
-//                         },
-//                         "approvals": []
-//                     },
-//                     "sn": 1,
-//                     "previous_hash": "J1E4IB_4FyQEedp8KqvZsHVTQ-xA_CAM72K3qlLyjb5s",
-//                     "state_hash": "Jw8CSITZisk23BNp5qROF6c-MWiQ5ZLQ8T3EXNFj1kjs",
-//                     "metadata": {
-//                         "namespace": "namespace1",
-//                         "governance_id": "JYn2BpGP2AmZ3wYTcj_Mp1DKVBNDVFd1_bYZEWGlSu8k",
-//                         "governance_version": 0,
-//                         "schema_id": "Prueba",
-//                         "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w"
-//                     },
-//                     "approved": true
-//                 },
-//                 "signature": {
-//                     "content": {
-//                         "signer": "EtMS_t--IIF3_1RFBuFWrdhr3v_ebggME0DNTQRIErtk",
-//                         "event_content_hash": "Jd_k2TDNmEskVwd95QjxU-19Egl7aZIcazyC0RAOcIOI",
-//                         "timestamp": 1671547013
-//                     },
-//                     "signature": "SED3HnSU6KsABUGSSlobDTLNnLY8RKJw77YAR--huLgXunhfURAskGyvazI4hfSu_sMx0HeV-pKdBoQZP-5cqpAw"
-//                 }
-//             }
-//         )),
-//         (status = 400, description = "Bad Request"),
-//         (status = 401, description = "Unauthorized"),
-//         (status = 404, description = "Not Found"),
-//         (status = 500, description = "Internal Server Error"),
-//     )
-// )]
-// pub async fn post_event_handler(
-//     id: String,
-//     _header: String,
-//     node: NodeAPI,
-//     body: PostEventBody,
-// ) -> Result<Box<dyn warp::Reply>, Rejection> {
-//     if id.is_empty() {
-//         return Err(warp::reject::custom(Error::RequestError(
-//             "Error in query parameter".to_owned(),
-//         )));
-//     }
-//     let payload = match body.payload {
-//         bodys::Payload::Json(data) => Payload::Json(data.to_string()),
-//         bodys::Payload::JsonPatch(data) => Payload::JsonPatch(data.to_string()),
-//     };
-//     let data = node.create_event(id, payload).await;
-//     match data {
-//         Ok(CreateRequestResponse::Event(event)) => handle_data(Ok(event)),
-//         Ok(CreateRequestResponse::Id(id)) => handle_data(Ok(id)),
-//         Err(error) => handle_data(Err::<Event, ApiError>(error)),
-//     }
-// }
 
 #[utoipa::path(
     post,
@@ -920,57 +661,6 @@ pub async fn get_event_handler(
 
 #[utoipa::path(
     get,
-    path = "/subjects/{id}/events/{sn}/signatures",
-    operation_id = "Get Signatures for an specific Event",
-    tag = "Signatures",
-    security(("api_key" = [])),
-    context_path = "/api",
-    params(
-        ("id" = String, Path, description = "Subject's unique id"),
-        ("sn" = u64, Path, description = "Event sn"),
-        ("from" = Option<usize>, Query, description = "Number of initial signature"),
-        ("quantity" = Option<usize>, Query, description = "Quantity of signatures requested"),
-    ),
-    responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = [Signature], 
-        example = json!(
-            [
-                {
-                    "content": {
-                        "signer": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                        "event_content_hash": "J1E4IB_4FyQEedp8KqvZsHVTQ-xA_CAM72K3qlLyjb5s",
-                        "timestamp": 1671544841
-                    },
-                    "signature": "SE51jtptGbj2T5ov0O6_ANQ3X8XJBAO3S9nDZPh6azuirFzIj0LV6tVtir2LEav9rR4tb5bDCgpDvDWn5sUT5AAg"
-                }
-            ]
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 404, description = "Not Found"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn get_signatures_handler(
-    id: String,
-    sn: u64,
-    node: NodeAPI,
-    _header: String,
-    parameters: GetSignaturesQuery,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    if id.is_empty() {
-        return Err(warp::reject::custom(Error::RequestError(
-            "Error in query parameter".to_owned(),
-        )));
-    }
-    let data = node
-        .get_signatures(id, sn, parameters.from, parameters.quantity)
-        .await;
-    handle_data(data)
-}
-
-#[utoipa::path(
-    get,
     path = "/subjects/{id}/events/{sn}/properties",
     operation_id = "Get Event Properties",
     tag = "Events",
@@ -1022,7 +712,7 @@ pub async fn get_event_properties_handler(
     }
 }
 
-fn handle_data<T: Serialize>(data: Result<T, ApiError>) -> Result<Box<dyn warp::Reply>, Rejection> {
+pub fn handle_data<T: Serialize>(data: Result<T, ApiError>) -> Result<Box<dyn warp::Reply>, Rejection> {
     match data {
         Ok(data) => return Ok(Box::new(warp::reply::json(&data))),
         Err(ApiError::InvalidParameters) => Err(warp::reject::custom(Error::InvalidParameters)),

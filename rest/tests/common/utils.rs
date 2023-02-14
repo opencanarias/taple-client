@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use commons::models::{signature::Signature, state::SubjectData};
-use core::{ApiModuleInterface, NodeAPI};
+use taple_core::{ApiModuleInterface, NodeAPI};
 use futures::{future, FutureExt};
 
 pub async fn do_task_with_timeout<Output>(

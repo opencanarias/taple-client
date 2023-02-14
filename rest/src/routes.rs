@@ -11,7 +11,7 @@ use super::{
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsQuery},
 };
-use core::NodeAPI;
+use taple_core::NodeAPI;
 use serde::de::DeserializeOwned;
 use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
 
@@ -19,8 +19,6 @@ pub fn routes(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    // Los métodos están comentados debido a su eliminación temporal de cara a la propuesta de POST Event Request
-    // Si se acaba aceptando, eliminar de manera definitiva
     get_subject(sender.clone(), api_key.clone())
         .or(get_all_subjects(sender.clone(), api_key.clone()))
         .or(get_all_governances(sender.clone(), api_key.clone()))
@@ -121,32 +119,6 @@ fn post_event_request(
         .recover(handle_rejection)
 }
 
-// fn post_external_request(
-//     sender: NodeAPI,
-//     api_key: Option<String>,
-// ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-//     warp::path!("api" / "requests" / "external")
-//         .and(warp::post())
-//         .and(api_key_validation(api_key))
-//         .and(with_sender(sender))
-//         .and(with_body())
-//         .and_then(post_external_request_handler)
-//         .recover(handle_rejection)
-// }
-
-// fn post_governance(
-//     sender: NodeAPI,
-//     api_key: Option<String>,
-// ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-//     warp::path!("api" / "governances")
-//         .and(warp::post())
-//         .and(api_key_validation(api_key))
-//         .and(with_sender(sender))
-//         .and(with_body())
-//         .and_then(post_governance_handler)
-//         .recover(handle_rejection)
-// }
-
 fn put_approval(
     sender: NodeAPI,
     api_key: Option<String>,
@@ -174,20 +146,6 @@ fn get_events_of_subject(
         .recover(handle_rejection)
 }
 
-// fn post_event(
-//     sender: NodeAPI,
-//     api_key: Option<String>
-// ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-//     warp::path!("api" / "subjects" / String / "events")
-//         .and(warp::post())
-//         // .and(warp::header("X-API-KEY"))
-//         .and(api_key_validation(api_key))
-//         .and(with_sender(sender))
-//         .and(with_body())
-//         .and_then(post_event_handler)
-//         .recover(handle_rejection)
-// }
-
 fn get_event(
     sender: NodeAPI,
     api_key: Option<String>,
@@ -212,13 +170,13 @@ fn get_event_properties(
         .recover(handle_rejection)
 }
 
-fn with_sender(
+pub fn with_sender(
     sender: NodeAPI,
 ) -> impl Filter<Extract = (NodeAPI,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || sender.clone())
 }
 
-fn api_key_validation(
+pub fn api_key_validation(
     api_key: Option<String>,
 ) -> impl Filter<Extract = (String,), Error = warp::Rejection> + Clone {
     warp::header::optional::<String>("x-api-key").and_then(move |key: Option<String>| {
@@ -241,12 +199,12 @@ fn api_key_validation(
     })
 }
 
-fn with_body<T: DeserializeOwned + Send>(
+pub fn with_body<T: DeserializeOwned + Send>(
 ) -> impl Filter<Extract = (T,), Error = warp::Rejection> + Clone {
     warp::body::content_length_limit(1024 * 16).and(warp::body::json())
 }
 
-async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
+pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     if let Some(ref err) = err.find::<Error>() {
         match err {
             Error::InternalServerError => {

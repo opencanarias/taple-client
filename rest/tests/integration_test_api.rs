@@ -6,7 +6,7 @@ use commons::{
     identifier::Derivable,
     models::{event::Event, state::SubjectData},
 };
-use core::ApiModuleInterface;
+use taple_core::ApiModuleInterface;
 use futures::FutureExt;
 use ureq::Agent;
 
@@ -29,7 +29,7 @@ fn init_node() {
 
 #[test]
 fn event_creation() {
-    use core::event_request::RequestData;
+    use taple_core::event_request::RequestData;
 
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
@@ -232,7 +232,7 @@ fn event_creation() {
 
 #[test]
 fn add_new_member_to_governance() {
-    use core::event_request::RequestData;
+    use taple_core::event_request::RequestData;
 
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {

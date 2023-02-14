@@ -1,4 +1,4 @@
-use core::{
+use taple_core::{
     NodeAPI,
     DatabaseSettings, NetworkSettings, NodeSettings, Taple,
 };
@@ -15,11 +15,11 @@ use commons::{
     config::TapleSettings,
     identifier::derive::{digest::DigestDerivator, KeyDerivator},
 };
-use rest::bodys::{PostEventBody, PostGovernanceBody, PostSubjectBody};
+use rest::bodys::{PostEventBody};
 use rest::handlers::{
     __path_get_all_subjects_handler, __path_get_event_handler, __path_get_event_properties_handler,
-    __path_get_events_of_subject_handler, __path_get_signatures_handler,
-    __path_get_subject_handler, __path_post_governance_handler, __path_post_subject_handler,
+    __path_get_events_of_subject_handler,
+    __path_get_subject_handler,
 };
 use serde::Deserialize;
 use std::env;
@@ -145,9 +145,9 @@ impl NodeBuilderAPI {
 
         #[derive(OpenApi)]
         #[openapi(
-        paths(get_subject_handler, get_all_subjects_handler, post_subject_handler, post_governance_handler, get_events_of_subject_handler, get_event_handler, get_signatures_handler, get_event_properties_handler),
+        paths(get_subject_handler, get_all_subjects_handler, get_events_of_subject_handler, get_event_handler, get_event_properties_handler),
         components(
-            schemas(SubjectData, Payload, PostEventBody, PostSubjectBody, PostGovernanceBody, Event, EventRequestType, Signature, EventContent, SignatureContent, EventRequest, Metadata, CreateRequest, StateRequest, RequestPayload)
+            schemas(SubjectData, Payload, PostEventBody, Event, EventRequestType, Signature, EventContent, SignatureContent, EventRequest, Metadata, CreateRequest, StateRequest, RequestPayload)
         ),
         modifiers(&SecurityAddon),
         tags(

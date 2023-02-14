@@ -3,6 +3,7 @@
 members = [
     "rest",
     "client",
+    "settings"
 ]
 
 [profile.release]
