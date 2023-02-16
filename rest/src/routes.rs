@@ -100,6 +100,7 @@ pub fn get_all_governances(
         .and(warp::get())
         .and(api_key_validation(api_key))
         .and(with_sender(sender))
+        .and(warp::query::<GetAllSubjectsQuery>())
         .and_then(get_all_governances_handler)
         .recover(handle_rejection)
 }
