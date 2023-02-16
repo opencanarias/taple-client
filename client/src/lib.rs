@@ -9,5 +9,6 @@ pub use rest::{
     openapi::{serve_swagger, ApiDoc},
     querys::*,
     routes::*,
+    handlers
 };
 pub use settings::{ConfigGenerator, SettingSchemaBuilder};
