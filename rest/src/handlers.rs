@@ -103,13 +103,6 @@ pub async fn get_all_subjects_handler(
     _header: String,
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    fn convert_to_usize(data: Option<String>) -> Option<usize> {
-        if data.is_some() {
-            let tmp = data.unwrap();
-            return Some(tmp.parse::<usize>().unwrap());
-        }
-        None
-    }
     let data = node
         .get_all_subjects("namespace1".into(), parameters.from, parameters.quantity)
         .await;
@@ -382,15 +375,11 @@ pub async fn get_governance_handler(
 pub async fn get_all_governances_handler(
     _header: String,
     node: NodeAPI,
+    parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    fn convert_to_usize(data: Option<String>) -> Option<usize> {
-        if data.is_some() {
-            let tmp = data.unwrap();
-            return Some(tmp.parse::<usize>().unwrap());
-        }
-        None
-    }
-    let data = node.get_all_governances().await;
+    let data = node
+        .get_all_governances("namespace1".into(), parameters.from, parameters.quantity)
+        .await;
     handle_data(data)
 }
 
@@ -724,15 +713,21 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     match &data {
         Ok(data) => return Ok(Box::new(warp::reply::json(&data))),
-        Err(ApiError::InvalidParameters(msg)) => {
-            Err(warp::reject::custom(Error::InvalidParameters(msg.to_owned())))
-        }
+        Err(ApiError::InvalidParameters(msg)) => Err(warp::reject::custom(
+            Error::InvalidParameters(msg.to_owned()),
+        )),
         Err(ApiError::NotFound(msg)) => Err(warp::reject::custom(Error::NotFound(msg.to_owned()))),
-        Err(ApiError::EventCreationError { .. }) => Err(warp::reject::custom(Error::ExecutionError { source: data.unwrap_err() })),
-        Err(ApiError::NotEnoughPermissions(_)) => Err(warp::reject::custom(Error::NotEnoughPermissions)),
+        Err(ApiError::EventCreationError { .. }) => {
+            Err(warp::reject::custom(Error::ExecutionError {
+                source: data.unwrap_err(),
+            }))
+        }
+        Err(ApiError::NotEnoughPermissions(_)) => {
+            Err(warp::reject::custom(Error::NotEnoughPermissions))
+        }
         // Err(ApiError::VoteNotNeeded(msg)) => Err(warp::reject::custom(Error::RequestError(msg.to_owned()))),
         Err(error) => Err(warp::reject::custom(Error::ExecutionError {
-            source: error.to_owned(), 
+            source: error.to_owned(),
         })),
     }
 }

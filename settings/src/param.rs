@@ -128,7 +128,7 @@ impl SettingSchema {
         if let Some(section) = &self.section {
             result = result.help_heading(section);
         };
-        let mut result = match &self.param_type {
+        let result = match &self.param_type {
             ParamType::Enum(data) => {
                 result.value_parser(data.clone())
             }
