@@ -24,6 +24,7 @@ pub struct SettingSchemaBuilder {
     help: Option<String>,
     param_type: Option<ParamType>,
     section: Option<String>,
+    hidden: bool
 }
 
 impl SettingSchemaBuilder {
@@ -42,6 +43,7 @@ impl SettingSchemaBuilder {
             help: None,
             param_type: None,
             section: None,
+            hidden: false
         })
     }
 
@@ -54,6 +56,7 @@ impl SettingSchemaBuilder {
             env: id.clone().to_uppercase(),
             param_type: self.param_type.unwrap_or(ParamType::Set),
             help: self.help.unwrap_or(id),
+            hidden: self.hidden,
             section: self.section,
         }
     }
@@ -82,6 +85,11 @@ impl SettingSchemaBuilder {
         self.section = Some(value.into());
         self
     }
+
+    pub fn hide(mut self, value: bool) -> Self {
+        self.hidden = value;
+        self
+    }
 }
 
 #[derive(Eq)]
@@ -92,6 +100,7 @@ pub struct SettingSchema {
     env: String,
     param_type: ParamType,
     help: String,
+    hidden: bool,
     pub(crate) section: Option<String>,
 }
 
@@ -119,7 +128,7 @@ impl SettingSchema {
         if let Some(section) = &self.section {
             result = result.help_heading(section);
         };
-        let result = match &self.param_type {
+        let mut result = match &self.param_type {
             ParamType::Enum(data) => {
                 result.value_parser(data.clone())
             }
@@ -127,7 +136,7 @@ impl SettingSchema {
             ParamType::Flag => result.action(ArgAction::SetTrue),
             ParamType::Set => result.action(ArgAction::Set),
         };
-        result.long(self.long.clone()).help(self.help.clone())
+        result.long(self.long.clone()).help(self.help.clone()).hide(self.hidden)
     }
 }
 
