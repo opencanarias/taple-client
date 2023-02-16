@@ -31,7 +31,7 @@ pub fn routes(
         .or(get_pending_requests(sender.clone(), api_key.clone()))
 }
 
-fn get_single_request(
+pub fn get_single_request(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -43,7 +43,7 @@ fn get_single_request(
         .recover(handle_rejection)
 }
 
-fn get_pending_requests(
+pub fn get_pending_requests(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -55,7 +55,7 @@ fn get_pending_requests(
         .recover(handle_rejection)
 }
 
-fn get_subject(
+pub fn get_subject(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -67,7 +67,7 @@ fn get_subject(
         .recover(handle_rejection)
 }
 
-fn get_all_subjects(
+pub fn get_all_subjects(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -80,7 +80,7 @@ fn get_all_subjects(
         .recover(handle_rejection)
 }
 
-fn get_governance(
+pub fn get_governance(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -92,7 +92,7 @@ fn get_governance(
         .recover(handle_rejection)
 }
 
-fn get_all_governances(
+pub fn get_all_governances(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -104,7 +104,7 @@ fn get_all_governances(
         .recover(handle_rejection)
 }
 
-fn post_event_request(
+pub fn post_event_request(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -117,7 +117,7 @@ fn post_event_request(
         .recover(handle_rejection)
 }
 
-fn put_approval(
+pub fn put_approval(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -131,7 +131,7 @@ fn put_approval(
         .recover(handle_rejection)
 }
 
-fn get_events_of_subject(
+pub fn get_events_of_subject(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -144,7 +144,7 @@ fn get_events_of_subject(
         .recover(handle_rejection)
 }
 
-fn get_event(
+pub fn get_event(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -156,7 +156,7 @@ fn get_event(
         .recover(handle_rejection)
 }
 
-fn get_event_properties(
+pub fn get_event_properties(
     sender: NodeAPI,
     api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
