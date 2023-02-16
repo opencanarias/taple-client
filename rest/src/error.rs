@@ -1,21 +1,25 @@
+use taple_core::ApiError;
 use thiserror::Error;
 use warp::reject;
 
 #[derive(Error, Debug, Clone)]
 pub enum Error {
-    #[error("Request Error {0}")]
-    RequestError(String),
+    #[error("Bad Request: {0}")]
+    BadRequest(String),
     #[error("Internal Server Error")]
     InternalServerError,
-    #[error("Execution Error")]
-    ExecutionError,
-    #[error("Invalid Parameters")]
-    InvalidParameters,
-    #[error("Not found")]
-    NotFound,
+    #[error("{}", source)]
+    ExecutionError {
+        #[from]
+        source: ApiError
+    },
+    #[error("Invalid parameters: {0}")]
+    InvalidParameters(String),
+    #[error("Not found {0}")]
+    NotFound(String),
     #[error("Not enough permissions")]
     NotEnoughPermissions,
-    #[error("Unauthorized. Invalud API KEY")]
+    #[error("Unauthorized. Invalid API KEY")]
     Unauthorized,
 }
 
