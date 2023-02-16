@@ -1,6 +1,4 @@
-use crate::handlers::{
-    get_single_request_handler, post_event_request_handler,
-};
+use crate::handlers::{get_single_request_handler, post_event_request_handler};
 
 use super::handlers::{
     get_all_governances_handler, get_all_subjects_handler, get_event_handler,
@@ -11,8 +9,8 @@ use super::{
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsQuery},
 };
-use taple_core::NodeAPI;
 use serde::de::DeserializeOwned;
+use taple_core::NodeAPI;
 use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
 
 pub fn routes(
@@ -212,34 +210,37 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
                 *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
                 return Ok(response);
             }
-            Error::ExecutionError => {
-                let mut response = Response::new(String::from("Execution Error").into());
-                *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+            Error::ExecutionError { .. } => {
+                let mut response = Response::new(format!("{}", err).into());
+                *response.status_mut() = StatusCode::CONFLICT;
                 return Ok(response);
             }
-            Error::RequestError(error) => {
-                let mut response = Response::new(String::from(error).into());
-                *response.status_mut() = StatusCode::BAD_REQUEST;
-                return Ok(response);
-            }
-            Error::InvalidParameters => {
-                let mut response = Response::new(String::from("Invalid Parameters").into());
+            Error::InvalidParameters(_) => {
+                let mut response = Response::new(format!("{}", err).into());
                 *response.status_mut() = StatusCode::BAD_REQUEST;
                 return Ok(response);
             }
             Error::NotEnoughPermissions => {
-                let mut response = Response::new(String::from("Not Allowed").into());
-                *response.status_mut() = StatusCode::UNAUTHORIZED;
+                let mut response = Response::new(
+                    String::from("Not Allowed. The node does not have the permissions to perform the requested operation."
+                ).into());
+                *response.status_mut() = StatusCode::FORBIDDEN;
                 return Ok(response);
             }
-            Error::NotFound => {
-                let mut response = Response::new(String::from("Not Found").into());
+            Error::NotFound(_) => {
+                let mut response = Response::new(format!("{}", err).into());
                 *response.status_mut() = StatusCode::NOT_FOUND;
                 return Ok(response);
             }
             Error::Unauthorized => {
-                let mut response = Response::new(String::from("Unauthorized").into());
+                let mut response =
+                    Response::new(format!("{}", err).into());
                 *response.status_mut() = StatusCode::UNAUTHORIZED;
+                return Ok(response);
+            }
+            Error::BadRequest(msg) => {
+                let mut response = Response::new(msg.to_owned().into());
+                *response.status_mut() = StatusCode::BAD_REQUEST;
                 return Ok(response);
             }
         }

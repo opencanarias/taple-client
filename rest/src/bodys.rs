@@ -1,6 +1,7 @@
 use taple_core::{
     event_request::RequestPayload, ApiError, CreateRequest, CreateType, ExternalEventRequest,
-    SignatureRequest as CoreSignatureRequest, StateType, SignatureRequestContent as CoreSignatureRequestContent
+    SignatureRequest as CoreSignatureRequest,
+    SignatureRequestContent as CoreSignatureRequestContent, StateType,
 };
 
 use serde::{Deserialize, Serialize};
@@ -36,13 +37,13 @@ impl TryInto<ExternalEventRequest> for PostEventRequestBody {
     type Error = ApiError;
     fn try_into(self) -> Result<ExternalEventRequest, Self::Error> {
         let EventRequestTypeBody::State(request) = self.request else {
-            return Err(ApiError::InvalidParameters);
+            return Err(ApiError::InvalidParameters("External event request can't be of create type".into()));
         };
         let Some(timestamp) = self.timestamp else {
-            return Err(ApiError::InvalidParameters);
+            return Err(ApiError::InvalidParameters("Must specify timestamp".into()));
         };
         let Some(signature) = self.signature else {
-            return Err(ApiError::InvalidParameters);
+            return Err(ApiError::InvalidParameters("Must specify signature".into()));
         };
         Ok(ExternalEventRequest {
             request: StateType {
@@ -112,7 +113,7 @@ impl Into<CoreSignatureRequest> for SignatureRequest {
                 event_content_hash: self.content.event_content_hash,
                 timestamp: self.content.timestamp,
             },
-            signature: self.signature
+            signature: self.signature,
         }
     }
 }

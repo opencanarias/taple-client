@@ -47,7 +47,7 @@ pub async fn get_subject_handler(
     _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     if id.is_empty() {
-        return Err(warp::reject::custom(Error::RequestError(
+        return Err(warp::reject::custom(Error::InvalidParameters(
             "Error in query parameter".to_owned(),
         )));
     }
@@ -146,6 +146,7 @@ pub async fn get_all_subjects_handler(
         )),
         (status = 400, description = "Bad Request"),
         (status = 401, description = "Unauthorized"),
+        (status = 409, description = "Conflict"),
         (status = 500, description = "Internal Server Error"),
     )
 )]
@@ -158,15 +159,17 @@ pub async fn post_event_request_handler(
     if body.signature.is_none() && body.timestamp.is_none() {
         data = node.create_request(body.request.into()).await;
     } else if body.signature.is_some() && body.timestamp.is_some() {
-        if let Ok(external_request) = body.try_into() {
-            data = node.external_request(external_request).await;
-        } else {
-            data = Err(ApiError::InvalidParameters);
+        match body.try_into() {
+            Ok(external_request) => {
+                data = node.external_request(external_request).await;
+            }
+            Err(error) => data = Err(error),
         }
     } else {
-        data = Err(ApiError::InvalidParameters);
+        return Err(warp::reject::custom(Error::BadRequest(
+            "Must provide signature and timestamp in case of exernal request".into(),
+        )));
     }
-    log::info!("data: {:?}", data);
     handle_data(data)
 }
 
@@ -335,7 +338,7 @@ pub async fn get_governance_handler(
     _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     if id.is_empty() {
-        return Err(warp::reject::custom(Error::RequestError(
+        return Err(warp::reject::custom(Error::InvalidParameters(
             "Error in query parameter".to_owned(),
         )));
     }
@@ -512,7 +515,7 @@ pub async fn get_events_of_subject_handler(
     parameters: GetEventsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     if id.is_empty() {
-        return Err(warp::reject::custom(Error::RequestError(
+        return Err(warp::reject::custom(Error::InvalidParameters(
             "Error in query parameter".to_owned(),
         )));
     }
@@ -549,7 +552,9 @@ pub async fn get_events_of_subject_handler(
         )),
         (status = 400, description = "Bad Request"),
         (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
         (status = 404, description = "Not Found"),
+        (status = 409, description = "Conflict"),
         (status = 500, description = "Internal Server Error"),
     )
 )]
@@ -560,7 +565,7 @@ pub async fn post_event_simulated_handler(
     body: PostEventBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     if id.is_empty() {
-        return Err(warp::reject::custom(Error::RequestError(
+        return Err(warp::reject::custom(Error::InvalidParameters(
             "Error in query parameter".to_owned(),
         )));
     }
@@ -642,7 +647,7 @@ pub async fn get_event_handler(
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     // TODO: Analyze if an alternative method is necessary
     if id.is_empty() {
-        return Err(warp::reject::custom(Error::RequestError(
+        return Err(warp::reject::custom(Error::InvalidParameters(
             "Error in query parameter".to_owned(),
         )));
     }
@@ -651,7 +656,7 @@ pub async fn get_event_handler(
         .await;
     if response.is_ok() {
         let Some(event) = response.unwrap().pop() else {
-            return Err(warp::reject::custom(Error::NotFound));
+            return Err(warp::reject::custom(Error::NotFound("Event not found".into())));
         };
         handle_data::<Event>(Ok(event))
     } else {
@@ -695,7 +700,7 @@ pub async fn get_event_properties_handler(
     _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     if id.is_empty() {
-        return Err(warp::reject::custom(Error::RequestError(
+        return Err(warp::reject::custom(Error::InvalidParameters(
             "Error in query parameter".to_owned(),
         )));
     }
@@ -708,19 +713,26 @@ pub async fn get_event_properties_handler(
         let properties = event.event_content.event_request.request;
         return Ok(Box::new(warp::reply::json(&properties)));
     } else {
-        Err(warp::reject::custom(Error::ExecutionError))
+        Err(warp::reject::custom(Error::ExecutionError {
+            source: data.unwrap_err(),
+        }))
     }
 }
 
-pub fn handle_data<T: Serialize>(data: Result<T, ApiError>) -> Result<Box<dyn warp::Reply>, Rejection> {
-    match data {
+pub fn handle_data<T: Serialize + std::fmt::Debug>(
+    data: Result<T, ApiError>,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    match &data {
         Ok(data) => return Ok(Box::new(warp::reply::json(&data))),
-        Err(ApiError::InvalidParameters) => Err(warp::reject::custom(Error::InvalidParameters)),
-        Err(ApiError::NotFound(_data)) => Err(warp::reject::custom(Error::NotFound)),
-        Err(ApiError::EventCreationError { source }) => match source {
-            _ => Err(warp::reject::custom(Error::NotEnoughPermissions)), // TODO: Add the rest of the cases
-        },
-        Err(ApiError::VoteNotNeeded(msg)) => Err(warp::reject::custom(Error::RequestError(msg))),
-        _ => Err(warp::reject::custom(Error::ExecutionError)),
+        Err(ApiError::InvalidParameters(msg)) => {
+            Err(warp::reject::custom(Error::InvalidParameters(msg.to_owned())))
+        }
+        Err(ApiError::NotFound(msg)) => Err(warp::reject::custom(Error::NotFound(msg.to_owned()))),
+        Err(ApiError::EventCreationError { .. }) => Err(warp::reject::custom(Error::ExecutionError { source: data.unwrap_err() })),
+        Err(ApiError::NotEnoughPermissions(_)) => Err(warp::reject::custom(Error::NotEnoughPermissions)),
+        // Err(ApiError::VoteNotNeeded(msg)) => Err(warp::reject::custom(Error::RequestError(msg.to_owned()))),
+        Err(error) => Err(warp::reject::custom(Error::ExecutionError {
+            source: error.to_owned(), 
+        })),
     }
 }
