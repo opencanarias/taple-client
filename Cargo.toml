@@ -6,6 +6,10 @@ members = [
     "settings"
 ]
 
+[workspace.dependencies]
+taple_core = { git = "https://github.com/opencanarias/taple-core", package = "core", tag = "v0.1.2"}
+commons = { git = "https://github.com/opencanarias/taple-core", tag = "v0.1.2" }
+
 [profile.release]
 lto = true
 codegen-units = 1
