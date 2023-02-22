@@ -24,15 +24,14 @@ TAPLE Client is the reference application for connecting to the TAPLE DLT networ
 
 ## Build From Source
 ```bash
-$ git clone https://github.com/opencanarias/taple-core.git
 $ git clone https://github.com/opencanarias/taple-client.git
 $ cd taple-client
-$ cargo run --manifest-path ./client/Cargo.toml --bin taple -- --help
+$ cargo install --path client
+$ taple-client --version
 ```
 
 ## Docker images
 Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-client).
-
 
 ## Usage
 Refer to our [quick start guide and developer documentation](https://www.taple.es/docs/develop) to learn how to set up and run the application.
