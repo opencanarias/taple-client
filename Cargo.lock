@@ -739,26 +739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "client"
-version = "0.1.2"
-dependencies = [
- "async-trait",
- "commons",
- "core",
- "env_logger",
- "log",
- "rest",
- "serde",
- "serde_json",
- "settings",
- "thiserror",
- "tokio",
- "utoipa",
- "utoipa-swagger-ui",
- "warp",
-]
-
-[[package]]
 name = "cmake"
 version = "0.1.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4458,6 +4438,26 @@ checksum = "a75fb188eb626b924683e3b95e3a48e63551fcfb51949de2f06a9d91dbee93c9"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "taple_client"
+version = "0.1.2"
+dependencies = [
+ "async-trait",
+ "commons",
+ "core",
+ "env_logger",
+ "log",
+ "rest",
+ "serde",
+ "serde_json",
+ "settings",
+ "thiserror",
+ "tokio",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "warp",
 ]
 
 [[package]]

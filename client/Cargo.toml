@@ -1,5 +1,5 @@
 [package]
-name = "client"
+name = "taple_client"
 version = "0.1.2"
 edition = "2021"
 
