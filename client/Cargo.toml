@@ -21,7 +21,7 @@ serde = "^1.0"
 serde_json = "1.0"
 thiserror = "1.0"
 
-commons = { path = "../../taple-core/commons" }
-taple_core = {path = "../../taple-core/core", package = "core"}
+taple_core = { workspace = true }
+commons = { workspace = true }
 rest = { path = "../rest" }
 settings = { path = "../settings" }

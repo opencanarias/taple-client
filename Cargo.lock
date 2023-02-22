@@ -780,6 +780,7 @@ dependencies = [
 [[package]]
 name = "commons"
 version = "0.1.1"
+source = "git+https://github.com/opencanarias/taple-core?tag=v0.1.2#dbc2ef840a5deb04e5e8409df276f0c4b7efe781"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -853,6 +854,7 @@ checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 [[package]]
 name = "core"
 version = "0.1.1"
+source = "git+https://github.com/opencanarias/taple-core?tag=v0.1.2#dbc2ef840a5deb04e5e8409df276f0c4b7efe781"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1585,6 +1587,7 @@ dependencies = [
 [[package]]
 name = "governance"
 version = "0.1.1"
+source = "git+https://github.com/opencanarias/taple-core?tag=v0.1.2#dbc2ef840a5deb04e5e8409df276f0c4b7efe781"
 dependencies = [
  "async-trait",
  "commons",
@@ -2096,6 +2099,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "ledger"
 version = "0.1.1"
+source = "git+https://github.com/opencanarias/taple-core?tag=v0.1.2#dbc2ef840a5deb04e5e8409df276f0c4b7efe781"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -2799,6 +2803,7 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 [[package]]
 name = "message"
 version = "0.1.1"
+source = "git+https://github.com/opencanarias/taple-core?tag=v0.1.2#dbc2ef840a5deb04e5e8409df276f0c4b7efe781"
 dependencies = [
  "commons",
  "dashmap",
@@ -3011,6 +3016,7 @@ dependencies = [
 [[package]]
 name = "network"
 version = "0.1.1"
+source = "git+https://github.com/opencanarias/taple-core?tag=v0.1.2#dbc2ef840a5deb04e5e8409df276f0c4b7efe781"
 dependencies = [
  "async-std",
  "bincode",
@@ -3622,6 +3628,7 @@ dependencies = [
 [[package]]
 name = "protocol"
 version = "0.1.1"
+source = "git+https://github.com/opencanarias/taple-core?tag=v0.1.2#dbc2ef840a5deb04e5e8409df276f0c4b7efe781"
 dependencies = [
  "async-trait",
  "blake3",
