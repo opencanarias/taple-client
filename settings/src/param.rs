@@ -19,7 +19,6 @@ pub enum ParamType {
 
 pub struct SettingSchemaBuilder {
     id: String,
-    long: Option<String>,
     short: Option<char>,
     help: Option<String>,
     param_type: Option<ParamType>,
@@ -38,7 +37,6 @@ impl SettingSchemaBuilder {
         }
         Ok(Self {
             id,
-            long: None,
             short: None,
             help: None,
             param_type: None,
@@ -52,7 +50,6 @@ impl SettingSchemaBuilder {
         SettingSchema {
             id: id.clone(),
             short: self.short.take(),
-            long: self.long.unwrap_or(id.clone()),
             env: id.clone().to_uppercase(),
             param_type: self.param_type.unwrap_or(ParamType::Set),
             help: self.help.unwrap_or(id),
@@ -68,11 +65,6 @@ impl SettingSchemaBuilder {
 
     pub fn param_type(mut self, value: ParamType) -> Self {
         self.param_type = Some(value);
-        self
-    }
-
-    pub fn long<T: Into<String>>(mut self, value: T) -> Self {
-        self.long = Some(value.into());
         self
     }
 
@@ -96,7 +88,6 @@ impl SettingSchemaBuilder {
 pub struct SettingSchema {
     id: String,
     short: Option<char>,
-    long: String,
     env: String,
     param_type: ParamType,
     help: String,
@@ -106,10 +97,7 @@ pub struct SettingSchema {
 
 impl PartialEq for SettingSchema {
     fn eq(&self, other: &Self) -> bool {
-        (self.id == other.id)
-            || (self.short == other.short)
-            || (self.long == other.long)
-            || (self.env == other.env)
+        self.id == other.id
     }
 }
 
@@ -135,7 +123,7 @@ impl SettingSchema {
             ParamType::Set => result.action(ArgAction::Set),
         };
         result
-            .long(self.long.clone())
+            .long(self.id.clone())
             .help(self.help.clone())
             .hide(self.hidden)
     }

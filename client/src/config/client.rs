@@ -69,7 +69,6 @@ pub fn client_settings_builder() -> ConfigGenerator {
             SettingSchemaBuilder::new("keyderivator")
                 .unwrap()
                 .help("Key derivator to use by the TAPLE")
-                .long("kd")
                 .param_type(ParamType::Enum(vec!["ed25519".into(), "secp256k1".into()]))
                 .build(),
             SettingSchemaBuilder::new("digestderivator")
@@ -83,7 +82,6 @@ pub fn client_settings_builder() -> ConfigGenerator {
                     "SHA3_256".into(),
                     "SHA3_512".into(),
                 ]))
-                .long("dd")
                 .build(),
             SettingSchemaBuilder::new("factor")
                 .unwrap()
@@ -116,7 +114,6 @@ pub fn client_settings_builder() -> ConfigGenerator {
             SettingSchemaBuilder::new("path")
                 .unwrap()
                 .help("Path where to store the database")
-                .long("databasepath")
                 .short('d')
                 .build(),
         ]).unwrap()
@@ -124,28 +121,24 @@ pub fn client_settings_builder() -> ConfigGenerator {
             SettingSchemaBuilder::new("httpport")
                 .unwrap()
                 .help("Port HTTP for the API REST")
-                .long("hp")
                 .build(),
         )
         .add_setting(
             SettingSchemaBuilder::new("httpaddr")
                 .unwrap()
                 .help("Listening ADDR for the API REST")
-                .long("ha")
                 .build(),
         )
         .add_setting(
             SettingSchemaBuilder::new("apikey")
                 .unwrap()
                 .help("API KEY for the api rest server")
-                .long("apikey")
                 .build(),
         )
         .add_setting(
             SettingSchemaBuilder::new("swaggerui")
                 .unwrap()
                 .help("Flag to activate swagger-ui")
-                .long("ui")
                 .param_type(ParamType::Flag)
                 .build(),
         )
