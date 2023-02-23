@@ -24,7 +24,7 @@ impl SettingsGenerator for TapleSettings {
                 dev_mode: extract_from_map(&data, "devmode", false)?,
             },
             database: DatabaseSettings {
-                path: extract_from_map(&data, "databasepath", "/tmp/data".into())?,
+                path: extract_from_map(&data, "path", "/tmp/data".into())?,
             },
         })
     }
