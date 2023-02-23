@@ -3867,14 +3867,11 @@ dependencies = [
 name = "rest"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "chrono",
  "commons",
- "config",
  "core",
  "env_logger",
  "futures",
- "log",
  "serde",
  "serde_json",
  "thiserror",
@@ -4444,7 +4441,6 @@ dependencies = [
 name = "taple_client"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "commons",
  "core",
  "env_logger",
