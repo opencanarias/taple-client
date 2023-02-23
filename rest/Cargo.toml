@@ -1,6 +1,6 @@
 [package]
 name = "rest"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 authors = ["Open Canarias S.L.<taple@opencanarias.com>"]
 description = "TAPLE Client official implementation"
