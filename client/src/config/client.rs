@@ -33,6 +33,8 @@ impl SettingsGenerator for ClientSettings {
 pub fn client_settings_builder() -> ConfigGenerator {
     ConfigGenerator::new()
         .about("Node for a TAPLE network")
+        .program_name(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
         .author("Open Canarias")
         .usage("taple_client [OPTIONS]")
         .prefix("TAPLE").unwrap()
@@ -111,9 +113,10 @@ pub fn client_settings_builder() -> ConfigGenerator {
                 .build(),
         ]).unwrap()
         .group("database", vec![
-            SettingSchemaBuilder::new("databasepath")
+            SettingSchemaBuilder::new("path")
                 .unwrap()
                 .help("Path where to store the database")
+                .long("databasepath")
                 .short('d')
                 .build(),
         ]).unwrap()

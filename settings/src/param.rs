@@ -6,8 +6,8 @@ use std::{collections::HashSet, hash::Hasher};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use toml::Value;
 
-use crate::Error;
 use crate::utils::check_if_valid_env;
+use crate::Error;
 
 #[derive(Hash, PartialEq, Eq)]
 pub enum ParamType {
@@ -24,7 +24,7 @@ pub struct SettingSchemaBuilder {
     help: Option<String>,
     param_type: Option<ParamType>,
     section: Option<String>,
-    hidden: bool
+    hidden: bool,
 }
 
 impl SettingSchemaBuilder {
@@ -43,7 +43,7 @@ impl SettingSchemaBuilder {
             help: None,
             param_type: None,
             section: None,
-            hidden: false
+            hidden: false,
         })
     }
 
@@ -129,14 +129,15 @@ impl SettingSchema {
             result = result.help_heading(section);
         };
         let result = match &self.param_type {
-            ParamType::Enum(data) => {
-                result.value_parser(data.clone())
-            }
+            ParamType::Enum(data) => result.value_parser(data.clone()),
             ParamType::RequiredSet => result.required(true).action(ArgAction::Set),
             ParamType::Flag => result.action(ArgAction::SetTrue),
             ParamType::Set => result.action(ArgAction::Set),
         };
-        result.long(self.long.clone()).help(self.help.clone()).hide(self.hidden)
+        result
+            .long(self.long.clone())
+            .help(self.help.clone())
+            .hide(self.hidden)
     }
 }
 
@@ -147,6 +148,7 @@ pub struct ConfigGenerator {
     author: Option<String>,
     about: Option<String>,
     usage: Option<String>,
+    version: Option<String>,
     prefix: Option<String>,
 }
 
@@ -160,6 +162,7 @@ impl ConfigGenerator {
             about: None,
             usage: None,
             prefix: None,
+            version: None,
         }
     }
 
@@ -193,7 +196,16 @@ impl ConfigGenerator {
         self
     }
 
-    pub fn group<T: Into<String>>(mut self, group: T, settings: Vec<SettingSchema>) -> Result<Self, Error> {
+    pub fn version<T: Into<String>>(mut self, version: T) -> Self {
+        self.version = Some(version.into());
+        self
+    }
+
+    pub fn group<T: Into<String>>(
+        mut self,
+        group: T,
+        settings: Vec<SettingSchema>,
+    ) -> Result<Self, Error> {
         let group: String = group.into();
         if !check_if_valid_env(&group) {
             return Err(Error::InvalidStringForEnv(group));
@@ -231,7 +243,11 @@ impl ConfigGenerator {
             command
         };
         let mut command = command
-            .version(env!("CARGO_PKG_VERSION"))
+            .version(
+                self.version
+                    .take()
+                    .unwrap_or("0.1.0".into()),
+            )
             .override_usage(self.usage.take().unwrap_or(program_name));
         for setting in self.data.iter() {
             command = command.arg(setting.to_arg());
@@ -300,7 +316,7 @@ impl ConfigGenerator {
                 setting.env = format!("{}_{}", prefix, setting.env);
             }
             if let Ok(value) = std::env::var(&setting.env) {
-                result.insert(setting.id, value);   
+                result.insert(setting.id, value);
             } else if let Some(value) = Self::get_from_matches(&setting, &matches) {
                 result.insert(setting.id, value);
             } else if toml.is_some() {
