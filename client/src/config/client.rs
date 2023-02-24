@@ -39,7 +39,11 @@ pub fn client_settings_builder() -> ConfigGenerator {
         .usage("taple_client [OPTIONS]")
         .prefix("TAPLE").unwrap()
         .add_toml("settings.toml")
-        .group("network", vec![
+        .group(
+            "network",
+            Some("network"),
+            Some("Network protocol configurations"),
+            vec![
                 SettingSchemaBuilder::new("p2pport")
                     .unwrap()
                     .help("Port for the node to listen for protocol messages")
@@ -55,97 +59,98 @@ pub fn client_settings_builder() -> ConfigGenerator {
                     .help("List of access points to use by the node. Each element is separated by ';'")
                     .build(),
         ]).unwrap()
-        .group("node", vec![
-            SettingSchemaBuilder::new("seed")
-                .unwrap()
-                .help("Seed to use to generate the MC")
-                .short('s')
-                .build(),
-            SettingSchemaBuilder::new("secretkey")
-                .unwrap()
-                .help("Secret Key in hexadecimal to import into the node")
-                .short('k')
-                .build(),
-            SettingSchemaBuilder::new("keyderivator")
-                .unwrap()
-                .help("Key derivator to use by the TAPLE")
-                .long("kd")
-                .param_type(ParamType::Enum(vec!["ed25519".into(), "secp256k1".into()]))
-                .build(),
-            SettingSchemaBuilder::new("digestderivator")
-                .unwrap()
-                .help("Digest derivator to use by the TAPLE")
-                .param_type(ParamType::Enum(vec![
-                    "Blake3_256".into(),
-                    "Blake3_512".into(),
-                    "SHA2_256".into(),
-                    "SHA2_512".into(),
-                    "SHA3_256".into(),
-                    "SHA3_512".into(),
-                ]))
-                .long("dd")
-                .build(),
-            SettingSchemaBuilder::new("factor")
-                .unwrap()
-                .help("Replication factor to use by the node")
-                .short('f')
-                .build(),
-            SettingSchemaBuilder::new("timeout")
-                .unwrap()
-                .help("Replication factor to use by the node")
-                .short('t')
-                .build(),
-            SettingSchemaBuilder::new("devmode")
-                .unwrap()
-                .help("Flag to activate the developer mode")
-                .short('m')
-                .param_type(ParamType::Flag)
-                .build(),
-            SettingSchemaBuilder::new("passvotation")
-                .unwrap()
-                .help("To vote to response to all vote request. It requires the dev mode enabled")
-                .short('v')
-                .param_type(ParamType::Enum(vec![
-                    "dissabled".into(),
-                    "always_yes".into(),
-                    "always_no".into(),
-                ]))
-                .build(),
+        .group(
+            "node",
+            Some("node"),
+            Some("Cryptographic and general configuration"),
+            vec![
+                SettingSchemaBuilder::new("seed")
+                    .unwrap()
+                    .help("Seed to use to generate the MC")
+                    .short('s')
+                    .build(),
+                SettingSchemaBuilder::new("secretkey")
+                    .unwrap()
+                    .help("Secret Key in hexadecimal to import into the node")
+                    .short('k')
+                    .build(),
+                SettingSchemaBuilder::new("keyderivator")
+                    .unwrap()
+                    .help("Key derivator to use by the TAPLE")
+                    .param_type(ParamType::Enum(vec!["ed25519".into(), "secp256k1".into()]))
+                    .build(),
+                SettingSchemaBuilder::new("digestderivator")
+                    .unwrap()
+                    .help("Digest derivator to use by the TAPLE")
+                    .param_type(ParamType::Enum(vec![
+                        "Blake3_256".into(),
+                        "Blake3_512".into(),
+                        "SHA2_256".into(),
+                        "SHA2_512".into(),
+                        "SHA3_256".into(),
+                        "SHA3_512".into(),
+                    ]))
+                    .build(),
+                SettingSchemaBuilder::new("factor")
+                    .unwrap()
+                    .help("Replication factor to use by the node")
+                    .short('f')
+                    .build(),
+                SettingSchemaBuilder::new("timeout")
+                    .unwrap()
+                    .help("Replication factor to use by the node")
+                    .short('t')
+                    .build(),
+                SettingSchemaBuilder::new("devmode")
+                    .unwrap()
+                    .help("Flag to activate the developer mode")
+                    .short('m')
+                    .param_type(ParamType::Flag)
+                    .build(),
+                SettingSchemaBuilder::new("passvotation")
+                    .unwrap()
+                    .help("To vote to response to all vote request. It requires the dev mode enabled")
+                    .short('v')
+                    .param_type(ParamType::Enum(vec![
+                        "dissabled".into(),
+                        "always_yes".into(),
+                        "always_no".into(),
+                    ]))
+                    .build(),
         ]).unwrap()
-        .group("database", vec![
-            SettingSchemaBuilder::new("path")
-                .unwrap()
-                .help("Path where to store the database")
-                .long("databasepath")
-                .short('d')
-                .build(),
+        .group(
+            "database",
+            Some("database"), 
+            Some("Database configurations"),
+            vec![
+                SettingSchemaBuilder::new("path")
+                    .unwrap()
+                    .help("Path where to store the database")
+                    .short('d')
+                    .build(),
         ]).unwrap()
         .add_setting(
             SettingSchemaBuilder::new("httpport")
                 .unwrap()
                 .help("Port HTTP for the API REST")
-                .long("hp")
                 .build(),
         )
         .add_setting(
             SettingSchemaBuilder::new("httpaddr")
                 .unwrap()
                 .help("Listening ADDR for the API REST")
-                .long("ha")
                 .build(),
         )
         .add_setting(
             SettingSchemaBuilder::new("apikey")
                 .unwrap()
                 .help("API KEY for the api rest server")
-                .long("apikey")
                 .build(),
         )
         .add_setting(
             SettingSchemaBuilder::new("swaggerui")
                 .unwrap()
                 .help("Flag to activate swagger-ui")
-                .long("ui")
                 .param_type(ParamType::Flag)
                 .build(),
         )

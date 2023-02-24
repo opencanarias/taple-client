@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::fs;
 use std::hash::Hash;
-use std::{collections::HashSet, hash::Hasher};
+use std::hash::Hasher;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use linked_hash_set::LinkedHashSet;
 use toml::Value;
 
 use crate::utils::check_if_valid_env;
@@ -19,11 +20,12 @@ pub enum ParamType {
 
 pub struct SettingSchemaBuilder {
     id: String,
-    long: Option<String>,
     short: Option<char>,
     help: Option<String>,
     param_type: Option<ParamType>,
     section: Option<String>,
+    group_prefix: Option<String>,
+    group_description: Option<String>,
     hidden: bool,
 }
 
@@ -38,11 +40,12 @@ impl SettingSchemaBuilder {
         }
         Ok(Self {
             id,
-            long: None,
             short: None,
             help: None,
             param_type: None,
             section: None,
+            group_prefix: None,
+            group_description: None,
             hidden: false,
         })
     }
@@ -52,12 +55,13 @@ impl SettingSchemaBuilder {
         SettingSchema {
             id: id.clone(),
             short: self.short.take(),
-            long: self.long.unwrap_or(id.clone()),
             env: id.clone().to_uppercase(),
             param_type: self.param_type.unwrap_or(ParamType::Set),
             help: self.help.unwrap_or(id),
             hidden: self.hidden,
             section: self.section,
+            group_prefix: self.group_prefix,
+            group_description: self.group_description,
         }
     }
 
@@ -68,11 +72,6 @@ impl SettingSchemaBuilder {
 
     pub fn param_type(mut self, value: ParamType) -> Self {
         self.param_type = Some(value);
-        self
-    }
-
-    pub fn long<T: Into<String>>(mut self, value: T) -> Self {
-        self.long = Some(value.into());
         self
     }
 
@@ -96,20 +95,18 @@ impl SettingSchemaBuilder {
 pub struct SettingSchema {
     id: String,
     short: Option<char>,
-    long: String,
     env: String,
     param_type: ParamType,
     help: String,
     hidden: bool,
     pub(crate) section: Option<String>,
+    pub(crate) group_prefix: Option<String>,
+    pub(crate) group_description: Option<String>,
 }
 
 impl PartialEq for SettingSchema {
     fn eq(&self, other: &Self) -> bool {
-        (self.id == other.id)
-            || (self.short == other.short)
-            || (self.long == other.long)
-            || (self.env == other.env)
+        self.id == other.id
     }
 }
 
@@ -121,11 +118,21 @@ impl Hash for SettingSchema {
 
 impl SettingSchema {
     pub fn to_arg(&self) -> Arg {
-        let mut result = Arg::new(self.id.clone());
+        let id = if let Some(group_prefix) = &self.group_prefix {
+            format!("{}.{}", group_prefix, self.id)
+        } else {
+            self.id.clone()
+        };
+        let mut result = Arg::new(id.clone());
         if let Some(short) = self.short {
             result = result.short(short);
         };
         if let Some(section) = &self.section {
+            let section = if let Some(description) = &self.group_description {
+                format!("{}({})", section, description)
+            } else {
+                section.clone()
+            };
             result = result.help_heading(section);
         };
         let result = match &self.param_type {
@@ -135,14 +142,14 @@ impl SettingSchema {
             ParamType::Set => result.action(ArgAction::Set),
         };
         result
-            .long(self.long.clone())
+            .long(id.clone())
             .help(self.help.clone())
             .hide(self.hidden)
     }
 }
 
 pub struct ConfigGenerator {
-    data: HashSet<SettingSchema>,
+    data: LinkedHashSet<SettingSchema>,
     toml_filename: Option<String>,
     program_name: Option<String>,
     author: Option<String>,
@@ -155,7 +162,7 @@ pub struct ConfigGenerator {
 impl ConfigGenerator {
     pub fn new() -> Self {
         Self {
-            data: HashSet::new(),
+            data: LinkedHashSet::new(),
             toml_filename: None,
             program_name: None,
             author: None,
@@ -201,17 +208,40 @@ impl ConfigGenerator {
         self
     }
 
-    pub fn group<T: Into<String>>(
+    pub fn group<T, S, D>(
         mut self,
         group: T,
+        prefix: Option<S>,
+        description: Option<D>,
         settings: Vec<SettingSchema>,
-    ) -> Result<Self, Error> {
-        let group: String = group.into();
+    ) -> Result<Self, Error> 
+    where 
+        T: Into<String>,
+        S: Into<String>,
+        D: Into<String>
+    {
+        let group = group.into();
         if !check_if_valid_env(&group) {
             return Err(Error::InvalidStringForEnv(group));
         }
+        let description = if let Some(description) = description {
+            Some(description.into())
+        } else {
+            None
+        };
+        let prefix = if let Some(data) = prefix {
+            let data = data.into();
+            if !check_if_valid_env(&data) {
+                return Err(Error::InvalidStringForEnv(data));
+            }
+            Some(data)
+        } else {
+            None
+        };
         settings.into_iter().for_each(|mut s| {
             s.section = Some(group.clone());
+            s.group_prefix = prefix.clone();
+            s.group_description = description.clone();
             self.data.insert(s);
         });
         Ok(self)
@@ -243,11 +273,7 @@ impl ConfigGenerator {
             command
         };
         let mut command = command
-            .version(
-                self.version
-                    .take()
-                    .unwrap_or("0.1.0".into()),
-            )
+            .version(self.version.take().unwrap_or("0.1.0".into()))
             .override_usage(self.usage.take().unwrap_or(program_name));
         for setting in self.data.iter() {
             command = command.arg(setting.to_arg());
@@ -266,11 +292,16 @@ impl ConfigGenerator {
     }
 
     fn get_from_matches(setting: &SettingSchema, matches: &ArgMatches) -> Option<String> {
-        if let Some(_) = matches.value_source(&setting.id) {
+        let id = if let Some(prefix) = &setting.group_prefix {
+            format!("{}.{}", prefix, setting.id)
+        } else {
+            setting.id.clone()
+        };
+        if let Some(_) = matches.value_source(&id) {
             if let ParamType::Flag = &setting.param_type {
-                Some(matches.get_one::<bool>(&setting.id).unwrap().to_string())
+                Some(matches.get_one::<bool>(&id).unwrap().to_string())
             } else {
-                matches.get_one::<String>(&setting.id).cloned()
+                matches.get_one::<String>(&id).cloned()
             }
         } else {
             None
@@ -309,7 +340,7 @@ impl ConfigGenerator {
         let matches = self.get_matches();
         let toml = self.get_toml();
         for mut setting in self.data {
-            if let Some(group) = &setting.section {
+            if let Some(group) = &setting.group_prefix {
                 setting.env = format!("{}_{}", group.to_uppercase(), setting.env);
             }
             if let Some(prefix) = &self.prefix {
