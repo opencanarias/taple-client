@@ -11,3 +11,4 @@ toml = { workspace = true }
 thiserror = { workspace = true }
 lazy_static = { workspace = true }
 regex = { workspace = true }
+linked_hash_set = { workspace = true }
