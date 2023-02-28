@@ -3,11 +3,11 @@ WORKDIR /app
 RUN apt update
 RUN apt install -y libprotobuf-dev protobuf-compiler
 RUN apt install cmake -y
-COPY . taple-client
-WORKDIR /app/taple-client
+COPY . taple_client
+WORKDIR /app/taple_client
 RUN cargo install --path client
 
 FROM debian:buster-slim
 WORKDIR /home
-COPY --from=builder /usr/local/cargo/bin/taple-client /usr/local/bin/taple-client
-CMD ["taple-client"]
+COPY --from=builder /usr/local/cargo/bin/taple_client /usr/local/bin/taple_client
+CMD ["taple_client"]
