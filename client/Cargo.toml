@@ -5,7 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
-name = "taple-client"
+name = "taple_client"
 path = "src/main.rs"
 
 [dependencies]
