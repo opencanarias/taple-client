@@ -9,8 +9,10 @@ use commons::{
 use taple_core::ApiModuleInterface;
 use futures::FutureExt;
 use ureq::Agent;
+use serial_test::serial;
 
 #[test]
+#[serial]
 fn init_node() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
@@ -22,12 +24,13 @@ fn init_node() {
             .run_with_api()
             .await;
         tokio::time::sleep(Duration::from_secs(1)).await;
-        let result = do_task_with_timeout(node.shutdown().boxed(), 1000).await;
+        let result = utils::do_task_with_timeout(node.shutdown().boxed(), 1000).await;
         assert!(result.is_ok());
     });
 }
 
 #[test]
+#[serial]
 fn event_creation() {
     use taple_core::event_request::RequestData;
 
@@ -72,7 +75,7 @@ fn event_creation() {
                         "namespace": "",
                         "schema_id": "governance",
                         "payload": {
-                            "Json": governance_two()
+                            "Json": utils::governance_two()
                         }
                     }
                 }
@@ -231,6 +234,7 @@ fn event_creation() {
 }
 
 #[test]
+#[serial]
 fn add_new_member_to_governance() {
     use taple_core::event_request::RequestData;
 
@@ -273,7 +277,7 @@ fn add_new_member_to_governance() {
                         "namespace": "",
                         "schema_id": "governance",
                         "payload": {
-                            "Json": governance_one()
+                            "Json": utils::governance_one()
                         }
                     }
                 }
@@ -298,7 +302,7 @@ fn add_new_member_to_governance() {
                     "State": {
                         "subject_id": governance_id,
                         "payload": {
-                            "Json": governance_two()
+                            "Json": utils::governance_two()
                         }
                     }
                 }

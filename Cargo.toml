@@ -1,10 +1,22 @@
 [workspace]
-
 members = [
-    "rest",
     "settings",
     "client",
 ]
+
+[workspace.package]
+version = "0.2.0-dev"
+authors = ["Open Canarias S.L.<taple@opencanarias.com>"]
+edition = "2021"
+description = "TAPLE Client official implementation"
+# Remove when crates.io is published
+documentation = "https://www.taple.es" 
+readme = "./README.md"
+homepage = "https://www.taple.es"
+repository = "https://github.com/opencanarias/taple-client"
+license = "AGPL-3.0-only"
+keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
+
 
 [workspace.dependencies]
 taple_core = { git = "https://github.com/opencanarias/taple-core", package = "core", tag = "v0.1.2"}
@@ -36,6 +48,9 @@ toml = "0.6.0"
 lazy_static = "1.4.0"
 regex = "1.7.1"
 linked_hash_set = "0.1.4"
+
+## TEST
+serial_test = "1.0.0"
 
 [profile.release]
 lto = true

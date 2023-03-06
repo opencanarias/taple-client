@@ -2,7 +2,7 @@ use taple_core::{
     NodeAPI,
     DatabaseSettings, NetworkSettings, NodeSettings, Taple,
 };
-use rest::bodys::{Payload};
+use taple_client::{Payload, PostEventBody};
 extern crate env_logger;
 use commons::models::event::Event;
 use commons::models::event_content::{EventContent, Metadata};
@@ -15,8 +15,7 @@ use commons::{
     config::TapleSettings,
     identifier::derive::{digest::DigestDerivator, KeyDerivator},
 };
-use rest::bodys::{PostEventBody};
-use rest::handlers::{
+use taple_client::handlers::{
     __path_get_all_subjects_handler, __path_get_event_handler, __path_get_event_properties_handler,
     __path_get_events_of_subject_handler,
     __path_get_subject_handler,
@@ -183,7 +182,7 @@ impl NodeBuilderAPI {
         let api_rest = warp::serve(
             api_doc
                 .or(swagger_ui)
-                .or(rest::routes::routes(taple.get_api(), None)),
+                .or(taple_client::routes(taple.get_api(), None)),
         )
         .bind_with_graceful_shutdown(http_addr, async move {
             stream.recv().await;

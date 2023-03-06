@@ -1,4 +1,4 @@
-use crate::handlers::{get_single_request_handler, post_event_request_handler};
+use crate::rest::handlers::{get_single_request_handler, post_event_request_handler};
 
 use super::handlers::{
     get_all_governances_handler, get_all_subjects_handler, get_event_handler,
@@ -234,8 +234,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
                 return Ok(response);
             }
             Error::Unauthorized => {
-                let mut response =
-                    Response::new(format!("{}", err).into());
+                let mut response = Response::new(format!("{}", err).into());
                 *response.status_mut() = StatusCode::UNAUTHORIZED;
                 return Ok(response);
             }
