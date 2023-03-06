@@ -1,14 +1,17 @@
 [package]
-name = "taple_client"
-version = "0.1.0"
-edition = "2021"
+name = "taple-client"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+documentation.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
-name = "taple_client"
+name = "taple-client"
 path = "src/main.rs"
 
 [dependencies]
+# API
 env_logger = { workspace = true }
 log = { workspace = true }
 utoipa = { workspace = true }
@@ -23,5 +26,11 @@ thiserror = { workspace = true }
 taple_core = { workspace = true }
 commons = { workspace = true }
 
-rest = { path = "../rest" }
 settings = { path = "../settings" }
+
+[dev-dependencies]
+env_logger = { workspace = true }
+ureq = { workspace = true }
+futures = { workspace = true }
+chrono = { workspace = true }
+serial_test = { workspace = true }

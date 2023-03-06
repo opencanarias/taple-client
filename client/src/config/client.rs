@@ -36,7 +36,7 @@ pub fn client_settings_builder() -> ConfigGenerator {
         .program_name(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author("Open Canarias")
-        .usage("taple_client [OPTIONS]")
+        .usage("taple-client [OPTIONS]")
         .prefix("TAPLE").unwrap()
         .add_toml("settings.toml")
         .group(

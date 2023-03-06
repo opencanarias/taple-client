@@ -3879,25 +3879,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rest"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "commons",
- "core",
- "env_logger",
- "futures",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "ureq",
- "utoipa",
- "utoipa-swagger-ui",
- "warp",
-]
-
-[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4211,8 +4192,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "serial_test"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "538c30747ae860d6fb88330addbbd3e0ddbe46d662d032855596d8a8ca260611"
+dependencies = [
+ "dashmap",
+ "futures",
+ "lazy_static",
+ "log",
+ "parking_lot 0.12.1",
+ "serial_test_derive",
+]
+
+[[package]]
+name = "serial_test_derive"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "079a83df15f85d89a68d64ae1238f142f172b1fa915d0d76b26a7cba1b659a69"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "settings"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap 4.1.6",
  "lazy_static",
@@ -4454,19 +4460,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "taple_client"
-version = "0.1.0"
+name = "taple-client"
+version = "0.2.0-dev"
 dependencies = [
+ "chrono",
  "commons",
  "core",
  "env_logger",
+ "futures",
  "log",
- "rest",
  "serde",
  "serde_json",
+ "serial_test",
  "settings",
  "thiserror",
  "tokio",
+ "ureq",
  "utoipa",
  "utoipa-swagger-ui",
  "warp",

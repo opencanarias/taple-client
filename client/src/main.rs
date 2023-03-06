@@ -1,4 +1,5 @@
 extern crate env_logger;
+mod rest;
 use taple_client::{ClientSettings, client_settings_builder, SettingsGenerator};
 use rest::openapi::{serve_swagger, ApiDoc};
 use utoipa::OpenApi;

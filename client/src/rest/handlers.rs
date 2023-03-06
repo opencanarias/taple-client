@@ -2,7 +2,7 @@ use commons::models::{approval_signature::Acceptance, event::Event};
 use serde::Serialize;
 use warp::Rejection;
 
-use crate::bodys::PostEventRequestBody;
+use crate::rest::bodys::PostEventRequestBody;
 use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 
 use super::{
