@@ -32,5 +32,4 @@ settings = { path = "../settings" }
 env_logger = { workspace = true }
 ureq = { workspace = true }
 futures = { workspace = true }
-chrono = { workspace = true }
 serial_test = { workspace = true }
