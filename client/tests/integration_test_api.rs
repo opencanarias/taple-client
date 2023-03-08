@@ -2,9 +2,9 @@ mod common;
 use std::time::Duration;
 
 use common::*;
-use commons::{
+use taple_core::{
     identifier::Derivable,
-    models::{event::Event, state::SubjectData},
+    Event, SubjectData,
 };
 use taple_core::ApiModuleInterface;
 use futures::FutureExt;

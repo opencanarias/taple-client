@@ -24,7 +24,6 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 taple_core = { workspace = true }
-commons = { workspace = true }
 
 settings = { path = "../settings" }
 

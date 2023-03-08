@@ -1,4 +1,4 @@
-pub use commons::config::{DatabaseSettings, NetworkSettings, NodeSettings, TapleSettings};
+pub use taple_core::{DatabaseSettings, NetworkSettings, NodeSettings, TapleSettings};
 use taple_core::{DigestDerivator, KeyDerivator};
 use std::collections::HashMap;
 
