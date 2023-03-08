@@ -4,15 +4,15 @@ use taple_core::{
 };
 use taple_client::{Payload, PostEventBody};
 extern crate env_logger;
-use commons::models::event::Event;
-use commons::models::event_content::{EventContent, Metadata};
-use commons::models::event_request::{
+use taple_core::Event;
+use taple_core::event_content::{EventContent, Metadata};
+use taple_core::event_request::{
     CreateRequest, EventRequest, EventRequestType, RequestPayload, StateRequest,
 };
-use commons::models::signature::{Signature, SignatureContent};
-use commons::models::state::SubjectData;
-use commons::{
-    config::TapleSettings,
+use taple_core::signature::{Signature, SignatureContent};
+use taple_core::SubjectData;
+use taple_core::{
+    TapleSettings,
     identifier::derive::{digest::DigestDerivator, KeyDerivator},
 };
 use taple_client::handlers::{

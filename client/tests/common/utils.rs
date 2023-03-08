@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use commons::models::{signature::Signature, state::SubjectData};
+use taple_core::{signature::Signature, SubjectData};
 use taple_core::{ApiModuleInterface, NodeAPI};
 use futures::{future, FutureExt};
 

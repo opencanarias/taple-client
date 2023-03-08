@@ -1,4 +1,4 @@
-use commons::models::{approval_signature::Acceptance, event::Event};
+use taple_core::{Acceptance, Event};
 use serde::Serialize;
 use warp::Rejection;
 
