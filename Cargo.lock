@@ -572,53 +572,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
-name = "core"
-version = "0.2.0-dev"
-source = "git+https://github.com/opencanarias/taple-core#323339d41ad294576a57f258d53017eebb786c14"
-dependencies = [
- "async-std",
- "async-trait",
- "base64 0.13.1",
- "bincode",
- "blake2 0.9.2",
- "blake3",
- "borsh",
- "config",
- "curve25519-dalek 3.0.3",
- "dashmap",
- "db-key",
- "ed25519-dalek",
- "env_logger",
- "futures",
- "getrandom 0.2.8",
- "hex",
- "instant",
- "json-patch",
- "jsonschema",
- "leveldb",
- "libp2p",
- "libsecp256k1",
- "log",
- "rand 0.8.5",
- "rand_core 0.5.1",
- "rmp-serde",
- "serde",
- "serde_cbor",
- "serde_json",
- "sha2 0.10.6",
- "sha3",
- "tempfile",
- "thiserror",
- "time",
- "tokio",
- "tokio-stream",
- "unsigned-varint",
- "url",
- "utoipa",
- "x25519-dalek",
-]
-
-[[package]]
 name = "core2"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3262,7 +3215,6 @@ dependencies = [
 name = "taple-client"
 version = "0.2.0-dev"
 dependencies = [
- "core",
  "env_logger",
  "futures",
  "log",
@@ -3270,12 +3222,60 @@ dependencies = [
  "serde_json",
  "serial_test",
  "settings",
+ "taple-core",
  "thiserror",
  "tokio",
  "ureq",
  "utoipa",
  "utoipa-swagger-ui",
  "warp",
+]
+
+[[package]]
+name = "taple-core"
+version = "0.2.0-dev"
+source = "git+https://github.com/opencanarias/taple-core#6b83726d9f8274e056afe8f7090d2f876519e343"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "base64 0.13.1",
+ "bincode",
+ "blake2 0.9.2",
+ "blake3",
+ "borsh",
+ "config",
+ "curve25519-dalek 3.0.3",
+ "dashmap",
+ "db-key",
+ "ed25519-dalek",
+ "env_logger",
+ "futures",
+ "getrandom 0.2.8",
+ "hex",
+ "instant",
+ "json-patch",
+ "jsonschema",
+ "leveldb",
+ "libp2p",
+ "libsecp256k1",
+ "log",
+ "rand 0.8.5",
+ "rand_core 0.5.1",
+ "rmp-serde",
+ "serde",
+ "serde_cbor",
+ "serde_json",
+ "sha2 0.10.6",
+ "sha3",
+ "tempfile",
+ "thiserror",
+ "time",
+ "tokio",
+ "tokio-stream",
+ "unsigned-varint",
+ "url",
+ "utoipa",
+ "x25519-dalek",
 ]
 
 [[package]]
