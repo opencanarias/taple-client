@@ -63,7 +63,7 @@ pub async fn get_subject_handler(
     context_path = "/api",
     security(("api_key" = [])),
     params(
-        ("from" = Option<usize>, Query, description = "Number of initial subject"),
+        ("from" = Option<String>, Query, description = "Id of initial subject"),
         ("quantity" = Option<usize>, Query, description = "Quantity of subjects requested")
     ),
     responses(
@@ -351,6 +351,10 @@ pub async fn get_governance_handler(
     tag = "Governances",
     context_path = "/api",
     security(("api_key" = [])),
+    params(
+        ("from" = Option<String>, Query, description = "Id of initial subject"),
+        ("quantity" = Option<usize>, Query, description = "Quantity of subjects requested")
+    ),
     responses(
         (status = 200, description = "Subjets Data successfully retrieved", body = [SubjectData],
         example = json!(
