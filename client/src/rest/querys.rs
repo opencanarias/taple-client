@@ -14,7 +14,7 @@ pub struct GetEventsQuery {
 #[into_params(parameter_in = Query)]
 pub struct GetAllSubjectsQuery {
     // Number of initial subject
-    pub from: Option<usize>,
+    pub from: Option<String>,
     // Quantity of subjects requested
     pub quantity: Option<usize>,
 }
