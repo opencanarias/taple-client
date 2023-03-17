@@ -29,7 +29,7 @@ impl Into<RequestPayload> for Payload {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PostEventRequestBody {
     pub request: EventRequestTypeBody,
-    pub timestamp: Option<i64>,
+    pub timestamp: Option<u64>,
     pub signature: Option<SignatureRequest>,
 }
 
@@ -122,7 +122,7 @@ impl Into<CoreSignatureRequest> for SignatureRequest {
 pub struct SignatureRequestContent {
     pub signer: String,             // KeyIdentifier,
     pub event_content_hash: String, // DigestIdentifier,
-    pub timestamp: i64,
+    pub timestamp: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
