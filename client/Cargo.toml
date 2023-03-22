@@ -22,13 +22,22 @@ warp = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+tempfile = { workspace = true }
 
 taple-core = { workspace = true }
 
 settings = { path = "../settings" }
+
+# LevelDB
+leveldb = { workspace = true }
+db-key = { workspace = true }  #Usar esta versión. Necesario para implementar custom keys para leveldb::Database
+url = { workspace = true }
+bincode = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }
 ureq = { workspace = true }
 futures = { workspace = true }
 serial_test = { workspace = true }
+tempfile = { workspace = true }
+tempdir = { workspace = true }

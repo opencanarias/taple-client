@@ -1,6 +1,6 @@
 use taple_core::{
     NodeAPI,
-    DatabaseSettings, NetworkSettings, NodeSettings, Taple,
+    DatabaseSettings, NetworkSettings, NodeSettings, Taple, MemoryManager,
 };
 use taple_client::{Payload, PostEventBody};
 extern crate env_logger;
@@ -79,7 +79,7 @@ impl NodeBuilderAPI {
     }
 
     #[allow(dead_code)]
-    pub fn build(mut self) -> Taple {
+    pub fn build(mut self) -> Taple<MemoryManager> {
         let settings = TapleSettings {
             network: NetworkSettings {
                 p2p_port: self.p2p_port.unwrap_or(40000u32),
@@ -103,7 +103,7 @@ impl NodeBuilderAPI {
                 path: self.database_path.unwrap_or("".into()),
             },
         };
-        Taple::new(settings)
+        Taple::new(settings, MemoryManager::new())
     }
 
     pub async fn run_with_api(mut self) -> NodeAPI {
@@ -130,7 +130,7 @@ impl NodeBuilderAPI {
                 path: self.database_path.unwrap_or("".into()),
             },
         };
-        let mut taple = Taple::new(settings);
+        let mut taple = Taple::new(settings, MemoryManager::new());
         taple.start().await.unwrap();
         let http_addr = format!(
             "{}:{}",

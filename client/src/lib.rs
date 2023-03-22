@@ -1,5 +1,6 @@
 mod config;
 mod rest;
+mod database;
 pub use self::config::{
     client_settings_builder, extract_from_map, extract_option, ClientSettings, SettingsError,
     SettingsGenerator, 
