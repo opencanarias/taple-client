@@ -3,6 +3,7 @@ use utoipa::{
     Modify, OpenApi,
 };
 use taple_core::event_request::{CreateRequest, RequestPayload, StateRequest};
+use taple_core::TimeStamp;
 use std::sync::Arc;
 use taple_core::{
     Acceptance,
@@ -42,7 +43,6 @@ use warp::{
     path::{FullPath, Tail},
     Rejection, Reply, redirect,
 };
-
 #[derive(OpenApi)]
 #[openapi(
     paths(get_single_request_handler, post_event_request_handler, get_subject_handler, 
@@ -51,7 +51,8 @@ use warp::{
         put_approval_handler, get_all_governances_handler, get_governance_handler
     ),
     components(
-        schemas(StateRequestBody, SignatureRequestContent, SignatureRequest, PostEventBody, RequestPayload, CreateRequestBody, CreateRequest, StateRequest, EventRequestTypeBody, RequestData, SubjectData, Acceptance, ApprovalResponse, ApprovalResponseContent, EventRequest, Payload, PostEventRequestBody, PutVoteBody, Event, EventRequestType, Signature, EventContent, SignatureContent, EventRequest, Metadata)
+        schemas(StateRequestBody, SignatureRequestContent, SignatureRequest, PostEventBody, RequestPayload, CreateRequestBody, CreateRequest, StateRequest, EventRequestTypeBody, RequestData, SubjectData, Acceptance, ApprovalResponse, ApprovalResponseContent, EventRequest, Payload, PostEventRequestBody, PutVoteBody, Event, EventRequestType, Signature, EventContent, SignatureContent, EventRequest, Metadata,
+            TimeStamp)
     ),
     modifiers(&SecurityAddon),
     security(),
