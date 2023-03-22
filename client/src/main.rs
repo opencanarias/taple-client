@@ -1,14 +1,17 @@
 extern crate env_logger;
+mod database;
 mod rest;
-use taple_client::{ClientSettings, client_settings_builder, SettingsGenerator};
+use database::leveldb::{open_db_with_comparator, LevelDB};
+use log::info;
 use rest::openapi::{serve_swagger, ApiDoc};
-use utoipa::OpenApi;
-use warp::Filter;
-use taple_core::Taple;
-use log::{info};
 use std::sync::Arc;
 use std::{error::Error, net::SocketAddr};
+use taple_client::{client_settings_builder, ClientSettings, SettingsGenerator};
+use taple_core::Taple;
 use tokio::signal::unix::{signal, SignalKind};
+use utoipa::OpenApi;
+use warp::Filter;
+use tempfile::tempdir as tempdirf;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -22,7 +25,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         info!("DEV MODE is enabled. This is not a proper mode for production apps");
     }
     info!("{:?}", settings);
-    let mut taple = Taple::new(settings.taple.clone());
+    // Open DATABASE DIR
+    let tempdir;
+    let path = if settings.taple.database.path.is_empty() {
+        tempdir = tempdirf().unwrap();
+        tempdir.path().clone()
+    } else {
+        std::path::Path::new(&settings.taple.database.path)
+    };
+    let db = open_db_with_comparator(path);
+    let leveldb = LevelDB::new(db);
+    ////////////////////
+    let mut taple = Taple::new(settings.taple.clone(), leveldb);
     taple.start().await?;
     info!("Controller ID: {}", taple.controller_id().unwrap());
     let http_addr = format!("{}:{}", settings.http_addr, settings.http_port)
