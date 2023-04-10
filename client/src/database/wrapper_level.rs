@@ -1,5 +1,4 @@
 use std::cell::{Cell, RefCell};
-use std::cmp::Ordering;
 use std::rc::Rc;
 
 use leveldb::comparator::OrdComparator;
@@ -39,173 +38,64 @@ impl db_key::Key for StringKey {
     }
 }
 
-fn last_index_of(sttr: &str, c: char) -> Option<usize> {
-    sttr.rfind(c)
+fn partial_compare_possible_number_strings(
+    first: &str,
+    second: &str,
+) -> Option<std::cmp::Ordering> {
+    let first_number = first.parse::<i64>();
+    let second_number = second.parse::<i64>();
+    if first_number.is_ok() && second_number.is_ok() {
+        let first_number = first_number.unwrap();
+        let second_number = second_number.unwrap();
+        return first_number.partial_cmp(&second_number);
+    }
+    first.partial_cmp(second)
 }
 
-fn ord_by_len(a: &Vec<&str>, b: &Vec<&str>) -> std::cmp::Ordering {
-    if a.len() > b.len() {
-        std::cmp::Ordering::Greater
-    } else if a.len() < b.len() {
-        std::cmp::Ordering::Less
-    } else {
-        std::cmp::Ordering::Equal
+fn compare_possible_number_strings(first: &str, second: &str) -> std::cmp::Ordering {
+    let first_number = first.parse::<i64>();
+    let second_number = second.parse::<i64>();
+    if first_number.is_ok() && second_number.is_ok() {
+        let first_number = first_number.unwrap();
+        let second_number = second_number.unwrap();
+        return first_number.cmp(&second_number);
     }
-}
-
-fn compare_partition_case(a: &Vec<&str>, b: &Vec<&str>) -> std::cmp::Ordering {
-    if a[a.len() - 1] == "" && b[b.len() - 1] == "" {
-        if a.len() > b.len() {
-            return std::cmp::Ordering::Less;
-        } else if b.len() > a.len() {
-            return std::cmp::Ordering::Greater;
-        }
-    }
-    return std::cmp::Ordering::Equal;
-}
-
-fn compare_special_case(a: &str, b: &str) -> std::cmp::Ordering {
-    let mut aux = 0;
-    let a_len = a.chars().count();
-    let b_len = b.chars().count();
-    if a.chars().last().unwrap() == char::MAX {
-        aux += 1;
-        let tmp = a.chars().nth(a_len - 2);
-        if let Some(value) = tmp {
-            if value == char::MAX {
-                aux += 10;
-            }
-        }
-    }
-    if b.chars().last().unwrap() == char::MAX {
-        aux += 2;
-        let tmp = b.chars().nth(b_len - 2);
-        if let Some(value) = tmp {
-            if value == char::MAX {
-                aux += 20;
-            }
-        }
-    }
-    if aux == 1 || aux == 2 || aux == 3 || aux == 11 || aux == 22 {
-        return a.cmp(b);
-    } else if aux == 23 {
-        let a: String = a.chars().take(a.len() - 2).collect();
-        let b: String = b.chars().take(b.len() - 3).collect();
-        let cmp_result = a.cmp(&b);
-        if cmp_result == std::cmp::Ordering::Equal {
-            return std::cmp::Ordering::Less;
-        }
-        return cmp_result;
-    } else if aux == 13 {
-        let a: String = a.chars().take(a.len() - 3).collect();
-        let b: String = b.chars().take(b.len() - 2).collect();
-        let cmp_result = a.cmp(&b);
-        if cmp_result == std::cmp::Ordering::Equal {
-            return std::cmp::Ordering::Greater;
-        }
-        return cmp_result;
-    } else {
-        return std::cmp::Ordering::Equal;
-    }
+    first.cmp(second)
 }
 
 impl PartialOrd for StringKey {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        // let last_separator_index_self = last_index_of(&self.0, char::MAX).expect("Has Separator");
-        // let last_separator_index_other = last_index_of(&other.0, char::MAX).expect("Has Separator");
-        // let self_prefix = &self.0[..last_separator_index_self];
-        // let other_prefix = &other.0[..last_separator_index_other];
-        // match self_prefix.partial_cmp(other_prefix) {
-        //     Some(result) => match result {
-        //         Ordering::Less => Some(Ordering::Less),
-        //         Ordering::Greater => Some(Ordering::Greater),
-        //         Ordering::Equal => self.0[last_separator_index_self..]
-        //         .partial_cmp(&other.0[last_separator_index_other..]),
-        //     },
-        //     None => None,
-        // }
-        let odr_by_special_case = compare_special_case(&self.0, &other.0);
-        if odr_by_special_case != std::cmp::Ordering::Equal {
-            return Some(odr_by_special_case);
-        }
-        let splited_self: Vec<&str> = self.0.split(char::MAX).collect();
-        let splited_other: Vec<&str> = other.0.split(char::MAX).collect();
-        let odr_by_partition = compare_partition_case(&splited_self, &splited_other);
-        if odr_by_partition != std::cmp::Ordering::Equal {
-            return Some(odr_by_partition);
-        }
-        let len = splited_self.len();
-        let odr_by_len = ord_by_len(&splited_self, &splited_other);
-        if odr_by_len != std::cmp::Ordering::Equal {
-            Some(odr_by_len)
-        } else {
-            for i in 0..len {
-                let pcmp = check_partial_cmp(splited_self[i], splited_other[i]);
-                if pcmp != Some(std::cmp::Ordering::Equal) {
-                    return pcmp;
-                }
-            }
-            Some(Ordering::Equal)
-        }
-    }
-}
+        let Some((self_first, self_second)) = self.0.rsplit_once(char::MAX) else {
+            return self.partial_cmp(other);
+        };
+        let Some((other_first, other_second)) = other.0.rsplit_once(char::MAX) else {
+            return self.partial_cmp(other);
+        };
 
-fn check_partial_cmp(a: &str, b: &str) -> Option<std::cmp::Ordering> {
-    if a.len() > b.len() {
-        Some(std::cmp::Ordering::Greater)
-    } else if a.len() < b.len() {
-        Some(std::cmp::Ordering::Less)
-    } else {
-        a.partial_cmp(b)
+        let result = self_first.partial_cmp(other_first);
+        if let Some(std::cmp::Ordering::Equal) = result {
+            return partial_compare_possible_number_strings(self_second, other_second);
+        } else {
+            return result;
+        }
     }
 }
 
 impl Ord for StringKey {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        // let last_separator_index_self = last_index_of(&self.0, char::MAX).expect("Has Separator");
-        // let last_separator_index_other = last_index_of(&other.0, char::MAX).expect("Has Separator");
-        // let self_prefix = &self.0[..last_separator_index_self];
-        // let other_prefix = &other.0[..last_separator_index_other];
-        // match self_prefix.cmp(other_prefix) {
-        //     Ordering::Less => Ordering::Less,
-        //     Ordering::Greater => Ordering::Greater,
-        //     Ordering::Equal => {
-        //         self.0[last_separator_index_self..].cmp(&other.0[last_separator_index_other..])
-        //     }
-        // }
-        let odr_by_special_case = compare_special_case(&self.0, &other.0);
-        if odr_by_special_case != std::cmp::Ordering::Equal {
-            return odr_by_special_case;
-        }
-        let splited_self: Vec<&str> = self.0.split(char::MAX).collect();
-        let splited_other: Vec<&str> = other.0.split(char::MAX).collect();
-        let odr_by_partition = compare_partition_case(&splited_self, &splited_other);
-        if odr_by_partition != std::cmp::Ordering::Equal {
-            return odr_by_partition;
-        }
-        let len = splited_self.len();
-        let odr_by_len = ord_by_len(&splited_self, &splited_other);
-        if odr_by_len != std::cmp::Ordering::Equal {
-            odr_by_len
-        } else {
-            for i in 0..len {
-                let pcmp = check_cmp(splited_self[i], splited_other[i]);
-                if pcmp != std::cmp::Ordering::Equal {
-                    return pcmp;
-                }
-            }
-            Ordering::Equal
-        }
-    }
-}
+        let Some((self_first, self_second)) = self.0.rsplit_once(char::MAX) else {
+            return self.cmp(other);
+        };
+        let Some((other_first, other_second)) = other.0.rsplit_once(char::MAX) else {
+            return self.cmp(other);
+        };
 
-fn check_cmp(a: &str, b: &str) -> std::cmp::Ordering {
-    if a.len() > b.len() {
-        std::cmp::Ordering::Greater
-    } else if a.len() < b.len() {
-        std::cmp::Ordering::Less
-    } else {
-        a.cmp(&b)
+        let result = self_first.cmp(other_first);
+        if let std::cmp::Ordering::Equal = result {
+            return compare_possible_number_strings(self_second, other_second);
+        } else {
+            return result;
+        }
     }
 }
 
@@ -300,28 +190,12 @@ where
             separator: char::MAX,
             phantom: PhantomData::default(),
         };
-        db.put(
-            result.get_write_options(),
-            StringKey(result.create_last_key()),
-            vec![].as_slice(),
-        )
-        .expect("Can't insert end data at wrapper creation");
         result
     }
 
     pub fn partition(&self, subtable_name: &str) -> Self {
         // Create the concatenation
         let table_name = self.build_key(subtable_name);
-        self.db
-            .put(
-                self.get_write_options(),
-                StringKey(format!(
-                    "{}{}{}",
-                    table_name.0, self.separator, self.separator
-                )),
-                vec![].as_slice(),
-            )
-            .expect("Can't insert end data at wrapper creation");
         WrapperLevelDB {
             db: self.db.clone(),
             selected_table: table_name.0,
@@ -625,11 +499,15 @@ where
 mod tests {
     use std::sync::Arc;
 
-    use leveldb::{comparator::OrdComparator, options::Options};
+    use leveldb::{
+        comparator::OrdComparator,
+        iterator::{Iterable, LevelDBIterator},
+        options::{self, Options},
+    };
     use serde::{Deserialize, Serialize};
     use tempfile::tempdir;
 
-    use super::{StringKey, WrapperLevelDB, open_db, CursorIndex, open_db_with_comparator};
+    use super::{open_db, open_db_with_comparator, CursorIndex, StringKey, WrapperLevelDB};
 
     const TABLE_NAME1: &str = "TESTS";
     const TABLE_NAME2: &str = "PRUEBA";
@@ -775,13 +653,7 @@ mod tests {
             {
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
@@ -794,13 +666,7 @@ mod tests {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
@@ -850,32 +716,26 @@ mod tests {
             {
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
                 let wrapper2 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), TEST_TABLE);
-
+                let options = options::ReadOptions::new();
                 set_up_entries(wrapper0, wrapper1, wrapper2);
+                let mut iter = db.iter(options);
+                iter.seek(&StringKey("PRUEBA1\u{10ffff}\u{10ffff}".to_string()));
+                // iter.seek(&StringKey("EJEMPLO0\u{10ffff}0".to_string()));
+                // iter.advance();
+                let item = iter.next();
+                println!("{:?}", item);
             }
 
             {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
 
@@ -933,13 +793,7 @@ mod tests {
             {
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
@@ -952,13 +806,7 @@ mod tests {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = false;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
 
@@ -1017,13 +865,7 @@ mod tests {
             {
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
@@ -1036,13 +878,7 @@ mod tests {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = false;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
 
@@ -1092,13 +928,7 @@ mod tests {
             {
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
@@ -1111,13 +941,7 @@ mod tests {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = false;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), PRUEBA_TABLE);
 
@@ -1173,13 +997,7 @@ mod tests {
             {
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper00 = wrapper0.partition("SUB1");
@@ -1198,13 +1016,7 @@ mod tests {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = false;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper_mal = wrapper0.partition("SUB");
@@ -1298,13 +1110,7 @@ mod tests {
             {
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper00 = wrapper0.partition("SUB1");
@@ -1323,13 +1129,7 @@ mod tests {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = false;
-                let db = Arc::new(
-                    open_db::<StringKey>(
-                        temp_dir.path(),
-                        db_options,
-                    )
-                    .unwrap(),
-                );
+                let db = Arc::new(open_db::<StringKey>(temp_dir.path(), db_options).unwrap());
 
                 let wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), EJEMPLO_TABLE);
                 let wrapper_mal = wrapper0.partition("SUB");
@@ -1416,35 +1216,30 @@ mod tests {
         rt.block_on(async {
             let temp_dir = tempdir().unwrap();
             {
-                let comparator = OrdComparator::<StringKey>::new("taple_comparator".into());
+                let comparator = OrdComparator::<StringKey>::new("taple_comp".into());
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = true;
                 let db = Arc::new(
-                    open_db_with_comparator::<
-                        StringKey,
-                    >(temp_dir.path(), db_options, comparator)
-                    .unwrap(),
+                    open_db_with_comparator::<StringKey>(temp_dir.path(), db_options, comparator)
+                        .unwrap(),
                 );
 
                 let _wrapper0 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), "EJEMPLO_TABLE1");
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), "EJEMPLO_TABLE2");
                 let _wrapper2 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), "EJEMPLO_TABL3");
-                //wrapper1.put("b", 10).unwrap();
             }
             {
                 // Reopen the connection to confirm persistence...
                 let mut db_options = LevelDBOptions::new();
                 db_options.create_if_missing = false;
-                let comparator = OrdComparator::<StringKey>::new("taple_comparator".into());
+                let comparator = OrdComparator::<StringKey>::new("taple_comp".into());
                 let db = Arc::new(
-                    open_db_with_comparator::<
-                        StringKey,
-                    >(temp_dir.path(), db_options, comparator)
-                    .unwrap(),
+                    open_db_with_comparator::<StringKey>(temp_dir.path(), db_options, comparator)
+                        .unwrap(),
                 );
                 let wrapper1 = WrapperLevelDB::<StringKey, u64>::new(db.clone(), "EJEMPLO_TABLE2");
-                //wrapper1.put("b", 10).unwrap();
                 wrapper1.put("a", 11).unwrap();
+                wrapper1.put("b", 10).unwrap();
                 wrapper1.put("0", 12).unwrap();
                 wrapper1.put("00", 13).unwrap();
                 wrapper1.put("0a", 14).unwrap();

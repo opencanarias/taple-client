@@ -88,17 +88,24 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
 
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (String, Self::InnerDataType)> + 'a> {
         let iter = self.db.iter(self.get_read_options());
-        Box::new(DbIterator::new(iter, self.get_table_name(), self.separator))
+        Box::new(DbIterator::new(iter, self.get_table_name()))
     }
 
     fn rev_iter<'a>(&'a self) -> Box<dyn Iterator<Item = (String, Self::InnerDataType)> + 'a> {
-        let mut iter = self.db.iter(self.get_read_options()).reverse();
+        let iter = self.db.iter(self.get_read_options()).reverse();
         iter.seek(&StringKey(self.create_last_key()));
-        iter.advance();
+        let mut alt_iter = iter.peekable();
+        let iter = if let Some(_) = alt_iter.peek() {
+            let mut iter = self.db.iter(self.get_read_options()).reverse();
+            iter.seek(&StringKey(self.create_last_key()));
+            iter.advance();
+            iter
+        } else {
+            self.db.iter(self.get_read_options()).reverse()
+        };
         Box::new(RevDbIterator::new(
             iter,
             self.get_table_name(),
-            self.separator,
         ))
     }
 
@@ -114,18 +121,16 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
 pub struct DbIterator<'a, V: Serialize + DeserializeOwned> {
   _tmp: PhantomData<V>,
   table_name: String,
-  separator: char,
   iter: LevelIterator<'a, StringKey>,
 }
 
 impl<'a, V: Serialize + DeserializeOwned> DbIterator<'a, V> {
-  pub fn new(iter: LevelIterator<'a, StringKey>, table_name: String, separator: char) -> Self {
+  pub fn new(iter: LevelIterator<'a, StringKey>, table_name: String) -> Self {
       iter.seek(&StringKey(table_name.clone()));
       Self {
           _tmp: PhantomData::default(),
           table_name,
           iter,
-          separator,
       }
   }
 }
@@ -133,7 +138,6 @@ impl<'a, V: Serialize + DeserializeOwned> DbIterator<'a, V> {
 impl<'a, V: Serialize + DeserializeOwned> Iterator for DbIterator<'a, V> {
   type Item = (String, V);
   fn next(&mut self) -> Option<Self::Item> {
-      let end_pattern = format!("{}{}", self.separator, self.separator);
       loop {
           let item = self.iter.next();
           let Some(item) = item else {
@@ -142,14 +146,10 @@ impl<'a, V: Serialize + DeserializeOwned> Iterator for DbIterator<'a, V> {
           if !item.0 .0.starts_with(&self.table_name) {
               return None;
           }
-          if item.0 .0.ends_with(&end_pattern) {
-              continue;
-          }
           let value =
               WrapperLevelDB::<StringKey, V>::deserialize(item.1).unwrap();
           let key = {
               let StringKey(value) = item.0;
-              // Remove the table name from the key
               value.replace(&self.table_name, "")
           };
           return Some((key, value));
@@ -160,17 +160,14 @@ impl<'a, V: Serialize + DeserializeOwned> Iterator for DbIterator<'a, V> {
 pub struct RevDbIterator<'a, V: Serialize + DeserializeOwned + 'a> {
   _tmp: PhantomData<V>,
   table_name: String,
-  separator: char, // Con advance no debería de ser necesario
   iter: RevIterator<'a, StringKey>,
 }
 
 impl<'a, V: Serialize + DeserializeOwned> RevDbIterator<'a, V> {
-  pub fn new(iter: RevIterator<'a, StringKey>, table_name: String, separator: char) -> Self {
-      // iter.seek(&StringKey(table_name.clone()));
+  pub fn new(iter: RevIterator<'a, StringKey>, table_name: String) -> Self {
       Self {
           _tmp: PhantomData::default(),
           table_name,
-          separator,
           iter,
       }
   }
@@ -179,7 +176,6 @@ impl<'a, V: Serialize + DeserializeOwned> RevDbIterator<'a, V> {
 impl<'a, V: Serialize + DeserializeOwned> Iterator for RevDbIterator<'a, V> {
   type Item = (String, V);
   fn next(&mut self) -> Option<Self::Item> {
-      let end_pattern = format!("{}{}", self.separator, self.separator);
       loop {
           let item = self.iter.next();
           let Some(item) = item else {
@@ -188,14 +184,10 @@ impl<'a, V: Serialize + DeserializeOwned> Iterator for RevDbIterator<'a, V> {
           if !item.0 .0.starts_with(&self.table_name) {
               return None;
           }
-          if item.0 .0.ends_with(&end_pattern) {
-              continue;
-          }
           let value =
               WrapperLevelDB::<StringKey, V>::deserialize(item.1).unwrap();
           let key = {
               let StringKey(value) = item.0;
-              // Remove the table name from the key
               value.replace(&self.table_name, "")
           };
           return Some((key, value));
