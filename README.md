@@ -24,6 +24,8 @@ TAPLE Client is the reference application for connecting to the TAPLE DLT networ
 [Technology](https://www.taple.es) | [Develop](https://www.taple.es/docs/develop) | [Core](https://github.com/opencanarias/taple-core) | [Client](https://github.com/opencanarias/taple-client) | [Tools](https://github.com/opencanarias/taple-tools)
 
 ## Build From Source
+Rust versión 1.65 or higher is required.
+
 ```bash
 $ git clone https://github.com/opencanarias/taple-client.git
 $ cd taple-client
