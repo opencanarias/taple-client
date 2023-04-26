@@ -2,36 +2,17 @@ use utoipa::{
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
     Modify, OpenApi,
 };
-use taple_core::event_request::{CreateRequest, RequestPayload, StateRequest};
-use taple_core::TimeStamp;
 use std::sync::Arc;
-use taple_core::{
-    Acceptance,
-    ApprovalResponse,
-    ApprovalResponseContent,
-    Event,
-    SubjectData,
-    event_content::{
-        EventContent,
-        Metadata
-    },
-    event_request::{
-        EventRequest,
-        EventRequestType,
-        RequestData
-    },
-    signature::{
-        Signature,
-        SignatureContent
-    },
-};
-use super::bodys::{
-    CreateRequestBody, EventRequestTypeBody, PostEventBody, PostEventRequestBody, PutVoteBody,
-    StateRequestBody, Payload, SignatureRequestContent, SignatureRequest
-};
+use super::{bodys::{
+    CreateRequestBody, EventRequestTypeBody, PostEventRequestBody, PutVoteBody,
+    StateRequestBody, SignatureRequestContent, SignatureRequest
+}, responses::{AcceptanceResponse, EvaluationResponse, EventContentResponse,
+    ApprovalResponse, ApprovalContentResponse, ProposalResponse,
+    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse
+}};
 use super::handlers::{
     __path_get_all_governances_handler, __path_get_all_subjects_handler, __path_get_event_handler,
-    __path_get_event_properties_handler, __path_get_events_of_subject_handler,
+    __path_get_events_of_subject_handler,
     __path_get_governance_handler, __path_get_pending_requests_handler,
     __path_get_single_request_handler, __path_get_subject_handler,
     __path_post_event_request_handler,
@@ -47,12 +28,29 @@ use warp::{
 #[openapi(
     paths(get_single_request_handler, post_event_request_handler, get_subject_handler, 
         get_all_subjects_handler, get_events_of_subject_handler, get_event_handler, 
-        get_event_properties_handler, get_pending_requests_handler,
-        put_approval_handler, get_all_governances_handler, get_governance_handler
+        get_pending_requests_handler, put_approval_handler,
+        get_all_governances_handler, get_governance_handler
     ),
     components(
-        schemas(StateRequestBody, SignatureRequestContent, SignatureRequest, PostEventBody, RequestPayload, CreateRequestBody, CreateRequest, StateRequest, EventRequestTypeBody, RequestData, SubjectData, Acceptance, ApprovalResponse, ApprovalResponseContent, EventRequest, Payload, PostEventRequestBody, PutVoteBody, Event, EventRequestType, Signature, EventContent, SignatureContent, EventRequest, Metadata,
-            TimeStamp)
+        schemas(
+            StateRequestBody,
+            SignatureRequestContent,
+            SignatureRequest,
+            CreateRequestBody,
+            EventRequestTypeBody,
+            AcceptanceResponse,
+            PostEventRequestBody,
+            PutVoteBody,
+            EventResponse,
+            EventContentResponse,
+            EvaluationResponse,
+            ApprovalResponse,
+            ApprovalContentResponse,
+            ProposalResponse,
+            EventProposalResponse,
+            SubjectDataResponse,
+            ApprovalPetitionDataResponse
+        )
     ),
     modifiers(&SecurityAddon),
     security(),
