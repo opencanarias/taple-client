@@ -59,7 +59,7 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
             Ok(_) => Ok(()),
             Err(WrapperLevelDBErrors::SerializeError) => Err(DbError::SerializeError),
             Err(WrapperLevelDBErrors::LevelDBError { source }) => {
-                Err(DbError::CustomError(Box::new(source)))
+                Err(DbError::CustomError(source.to_string()))
             }
             Err(_) => unreachable!(),
         }
@@ -71,7 +71,7 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
             Err(WrapperLevelDBErrors::DeserializeError) => Err(DbError::DeserializeError),
             Err(WrapperLevelDBErrors::EntryNotFoundError) => Err(DbError::EntryNotFound),
             Err(WrapperLevelDBErrors::LevelDBError { source }) => {
-                Err(DbError::CustomError(Box::new(source)))
+                Err(DbError::CustomError(source.to_string()))
             }
             Ok(data) => Ok(data),
             _ => unreachable!(),
@@ -81,7 +81,7 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
     fn del(&self, key: &str) -> Result<(), DbError> {
         let result = self.del(key);
         if let Err(WrapperLevelDBErrors::LevelDBError { source }) = result {
-            return Err(DbError::CustomError(Box::new(source)));
+            return Err(DbError::CustomError(source.to_string()));
         }
         Ok(())
     }
