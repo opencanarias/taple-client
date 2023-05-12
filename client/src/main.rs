@@ -19,7 +19,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let settings = ClientSettings::generate(&client_settings_builder().build())?;
     let dev_mode = settings.taple.node.dev_mode;
-    let api_key = settings.x_api_key.clone();
     let swaggerui = settings.swagger_ui.clone();
     if dev_mode {
         info!("DEV MODE is enabled. This is not a proper mode for production apps");
@@ -61,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         warp::serve(
             api_doc
                 .or(swagger_ui)
-                .or(rest::routes::routes(taple.get_api(), api_key)),
+                .or(rest::routes::routes(taple.get_api())),
         )
         .bind_with_graceful_shutdown(http_addr, async move {
             stream.recv().await;
@@ -69,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .1
         .await;
     } else {
-        warp::serve(api_doc.or(rest::routes::routes(taple.get_api(), api_key)))
+        warp::serve(api_doc.or(rest::routes::routes(taple.get_api())))
             .bind_with_graceful_shutdown(http_addr, async move {
                 stream.recv().await;
             })
