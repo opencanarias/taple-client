@@ -3,14 +3,13 @@ use settings::{ConfigGenerator, SettingSchemaBuilder};
 use std::collections::HashMap;
 use taple_core::TapleSettings;
 
-use super::{extract_from_map, extract_option, SettingsGenerator};
+use super::{extract_from_map, SettingsGenerator};
 
 #[derive(Clone, Debug)]
 pub struct ClientSettings {
     pub taple: TapleSettings,
     pub http_addr: String,
     pub http_port: u32,
-    pub x_api_key: Option<String>,
     pub swagger_ui: bool,
 }
 
@@ -24,7 +23,6 @@ impl SettingsGenerator for ClientSettings {
             taple: taple_settings,
             http_addr: extract_from_map(&data, "httpaddr", "0.0.0.0".into())?,
             http_port: extract_from_map(&data, "httpport", 3000u32)?,
-            x_api_key: extract_option(&data, "apikey")?,
             swagger_ui: extract_from_map(&data, "swaggerui", false)?,
         })
     }
@@ -139,12 +137,6 @@ pub fn client_settings_builder() -> ConfigGenerator {
             SettingSchemaBuilder::new("httpaddr")
                 .unwrap()
                 .help("Listening ADDR for the API REST")
-                .build(),
-        )
-        .add_setting(
-            SettingSchemaBuilder::new("apikey")
-                .unwrap()
-                .help("API KEY for the api rest server")
                 .build(),
         )
         .add_setting(
