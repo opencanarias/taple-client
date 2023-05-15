@@ -1,14 +1,19 @@
-use taple_core::{Acceptance, Event};
+use std::str::FromStr;
+
 use serde::Serialize;
+use taple_core::{
+    identifier::{Derivable, DigestIdentifier},
+    Acceptance, Event,
+};
 use warp::Rejection;
 
-use crate::rest::bodys::PostEventRequestBody;
 use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 
 use super::{
-    bodys::{PostEventBody, PutVoteBody},
+    bodys::{PostEventRequestBody, PutVoteBody},
     error::Error,
-    querys::{GetAllSubjectsQuery, GetEventsQuery},
+    querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
+    responses::{ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse},
 };
 
 #[utoipa::path(
@@ -21,7 +26,7 @@ use super::{
         ("id" = String, Path, description = "Subject's unique id")
     ),
     responses(
-        (status = 200, description = "Subject Data successfully retrieved", body = SubjectData,
+        (status = 200, description = "Subject Data successfully retrieved", body = SubjectDataResponse,
         example = json!(
             {
                 "subject_id": "JKZgYhPjQdWNWWwkac0wSwqLKoOJsT0QimJmj6zjimWc",
@@ -44,12 +49,15 @@ pub async fn get_subject_handler(
     id: String,
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    if id.is_empty() {
-        return Err(warp::reject::custom(Error::InvalidParameters(
-            "Error in query parameter".to_owned(),
-        )));
-    }
-    let response = node.get_subject(id).await;
+    let response = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_subject(id)
+            .await
+            .map(|s| SubjectDataResponse::from(s))
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
     handle_data(response)
 }
 
@@ -59,12 +67,13 @@ pub async fn get_subject_handler(
     tag = "Subjects",
     operation_id = "Get All Subjects Data",
     context_path = "/api",
-    params(
+    security(("api_key" = [])),
+    params( // TODO: HACE FALTA ACTUALIZAR
         ("from" = Option<String>, Query, description = "Id of initial subject"),
         ("quantity" = Option<usize>, Query, description = "Quantity of subjects requested")
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = [SubjectData],
+        (status = 200, description = "Subjects Data successfully retrieved", body = [SubjectDataResponse],
         example = json!(
             [
                 {
@@ -99,9 +108,15 @@ pub async fn get_all_subjects_handler(
     node: NodeAPI,
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
+    // TODO: NAMESPACE DECIDIR CÓMO ESPECIFICAR
     let data = node
         .get_all_subjects("namespace1".into(), parameters.from, parameters.quantity)
-        .await;
+        .await
+        .map(|s| {
+            s.into_iter()
+                .map(|x| SubjectDataResponse::from(x))
+                .collect::<Vec<SubjectDataResponse>>()
+        });
     handle_data(data)
 }
 
@@ -113,7 +128,7 @@ pub async fn get_all_subjects_handler(
     context_path = "/api",
     request_body(content = PostEventRequestBody, content_type = "application/json", description = "Event Request type and payload with the associated signature"),
     responses(
-        (status = 202, description = "Event Request Created", body = RequestData,
+        (status = 202, description = "Event Request Created", body = RequestData, // TODO: Cambiar
         example = json!(
             {
                 "request": {
@@ -142,21 +157,13 @@ pub async fn post_event_request_handler(
     node: NodeAPI,
     body: PostEventRequestBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data;
-    if body.signature.is_none() && body.timestamp.is_none() {
-        data = node.create_request(body.request.into()).await;
-    } else if body.signature.is_some() && body.timestamp.is_some() {
-        match body.try_into() {
-            Ok(external_request) => {
-                data = node.external_request(external_request).await;
-            }
-            Err(error) => data = Err(error),
-        }
-    } else {
-        return Err(warp::reject::custom(Error::BadRequest(
-            "Must provide signature and timestamp in case of exernal request".into(),
-        )));
-    }
+    let data = match body.try_into() {
+        Ok(external_request) => node
+            .external_request(external_request)
+            .await
+            .map(|id| id.to_str()),
+        Err(error) => Err(error),
+    };
     handle_data(data)
 }
 
@@ -201,7 +208,12 @@ pub async fn post_event_request_handler(
 pub async fn get_pending_requests_handler(
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data = node.get_pending_requests().await;
+    let data = node.get_pending_requests().await.map(|result| {
+        result
+            .into_iter()
+            .map(|r| ApprovalPetitionDataResponse::from(r))
+            .collect::<Vec<ApprovalPetitionDataResponse>>()
+    });
     handle_data(data)
 }
 
@@ -245,8 +257,16 @@ pub async fn get_single_request_handler(
     id: String,
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data = node.get_single_request(id).await;
-    handle_data(data)
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_single_request(id)
+            .await
+            .map(|r| ApprovalPetitionDataResponse::from(r))
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
 }
 
 #[utoipa::path(
@@ -276,11 +296,19 @@ pub async fn put_approval_handler(
     body: PutVoteBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let acceptance = match body {
-        PutVoteBody::Accept => Acceptance::Accept,
-        PutVoteBody::Reject => Acceptance::Reject,
+        PutVoteBody::Accept => Acceptance::Ok,
+        PutVoteBody::Reject => Acceptance::Ko,
     };
-    let data = node.approval_request(request_id, acceptance).await;
-    handle_data(data)
+    let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
+        node.approval_request(id, acceptance)
+            .await
+            .map(|id| id.to_str())
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
 }
 #[utoipa::path(
     get,
@@ -292,7 +320,7 @@ pub async fn put_approval_handler(
         ("id" = String, Path, description = "Governance's unique id")
     ),
     responses(
-        (status = 200, description = "Subject Data successfully retrieved", body = SubjectData, 
+        (status = 200, description = "Subject Data successfully retrieved", body = SubjectDataResponse, 
             example = json!(
                 {
                     "subject_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
@@ -316,18 +344,16 @@ pub async fn get_governance_handler(
     id: String,
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    if id.is_empty() {
-        return Err(warp::reject::custom(Error::InvalidParameters(
-            "Error in query parameter".to_owned(),
-        )));
-    }
-    let mut response = node.get_subject(id).await;
-    if response.is_ok() && !response.as_ref().unwrap().governance_id.digest.is_empty() {
-        response = Err(ApiError::NotFound(String::from(
-            "This ID does not belong to a governance",
-        )));
-    }
-    handle_data(response)
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_subject(id)
+            .await
+            .map(|s| SubjectDataResponse::from(s))
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
 }
 
 #[utoipa::path(
@@ -341,7 +367,7 @@ pub async fn get_governance_handler(
         ("quantity" = Option<usize>, Query, description = "Quantity of subjects requested")
     ),
     responses(
-        (status = 200, description = "Subjets Data successfully retrieved", body = [SubjectData],
+        (status = 200, description = "Subjets Data successfully retrieved", body = [SubjectDataResponse],
         example = json!(
             [
                 {
@@ -367,7 +393,13 @@ pub async fn get_all_governances_handler(
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let data = node
         .get_all_governances("namespace1".into(), parameters.from, parameters.quantity)
-        .await;
+        .await
+        .map(|result| {
+            result
+                .into_iter()
+                .map(|s| SubjectDataResponse::from(s))
+                .collect::<Vec<SubjectDataResponse>>()
+        });
     handle_data(data)
 }
 
@@ -487,64 +519,22 @@ pub async fn get_all_governances_handler(
 pub async fn get_events_of_subject_handler(
     id: String,
     node: NodeAPI,
-    parameters: GetEventsQuery,
+    parameters: GetEventsOfSubjectQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    if id.is_empty() {
-        return Err(warp::reject::custom(Error::InvalidParameters(
-            "Error in query parameter".to_owned(),
-        )));
-    }
-    let data = node
-        .get_event_of_subject(id, parameters.from, parameters.quantity)
-        .await;
-    handle_data::<Vec<Event>>(data)
-}
-
-#[utoipa::path(
-    post,
-    path = "/subjects/{id}/events/simulated",
-    operation_id = "Simulate the creationg of an Event and get simulated Subject data",
-    tag = "Events",
-    context_path = "/api",
-    params(
-        ("id" = String, Path, description = "Subject's unique id"),
-    ),
-    request_body(content = PostEventBody, content_type = "application/json", description = "SubjectID and payload of the event"),
-    responses(
-        (status = 202, description = "Event Simulated", body = SubjectData,
-        example = json!(
-            {
-                "subject_id": "JKZgYhPjQdWNWWwkac0wSwqLKoOJsT0QimJmj6zjimWc",
-                "governance_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
-                "sn": 1,
-                "public_key": "ELZ_b-kZzdPykcYuRNC2ZZe_2lCTCUoo60GXfR4cuXMw",
-                "namespace": "namespace1",
-                "schema_id": "Prueba",
-                "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                "properties": "{\"localizacion\":\"Argentina\",\"temperatura\":-3}"
-            }
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 403, description = "Forbidden"),
-        (status = 404, description = "Not Found"),
-        (status = 409, description = "Conflict"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn post_event_simulated_handler(
-    id: String,
-    node: NodeAPI,
-    body: PostEventBody,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    if id.is_empty() {
-        return Err(warp::reject::custom(Error::InvalidParameters(
-            "Error in query parameter".to_owned(),
-        )));
-    }
-    let payload = body.payload.into();
-    let data = node.simulate_event(id, payload).await;
-    handle_data(data)
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_event_of_subject(id, parameters.from, parameters.quantity)
+            .await
+            .map(|ve| {
+                ve.into_iter()
+                    .map(|e| EventResponse::from(e))
+                    .collect::<Vec<EventResponse>>()
+            })
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data::<Vec<EventResponse>>(result)
 }
 
 #[utoipa::path(
@@ -617,74 +607,28 @@ pub async fn get_event_handler(
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     // TODO: Analyze if an alternative method is necessary
-    if id.is_empty() {
-        return Err(warp::reject::custom(Error::InvalidParameters(
-            "Error in query parameter".to_owned(),
-        )));
-    }
-    let response = node
-        .get_event_of_subject(id, Some(sn as i64), Some(1))
-        .await;
-    if response.is_ok() {
-        let Some(event) = response.unwrap().pop() else {
-            return Err(warp::reject::custom(Error::NotFound("Event not found".into())));
-        };
-        handle_data::<Event>(Ok(event))
+    if let Ok(id) = DigestIdentifier::from_str(&id) {
+        let response = node
+            .get_event_of_subject(id, Some(sn as i64), Some(1))
+            .await;
+        if response.is_ok() {
+            let Some(event) = response.unwrap().pop() else {
+                return Err(warp::reject::custom(Error::NotFound("Event not found".into())));
+            };
+            handle_data::<EventResponse>(Ok(event.into()))
+        } else {
+            let response = response.map(|ve| {
+                ve.into_iter()
+                    .map(|e| EventResponse::from(e))
+                    .collect::<Vec<EventResponse>>()
+            });
+            handle_data::<Vec<EventResponse>>(response)
+        }
     } else {
-        handle_data::<Vec<Event>>(response)
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/subjects/{id}/events/{sn}/properties",
-    operation_id = "Get Event Properties",
-    tag = "Events",
-    context_path = "/api",
-    params(
-        ("id" = String, Path, description = "Subject's unique id"),
-        ("sn" = u64, Path, description = "Event sn"),
-    ),
-    responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = EventRequestType,
-        example = json!(
-            {
-                "State": {
-                    "subject_id": "JKZgYhPjQdWNWWwkac0wSwqLKoOJsT0QimJmj6zjimWc",
-                    "payload": {
-                        "Json": "{\"localizacion\":\"Argentina\",\"temperatura\":-3}"
-                    }
-                }
-            }
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 404, description = "Not Found"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn get_event_properties_handler(
-    id: String,
-    sn: u64,
-    node: NodeAPI,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    if id.is_empty() {
-        return Err(warp::reject::custom(Error::InvalidParameters(
-            "Error in query parameter".to_owned(),
-        )));
-    }
-    let data = node
-        .get_event_of_subject(id, Some(sn as i64), Some(1))
-        .await;
-    if data.is_ok() {
-        // TODO: Determine if it is possible to receive an empty array
-        let event = data.unwrap().pop().unwrap();
-        let properties = event.event_content.event_request.request;
-        return Ok(Box::new(warp::reply::json(&properties)));
-    } else {
-        Err(warp::reject::custom(Error::ExecutionError {
-            source: data.unwrap_err(),
-        }))
+        let result: Result<Vec<EventResponse>, ApiError> = Err(ApiError::InvalidParameters(
+            format!("ID specified is not a valid Digest Identifier"),
+        ));
+        handle_data::<Vec<EventResponse>>(result)
     }
 }
 

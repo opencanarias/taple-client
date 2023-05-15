@@ -1,52 +1,66 @@
-use std::{marker::PhantomData, path::Path};
-use leveldb::{iterator::{Iterable, Iterator as LevelIterator, LevelDBIterator, RevIterator}, database::Database, comparator::OrdComparator};
-use super::wrapper_level::{WrapperLevelDB, StringKey};
+use super::wrapper_level::{StringKey, WrapperLevelDB};
 use crate::database::error::WrapperLevelDBErrors;
-use taple_core::{DbError, DatabaseManager, DatabaseCollection};
-use serde::{de::DeserializeOwned, Serialize};
 use leveldb::options::Options as LevelDBOptions;
+use leveldb::{
+    comparator::OrdComparator,
+    database::Database,
+    iterator::{Iterable, Iterator as LevelIterator, LevelDBIterator, RevIterator},
+    kv::KV,
+};
+use serde::{de::DeserializeOwned, Serialize};
+use std::{marker::PhantomData, path::Path};
+use taple_core::{DatabaseCollection, DatabaseManager, DbError};
 
 pub fn open_db_with_comparator(
-  path: &Path,
+    path: &Path,
 ) -> std::sync::Arc<leveldb::database::Database<StringKey>> {
-  let mut db_options = LevelDBOptions::new();
-  db_options.create_if_missing = true;
-  let comparator = OrdComparator::<StringKey>::new("taple_comp".into());
+    let mut db_options = LevelDBOptions::new();
+    db_options.create_if_missing = true;
+    let comparator = OrdComparator::<StringKey>::new("taple_comp".into());
 
-  if let Ok(db) = crate::database::wrapper_level::open_db_with_comparator(
-      path, db_options, comparator,
-  ) {
-      std::sync::Arc::new(db)
-  } else {
-      panic!("Error opening DB with comparator")
-  }
+    if let Ok(db) =
+        crate::database::wrapper_level::open_db_with_comparator(path, db_options, comparator)
+    {
+        std::sync::Arc::new(db)
+    } else {
+        panic!("Error opening DB with comparator")
+    }
 }
 
 pub struct LevelDB {
-  db: std::sync::Arc<Database<StringKey>>,
+    db: std::sync::Arc<Database<StringKey>>,
 }
 
 impl DatabaseManager for LevelDB {
-  fn create_collection<V>(
-      &self,
-      identifier: &str,
-  ) -> Box<dyn DatabaseCollection<InnerDataType = V>>
-  where
-      V: Serialize + DeserializeOwned + Sync + Send + 'static,
-  {
-      Box::new(WrapperLevelDB::<StringKey, V>::new(
-          self.db.clone(),
-          identifier,
-      ))
-  }
+    fn create_collection<V>(
+        &self,
+        identifier: &str,
+    ) -> Box<dyn DatabaseCollection<InnerDataType = V>>
+    where
+        V: Serialize + DeserializeOwned + Sync + Send + 'static,
+    {
+        Box::new(WrapperLevelDB::<StringKey, V>::new(
+            self.db.clone(),
+            identifier,
+        ))
+    }
 }
 
 impl LevelDB {
-  pub fn new(db: std::sync::Arc<Database<StringKey>>) -> Self {
-      Self { db }
-  }
+    pub fn new(db: std::sync::Arc<Database<StringKey>>) -> Self {
+        let iter = db.iter(leveldb::options::ReadOptions::new());
+        // db.put(
+        //     leveldb::options::WriteOptions::new(),
+        //     StringKey(format!("event{}", char::MAX)),
+        //     &vec![10],
+        // )
+        // .unwrap();
+        for i in iter {
+            println!("{}", i.0 .0);
+        }
+        Self { db }
+    }
 }
-
 
 impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
     for WrapperLevelDB<StringKey, V>
@@ -59,7 +73,7 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
             Ok(_) => Ok(()),
             Err(WrapperLevelDBErrors::SerializeError) => Err(DbError::SerializeError),
             Err(WrapperLevelDBErrors::LevelDBError { source }) => {
-                Err(DbError::CustomError(Box::new(source)))
+                Err(DbError::CustomError(source.to_string()))
             }
             Err(_) => unreachable!(),
         }
@@ -71,7 +85,7 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
             Err(WrapperLevelDBErrors::DeserializeError) => Err(DbError::DeserializeError),
             Err(WrapperLevelDBErrors::EntryNotFoundError) => Err(DbError::EntryNotFound),
             Err(WrapperLevelDBErrors::LevelDBError { source }) => {
-                Err(DbError::CustomError(Box::new(source)))
+                Err(DbError::CustomError(source.to_string()))
             }
             Ok(data) => Ok(data),
             _ => unreachable!(),
@@ -81,13 +95,14 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
     fn del(&self, key: &str) -> Result<(), DbError> {
         let result = self.del(key);
         if let Err(WrapperLevelDBErrors::LevelDBError { source }) = result {
-            return Err(DbError::CustomError(Box::new(source)));
+            return Err(DbError::CustomError(source.to_string()));
         }
         Ok(())
     }
 
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (String, Self::InnerDataType)> + 'a> {
         let iter = self.db.iter(self.get_read_options());
+        log::error!("TABLE NAME {}", self.get_table_name());
         Box::new(DbIterator::new(iter, self.get_table_name()))
     }
 
@@ -103,10 +118,7 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
         } else {
             self.db.iter(self.get_read_options()).reverse()
         };
-        Box::new(RevDbIterator::new(
-            iter,
-            self.get_table_name(),
-        ))
+        Box::new(RevDbIterator::new(iter, self.get_table_name()))
     }
 
     fn partition<'a>(
@@ -117,92 +129,92 @@ impl<V: Serialize + DeserializeOwned + Sync + Send> DatabaseCollection
     }
 }
 
-
 pub struct DbIterator<'a, V: Serialize + DeserializeOwned> {
-  _tmp: PhantomData<V>,
-  table_name: String,
-  iter: LevelIterator<'a, StringKey>,
+    _tmp: PhantomData<V>,
+    table_name: String,
+    iter: LevelIterator<'a, StringKey>,
 }
 
 impl<'a, V: Serialize + DeserializeOwned> DbIterator<'a, V> {
-  pub fn new(iter: LevelIterator<'a, StringKey>, table_name: String) -> Self {
-      iter.seek(&StringKey(table_name.clone()));
-      Self {
-          _tmp: PhantomData::default(),
-          table_name,
-          iter,
-      }
-  }
+    pub fn new(iter: LevelIterator<'a, StringKey>, table_name: String) -> Self {
+        iter.seek(&StringKey(table_name.clone()));
+        Self {
+            _tmp: PhantomData::default(),
+            table_name,
+            iter,
+        }
+    }
 }
 
 impl<'a, V: Serialize + DeserializeOwned> Iterator for DbIterator<'a, V> {
-  type Item = (String, V);
-  fn next(&mut self) -> Option<Self::Item> {
-      loop {
-          let item = self.iter.next();
-          let Some(item) = item else {
+    type Item = (String, V);
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let item = self.iter.next();
+            let Some(item) = item else {
               return None;
           };
-          if !item.0 .0.starts_with(&self.table_name) {
-              return None;
-          }
-          let value =
-              WrapperLevelDB::<StringKey, V>::deserialize(item.1).unwrap();
-          let key = {
-              let StringKey(value) = item.0;
-              value.replace(&self.table_name, "")
-          };
-          return Some((key, value));
-      }
-  }
+            if !item.0 .0.starts_with(&self.table_name) {
+                log::error!("OCURRE ESTO");
+                log::error!("TABLE NAME ES {}", self.table_name);
+                log::error!("{}", item.0.0);
+                return None;
+            }
+            let value = WrapperLevelDB::<StringKey, V>::deserialize(item.1).unwrap();
+            let key = {
+                let StringKey(value) = item.0;
+                value.replace(&self.table_name, "")
+            };
+            log::error!("DEVUELVE KEY");
+            return Some((key, value));
+        }
+    }
 }
 
 pub struct RevDbIterator<'a, V: Serialize + DeserializeOwned + 'a> {
-  _tmp: PhantomData<V>,
-  table_name: String,
-  iter: RevIterator<'a, StringKey>,
+    _tmp: PhantomData<V>,
+    table_name: String,
+    iter: RevIterator<'a, StringKey>,
 }
 
 impl<'a, V: Serialize + DeserializeOwned> RevDbIterator<'a, V> {
-  pub fn new(iter: RevIterator<'a, StringKey>, table_name: String) -> Self {
-      Self {
-          _tmp: PhantomData::default(),
-          table_name,
-          iter,
-      }
-  }
+    pub fn new(iter: RevIterator<'a, StringKey>, table_name: String) -> Self {
+        Self {
+            _tmp: PhantomData::default(),
+            table_name,
+            iter,
+        }
+    }
 }
 
 impl<'a, V: Serialize + DeserializeOwned> Iterator for RevDbIterator<'a, V> {
-  type Item = (String, V);
-  fn next(&mut self) -> Option<Self::Item> {
-      loop {
-          let item = self.iter.next();
-          let Some(item) = item else {
+    type Item = (String, V);
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let item = self.iter.next();
+            let Some(item) = item else {
               return None;
           };
-          if !item.0 .0.starts_with(&self.table_name) {
-              return None;
-          }
-          let value =
-              WrapperLevelDB::<StringKey, V>::deserialize(item.1).unwrap();
-          let key = {
-              let StringKey(value) = item.0;
-              value.replace(&self.table_name, "")
-          };
-          return Some((key, value));
-      }
-  }
+            if !item.0 .0.starts_with(&self.table_name) {
+                return None;
+            }
+            let value = WrapperLevelDB::<StringKey, V>::deserialize(item.1).unwrap();
+            let key = {
+                let StringKey(value) = item.0;
+                value.replace(&self.table_name, "")
+            };
+            return Some((key, value));
+        }
+    }
 }
-
 
 #[cfg(test)]
 mod test {
-    use std::{path::Path, vec};
-    use crate::database::{wrapper_level::StringKey};
+    use crate::database::wrapper_level::StringKey;
     use leveldb::comparator::OrdComparator;
     use leveldb::options::Options as LevelDBOptions;
     use serde::{Deserialize, Serialize};
+    use std::{path::Path, vec};
     use tempfile::tempdir;
 
     use super::{DatabaseCollection, DatabaseManager, LevelDB};
@@ -225,9 +237,9 @@ mod test {
         db_options.create_if_missing = true;
         let comparator = OrdComparator::<StringKey>::new("taple_comparator".into());
 
-        if let Ok(db) = crate::database::wrapper_level::open_db_with_comparator(
-            path, db_options, comparator,
-        ) {
+        if let Ok(db) =
+            crate::database::wrapper_level::open_db_with_comparator(path, db_options, comparator)
+        {
             std::sync::Arc::new(db)
         } else {
             panic!("Error opening DB with comparator")
@@ -582,18 +594,33 @@ mod test {
             db.create_collection("first");
         let first_inner = first_collection.partition("inner1");
         let second_inner = first_inner.partition("inner2");
-        first_collection.put("a", Data {
-            id: 0,
-            value: "A".into(),
-        }).unwrap();
-        first_inner.put("b", Data {
-            id: 0,
-            value: "B".into(),
-        }).unwrap();
-        second_inner.put("c", Data {
-            id: 0,
-            value: "C".into(),
-        }).unwrap();
+        first_collection
+            .put(
+                "a",
+                Data {
+                    id: 0,
+                    value: "A".into(),
+                },
+            )
+            .unwrap();
+        first_inner
+            .put(
+                "b",
+                Data {
+                    id: 0,
+                    value: "B".into(),
+                },
+            )
+            .unwrap();
+        second_inner
+            .put(
+                "c",
+                Data {
+                    id: 0,
+                    value: "C".into(),
+                },
+            )
+            .unwrap();
         let mut iter = second_inner.iter();
         let item = iter.next().unwrap();
         assert_eq!(&item.0, "c");
@@ -616,7 +643,6 @@ mod test {
         assert!(iter.next().is_none());
     }
 
-
     #[test]
     fn rev_iteration_with_partitions_test() {
         let temp_dir = tempdir().unwrap();
@@ -625,18 +651,33 @@ mod test {
             db.create_collection("first");
         let first_inner = first_collection.partition("inner1");
         let second_inner = first_inner.partition("inner2");
-        first_collection.put("a", Data {
-            id: 0,
-            value: "A".into(),
-        }).unwrap();
-        first_inner.put("b", Data {
-            id: 0,
-            value: "B".into(),
-        }).unwrap();
-        second_inner.put("c", Data {
-            id: 0,
-            value: "C".into(),
-        }).unwrap();
+        first_collection
+            .put(
+                "a",
+                Data {
+                    id: 0,
+                    value: "A".into(),
+                },
+            )
+            .unwrap();
+        first_inner
+            .put(
+                "b",
+                Data {
+                    id: 0,
+                    value: "B".into(),
+                },
+            )
+            .unwrap();
+        second_inner
+            .put(
+                "c",
+                Data {
+                    id: 0,
+                    value: "C".into(),
+                },
+            )
+            .unwrap();
         let mut iter = second_inner.rev_iter();
         let item = iter.next().unwrap();
         assert_eq!(&item.0, "c");
@@ -658,5 +699,4 @@ mod test {
         assert_eq!(&item.0, "a");
         assert!(iter.next().is_none());
     }
-
 }

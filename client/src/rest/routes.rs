@@ -2,12 +2,12 @@ use crate::rest::handlers::{get_single_request_handler, post_event_request_handl
 
 use super::handlers::{
     get_all_governances_handler, get_all_subjects_handler, get_event_handler,
-    get_event_properties_handler, get_events_of_subject_handler, get_governance_handler,
+    get_events_of_subject_handler, get_governance_handler,
     get_pending_requests_handler, get_subject_handler, put_approval_handler,
 };
 use super::{
     error::Error,
-    querys::{GetAllSubjectsQuery, GetEventsQuery},
+    querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
 };
 use serde::de::DeserializeOwned;
 use taple_core::NodeAPI;
@@ -24,7 +24,6 @@ pub fn routes(
         .or(get_governance(sender.clone()))
         .or(get_events_of_subject(sender.clone()))
         .or(get_event(sender.clone()))
-        .or(get_event_properties(sender.clone()))
         .or(put_approval(sender.clone()))
         .or(get_single_request(sender.clone()))
         .or(get_pending_requests(sender.clone()))
@@ -121,7 +120,7 @@ pub fn get_events_of_subject(
     warp::path!("api" / "subjects" / String / "events")
         .and(warp::get())
         .and(with_sender(sender))
-        .and(warp::query::<GetEventsQuery>())
+        .and(warp::query::<GetEventsOfSubjectQuery>())
         .and_then(get_events_of_subject_handler)
         .recover(handle_rejection)
 }
@@ -133,16 +132,6 @@ pub fn get_event(
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_event_handler)
-        .recover(handle_rejection)
-}
-
-pub fn get_event_properties(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "subjects" / String / "events" / u64 / "properties")
-        .and(warp::get())
-        .and(with_sender(sender))
-        .and_then(get_event_properties_handler)
         .recover(handle_rejection)
 }
 

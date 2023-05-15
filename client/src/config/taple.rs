@@ -22,6 +22,8 @@ impl SettingsGenerator for TapleSettings {
                 timeout: extract_from_map(&data, "timeout", 3000u32)?,
                 passvotation: extract_pass_votation(&data, "passvotation")?,
                 dev_mode: extract_from_map(&data, "devmode", false)?,
+                req_res: false,
+                smartcontracts_directory: String::from("../contracts") // TODO: CAMBIAR EN UN FUTURO
             },
             database: DatabaseSettings {
                 path: extract_from_map(&data, "path", "/tmp/data".into())?,

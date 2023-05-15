@@ -19,7 +19,8 @@ keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
 
 
 [workspace.dependencies]
-taple-core = { git = "https://github.com/opencanarias/taple-core" }
+# taple-core = { git = "https://github.com/opencanarias/taple-core" }
+taple-core = { path = "../taple-core/core" }
 
 ## Client
 env_logger = "0.10"
