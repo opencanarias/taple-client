@@ -22,7 +22,6 @@ use super::{
     operation_id = "Get Subject Data",
     tag = "Subjects",
     context_path = "/api",
-    security(("api_key" = [])),
     params(
         ("id" = String, Path, description = "Subject's unique id")
     ),
@@ -49,7 +48,6 @@ use super::{
 pub async fn get_subject_handler(
     id: String,
     node: NodeAPI,
-    _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let response = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_subject(id)
@@ -108,7 +106,6 @@ pub async fn get_subject_handler(
 )]
 pub async fn get_all_subjects_handler(
     node: NodeAPI,
-    _header: String,
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     // TODO: NAMESPACE DECIDIR CÓMO ESPECIFICAR
@@ -129,7 +126,6 @@ pub async fn get_all_subjects_handler(
     tag = "Requests",
     operation_id = "Create a new Event Request",
     context_path = "/api",
-    security(("api_key" = [])),
     request_body(content = PostEventRequestBody, content_type = "application/json", description = "Event Request type and payload with the associated signature"),
     responses(
         (status = 202, description = "Event Request Created", body = RequestData, // TODO: Cambiar
@@ -158,7 +154,6 @@ pub async fn get_all_subjects_handler(
     )
 )]
 pub async fn post_event_request_handler(
-    _header: String,
     node: NodeAPI,
     body: PostEventRequestBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
@@ -178,7 +173,6 @@ pub async fn post_event_request_handler(
     tag = "Approvals",
     operation_id = "Get all the pending requests for Approval",
     context_path = "/api",
-    security(("api_key" = [])),
     responses(
         (status = 200, description = "All pending requests", body =  [EventRequest],
         example = json!(
@@ -213,7 +207,6 @@ pub async fn post_event_request_handler(
 )]
 pub async fn get_pending_requests_handler(
     node: NodeAPI,
-    _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let data = node.get_pending_requests().await.map(|result| {
         result
@@ -230,7 +223,6 @@ pub async fn get_pending_requests_handler(
     tag = "Approvals",
     operation_id = "Get a specific pending request for Approval",
     context_path = "/api",
-    security(("api_key" = [])),
     responses(
         (status = 200, description = "The pending request", body = EventRequest,
         example = json!(
@@ -264,7 +256,6 @@ pub async fn get_pending_requests_handler(
 pub async fn get_single_request_handler(
     id: String,
     node: NodeAPI,
-    _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_single_request(id)
@@ -284,7 +275,6 @@ pub async fn get_single_request_handler(
     operation_id = "Set your Aprroval for a request",
     tag = "Approvals",
     context_path = "/api",
-    security(("api_key" = [])),
     request_body(content = PutVoteBody, content_type = "application/json", description = "Vote of the user for an existing request"),
     params(
         ("id" = String, Path, description = "Request's unique id"),
@@ -302,7 +292,6 @@ pub async fn get_single_request_handler(
 )]
 pub async fn put_approval_handler(
     request_id: String,
-    _header: String,
     node: NodeAPI,
     body: PutVoteBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
@@ -327,7 +316,6 @@ pub async fn put_approval_handler(
     operation_id = "Get Governance Data",
     tag = "Governances",
     context_path = "/api",
-    security(("api_key" = [])),
     params(
         ("id" = String, Path, description = "Governance's unique id")
     ),
@@ -355,7 +343,6 @@ pub async fn put_approval_handler(
 pub async fn get_governance_handler(
     id: String,
     node: NodeAPI,
-    _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_subject(id)
@@ -375,7 +362,6 @@ pub async fn get_governance_handler(
     operation_id = "Get all Governances data",
     tag = "Governances",
     context_path = "/api",
-    security(("api_key" = [])),
     params(
         ("from" = Option<String>, Query, description = "Id of initial subject"),
         ("quantity" = Option<usize>, Query, description = "Quantity of subjects requested")
@@ -402,7 +388,6 @@ pub async fn get_governance_handler(
     )
 )]
 pub async fn get_all_governances_handler(
-    _header: String,
     node: NodeAPI,
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
@@ -424,7 +409,6 @@ pub async fn get_all_governances_handler(
     operation_id = "Get all Events from indicated Subject",
     context_path = "/api",
     tag = "Events",
-    security(("api_key" = [])),
     params(
         ("id" = String, Path, description = "Subject's unique id"),
         ("from" = Option<usize>, Query, description = "Initial SN"),
@@ -535,7 +519,6 @@ pub async fn get_all_governances_handler(
 pub async fn get_events_of_subject_handler(
     id: String,
     node: NodeAPI,
-    _header: String,
     parameters: GetEventsOfSubjectQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
@@ -559,7 +542,6 @@ pub async fn get_events_of_subject_handler(
     path = "/subjects/{id}/events/{sn}",
     operation_id = "Get the Event data of indicated Events",
     tag = "Events",
-    security(("api_key" = [])),
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Subject's unique id"),
@@ -623,7 +605,6 @@ pub async fn get_event_handler(
     id: String,
     sn: u64,
     node: NodeAPI,
-    _header: String,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     // TODO: Analyze if an alternative method is necessary
     if let Ok(id) = DigestIdentifier::from_str(&id) {

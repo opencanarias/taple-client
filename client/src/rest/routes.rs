@@ -15,65 +15,56 @@ use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
 
 pub fn routes(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    get_subject(sender.clone(), api_key.clone())
-        .or(get_all_subjects(sender.clone(), api_key.clone()))
-        .or(get_all_governances(sender.clone(), api_key.clone()))
-        .or(get_subject(sender.clone(), api_key.clone()))
-        .or(post_event_request(sender.clone(), api_key.clone()))
-        .or(get_governance(sender.clone(), api_key.clone()))
-        .or(get_events_of_subject(sender.clone(), api_key.clone()))
-        .or(get_event(sender.clone(), api_key.clone()))
-        .or(put_approval(sender.clone(), api_key.clone()))
-        .or(get_single_request(sender.clone(), api_key.clone()))
-        .or(get_pending_requests(sender.clone(), api_key.clone()))
+    get_subject(sender.clone())
+        .or(get_all_subjects(sender.clone()))
+        .or(get_all_governances(sender.clone()))
+        .or(get_subject(sender.clone()))
+        .or(post_event_request(sender.clone()))
+        .or(get_governance(sender.clone()))
+        .or(get_events_of_subject(sender.clone()))
+        .or(get_event(sender.clone()))
+        .or(put_approval(sender.clone()))
+        .or(get_single_request(sender.clone()))
+        .or(get_pending_requests(sender.clone()))
 }
 
 pub fn get_single_request(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "approvals" / String)
         .and(warp::get())
         .and(with_sender(sender))
-        .and(api_key_validation(api_key))
         .and_then(get_single_request_handler)
         .recover(handle_rejection)
 }
 
 pub fn get_pending_requests(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "approvals")
         .and(warp::get())
         .and(with_sender(sender))
-        .and(api_key_validation(api_key))
         .and_then(get_pending_requests_handler)
         .recover(handle_rejection)
 }
 
 pub fn get_subject(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "subjects" / String)
         .and(warp::get())
         .and(with_sender(sender))
-        .and(api_key_validation(api_key))
         .and_then(get_subject_handler)
         .recover(handle_rejection)
 }
 
 pub fn get_all_subjects(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "subjects")
         .and(warp::get())
         .and(with_sender(sender))
-        .and(api_key_validation(api_key))
         .and(warp::query::<GetAllSubjectsQuery>())
         .and_then(get_all_subjects_handler)
         .recover(handle_rejection)
@@ -81,23 +72,19 @@ pub fn get_all_subjects(
 
 pub fn get_governance(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "governances" / String)
         .and(warp::get())
         .and(with_sender(sender))
-        .and(api_key_validation(api_key))
         .and_then(get_governance_handler)
         .recover(handle_rejection)
 }
 
 pub fn get_all_governances(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "governances")
         .and(warp::get())
-        .and(api_key_validation(api_key))
         .and(with_sender(sender))
         .and(warp::query::<GetAllSubjectsQuery>())
         .and_then(get_all_governances_handler)
@@ -106,11 +93,9 @@ pub fn get_all_governances(
 
 pub fn post_event_request(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "requests")
         .and(warp::post())
-        .and(api_key_validation(api_key))
         .and(with_sender(sender))
         .and(with_body())
         .and_then(post_event_request_handler)
@@ -119,12 +104,10 @@ pub fn post_event_request(
 
 pub fn put_approval(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "approvals" / String)
         .and(warp::put())
         //.and(warp::header("X-API-KEY"))
-        .and(api_key_validation(api_key))
         .and(with_sender(sender))
         .and(with_body())
         .and_then(put_approval_handler)
@@ -133,12 +116,10 @@ pub fn put_approval(
 
 pub fn get_events_of_subject(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "subjects" / String / "events")
         .and(warp::get())
         .and(with_sender(sender))
-        .and(api_key_validation(api_key))
         .and(warp::query::<GetEventsOfSubjectQuery>())
         .and_then(get_events_of_subject_handler)
         .recover(handle_rejection)
@@ -146,12 +127,10 @@ pub fn get_events_of_subject(
 
 pub fn get_event(
     sender: NodeAPI,
-    api_key: Option<String>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "subjects" / String / "events" / u64)
         .and(warp::get())
         .and(with_sender(sender))
-        .and(api_key_validation(api_key))
         .and_then(get_event_handler)
         .recover(handle_rejection)
 }
@@ -160,29 +139,6 @@ pub fn with_sender(
     sender: NodeAPI,
 ) -> impl Filter<Extract = (NodeAPI,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || sender.clone())
-}
-
-pub fn api_key_validation(
-    api_key: Option<String>,
-) -> impl Filter<Extract = (String,), Error = warp::Rejection> + Clone {
-    warp::header::optional::<String>("x-api-key").and_then(move |key: Option<String>| {
-        let inner_key = api_key.clone();
-        async move {
-            let inner_key = inner_key.clone();
-            let Some(inner_key) = inner_key else {
-                // API KEY NOT NEEDED
-                return Ok(String::from(""));
-            };
-            let Some(key) = key else {
-                return Err(warp::reject::custom(Error::Unauthorized));
-            };
-            if key == inner_key {
-                Ok(key)
-            } else {
-                Err(warp::reject::custom(Error::Unauthorized))
-            }
-        }
-    })
 }
 
 pub fn with_body<T: DeserializeOwned + Send>(
