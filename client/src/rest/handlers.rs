@@ -1,16 +1,16 @@
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 
 use serde::Serialize;
 use taple_core::{
     identifier::{Derivable, DigestIdentifier},
-    Acceptance, Event,
+    Acceptance, Event, KeyIdentifier,
 };
 use warp::Rejection;
 
 use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 
 use super::{
-    bodys::{PostEventRequestBody, PutVoteBody},
+    bodys::{AuthorizeSubjectBody, ExpectingTransfer, PostEventRequestBody, PutVoteBody},
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
     responses::{ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse},
@@ -165,6 +165,72 @@ pub async fn post_event_request_handler(
         Err(error) => Err(error),
     };
     handle_data(data)
+}
+
+pub async fn post_expecting_transfer_handler(
+    node: NodeAPI,
+    body: ExpectingTransfer,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let subject_id = match DigestIdentifier::from_str(&body.subject_id) {
+        Ok(subject_id) => subject_id,
+        Err(_error) => {
+            return handle_data::<()>(Err(ApiError::InvalidParameters(format!(
+                "Invalid digest identifier {}",
+                body.subject_id
+            ))))
+        }
+    };
+    let public_key = match hex::decode(body.public_key) {
+        Ok(public_key) => public_key,
+        Err(_error) => {
+            return handle_data::<()>(Err(ApiError::InvalidParameters(format!(
+                "Invalid public key {}",
+                body.subject_id
+            ))))
+        }
+    };
+    let data = node
+        .expecting_transfer(subject_id, public_key)
+        .await
+        .map(|id| id.to_str());
+    handle_data(data)
+}
+
+pub async fn post_preauthorized_subjects_handler(
+    node: NodeAPI,
+    body: Vec<AuthorizeSubjectBody>,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = 'result: {
+        for value in body.iter() {
+            let subject_id = match DigestIdentifier::from_str(&value.subject_id) {
+                Ok(subject_id) => subject_id,
+                Err(error) => {
+                    break 'result Err(ApiError::InvalidParameters(format!(
+                        "Invalid digest identifier {}",
+                        value.subject_id
+                    )))
+                }
+            };
+            let mut providers = HashSet::new();
+            for provider in value.providers.iter() {
+                let provider = match KeyIdentifier::from_str(provider) {
+                    Ok(provider) => provider,
+                    Err(error) => {
+                        break 'result Err(ApiError::InvalidParameters(format!(
+                            "Invalid key identifier {}",
+                            provider
+                        )))
+                    }
+                };
+                providers.insert(provider);
+            }
+            if let Err(error) = node.add_preauthorize_subject(&subject_id, &providers).await {
+                break 'result Err(error);
+            };
+        }
+        Ok(())
+    };
+    handle_data(result.map(|_| body))
 }
 
 #[utoipa::path(

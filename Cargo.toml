@@ -19,8 +19,7 @@ keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
 
 
 [workspace.dependencies]
-# taple-core = { git = "https://github.com/opencanarias/taple-core" }
-taple-core = { path = "../taple-core/core" }
+taple-core = { git = "https://github.com/opencanarias/taple-core" }
 
 ## Client
 env_logger = "0.10"
@@ -37,6 +36,7 @@ thiserror = "1.0"
 ## REST
 futures = "0.3.24"
 ureq = { version = "2.6.2", features = ["json", "charset"] } 
+hex = "0.4.3"
 
 # API
 config = { version = "0.13.2" }
