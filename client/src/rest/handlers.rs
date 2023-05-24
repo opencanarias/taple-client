@@ -180,17 +180,8 @@ pub async fn post_expecting_transfer_handler(
             ))))
         }
     };
-    let public_key = match hex::decode(body.public_key) {
-        Ok(public_key) => public_key,
-        Err(_error) => {
-            return handle_data::<()>(Err(ApiError::InvalidParameters(format!(
-                "Invalid public key {}",
-                body.subject_id
-            ))))
-        }
-    };
     let data = node
-        .expecting_transfer(subject_id, public_key)
+        .expecting_transfer(subject_id)
         .await
         .map(|id| id.to_str());
     handle_data(data)
