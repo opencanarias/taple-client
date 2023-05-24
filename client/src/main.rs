@@ -1,17 +1,17 @@
 extern crate env_logger;
 mod database;
 mod rest;
-use database::leveldb::{open_db_with_comparator, LevelDB};
+use database::leveldb::{open_db, LevelDBManager};
 use log::info;
 use rest::openapi::{serve_swagger, ApiDoc};
 use std::sync::Arc;
 use std::{error::Error, net::SocketAddr};
 use taple_client::{client_settings_builder, ClientSettings, SettingsGenerator};
 use taple_core::Taple;
+use tempfile::tempdir as tempdirf;
 use tokio::signal::unix::{signal, SignalKind};
 use utoipa::OpenApi;
 use warp::Filter;
-use tempfile::tempdir as tempdirf;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -32,8 +32,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     } else {
         std::path::Path::new(&settings.taple.database.path)
     };
-    let db = open_db_with_comparator(path);
-    let leveldb = LevelDB::new(db);
+    let db = open_db(path);
+    let leveldb = LevelDBManager::new(db);
     ////////////////////
     let mut taple = Taple::new(settings.taple.clone(), leveldb);
     taple.start().await?;
