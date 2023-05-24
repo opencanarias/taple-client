@@ -3747,6 +3747,7 @@ dependencies = [
  "db-key",
  "env_logger",
  "futures",
+ "hex",
  "leveldb",
  "log",
  "serde",
