@@ -84,8 +84,8 @@ impl TryInto<TransferRequest> for TransferRequestBody {
             subject_id: DigestIdentifier::from_str(&self.subject_id).map_err(|_| {
                 ApiError::InvalidParameters(format!("Invalid DigestIdentifier for subject id"))
             })?,
-            public_key: hex::decode(self.public_key).map_err(|_| {
-                ApiError::InvalidParameters(format!("Public Key provide is not in hex format"))
+            public_key: KeyIdentifier::from_str(&self.public_key).map_err(|_| {
+                ApiError::InvalidParameters(format!("Invalid KeyIdentifier for public key"))
             })?,
         })
     }
@@ -96,7 +96,7 @@ impl TryFrom<TransferRequest> for TransferRequestBody {
     fn try_from(value: TransferRequest) -> Result<Self, Self::Error> {
         Ok(TransferRequestBody {
             subject_id: value.subject_id.to_str(),
-            public_key: hex::encode(value.public_key),
+            public_key: value.public_key.to_str(),
         })
     }
 }
@@ -132,7 +132,6 @@ impl TryInto<StateRequest> for StateRequestBody {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ExpectingTransfer {
     pub subject_id: String,
-    pub public_key: String
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
