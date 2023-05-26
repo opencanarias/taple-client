@@ -23,6 +23,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tempfile = { workspace = true }
+hex = { workspace = true }
 
 taple-core = { workspace = true }
 

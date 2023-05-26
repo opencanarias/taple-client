@@ -1,9 +1,8 @@
-use crate::rest::handlers::{get_single_request_handler, post_event_request_handler};
-
 use super::handlers::{
     get_all_governances_handler, get_all_subjects_handler, get_event_handler,
-    get_events_of_subject_handler, get_governance_handler,
-    get_pending_requests_handler, get_subject_handler, put_approval_handler,
+    get_events_of_subject_handler, get_governance_handler, get_pending_requests_handler,
+    get_single_request_handler, get_subject_handler, post_event_request_handler,
+    post_preauthorized_subjects_handler, put_approval_handler, post_expecting_transfer_handler
 };
 use super::{
     error::Error,
@@ -13,9 +12,7 @@ use serde::de::DeserializeOwned;
 use taple_core::NodeAPI;
 use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
 
-pub fn routes(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn routes(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_subject(sender.clone())
         .or(get_all_subjects(sender.clone()))
         .or(get_all_governances(sender.clone()))
@@ -27,6 +24,8 @@ pub fn routes(
         .or(put_approval(sender.clone()))
         .or(get_single_request(sender.clone()))
         .or(get_pending_requests(sender.clone()))
+        .or(post_preauthorized_subjects(sender.clone()))
+        .or(post_expecting_transfer(sender.clone()))
 }
 
 pub fn get_single_request(
@@ -114,6 +113,28 @@ pub fn put_approval(
         .recover(handle_rejection)
 }
 
+pub fn post_preauthorized_subjects(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "subjects" / "authorize")
+        .and(warp::post())
+        .and(with_sender(sender))
+        .and(with_body())
+        .and_then(post_preauthorized_subjects_handler)
+        .recover(handle_rejection)
+}
+
+pub fn post_expecting_transfer(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "transfer")
+        .and(warp::post())
+        .and(with_sender(sender))
+        .and(with_body())
+        .and_then(post_expecting_transfer_handler)
+        .recover(handle_rejection)
+}
+
 pub fn get_events_of_subject(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -125,9 +146,7 @@ pub fn get_events_of_subject(
         .recover(handle_rejection)
 }
 
-pub fn get_event(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn get_event(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "subjects" / String / "events" / u64)
         .and(warp::get())
         .and(with_sender(sender))
