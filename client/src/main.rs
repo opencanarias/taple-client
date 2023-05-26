@@ -2,6 +2,7 @@ extern crate env_logger;
 mod database;
 mod rest;
 use database::leveldb::{open_db, LevelDBManager};
+use leveldb::iterator::Iterable;
 use log::info;
 use rest::openapi::{serve_swagger, ApiDoc};
 use std::sync::Arc;
@@ -33,6 +34,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         std::path::Path::new(&settings.taple.database.path)
     };
     let db = open_db(path);
+    let iter = db.iter(leveldb::options::ReadOptions::new());
+    for i in iter {
+        log::warn!("{}", i.0.0)
+    }
     let leveldb = LevelDBManager::new(db);
     ////////////////////
     let mut taple = Taple::new(settings.taple.clone(), leveldb);

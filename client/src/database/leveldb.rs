@@ -224,6 +224,9 @@ impl<'a> Iterator for RevLDBIterator<'a> {
             };
             let key = {
                 let StringKey(value) = item.0;
+                if !value.starts_with(&self.table_name) {
+                    return None;
+                }
                 value.replace(&self.table_name, "")
             };
             return Some((key, item.1));
