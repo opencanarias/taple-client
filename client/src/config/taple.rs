@@ -1,9 +1,8 @@
+use std::collections::HashMap;
 pub use taple_core::{DatabaseSettings, NetworkSettings, NodeSettings, TapleSettings};
 use taple_core::{DigestDerivator, KeyDerivator};
-use std::collections::HashMap;
 
 use super::{error::SettingsError, extract_from_map, extract_option, SettingsGenerator};
-
 
 impl SettingsGenerator for TapleSettings {
     fn generate(data: &HashMap<String, String>) -> Result<Self, SettingsError> {
@@ -12,18 +11,23 @@ impl SettingsGenerator for TapleSettings {
                 p2p_port: extract_from_map(&data, "p2pport", 0)?,
                 addr: extract_from_map(&data, "addr", "/ip4/0.0.0.0/tcp".into())?,
                 known_nodes: extract_known_nodes(&data, "knownnodes"),
+                external_address: extract_known_nodes(&data, "externaladdress"),
             },
             node: NodeSettings {
                 key_derivator: extract_key_derivator(&data, "keyderivator", KeyDerivator::Ed25519)?,
                 secret_key: extract_option(&data, "secretkey")?,
                 seed: extract_option(&data, "seed")?,
-                digest_derivator: extract_digest_derivator(&data, "digestderivator", DigestDerivator::Blake3_256)?,
+                digest_derivator: extract_digest_derivator(
+                    &data,
+                    "digestderivator",
+                    DigestDerivator::Blake3_256,
+                )?,
                 replication_factor: extract_from_map(&data, "factor", 0.25f64)?,
                 timeout: extract_from_map(&data, "timeout", 3000u32)?,
                 passvotation: extract_pass_votation(&data, "passvotation")?,
                 dev_mode: extract_from_map(&data, "devmode", false)?,
                 req_res: false,
-                smartcontracts_directory: String::from("../contracts") // TODO: CAMBIAR EN UN FUTURO
+                smartcontracts_directory: String::from("../contracts"), // TODO: CAMBIAR EN UN FUTURO
             },
             database: DatabaseSettings {
                 path: extract_from_map(&data, "path", "/tmp/data".into())?,
@@ -32,10 +36,7 @@ impl SettingsGenerator for TapleSettings {
     }
 }
 
-fn extract_known_nodes<T: Into<String>>(
-    data: &HashMap<String, String>,
-    key: T,
-) -> Vec<String> {
+fn extract_known_nodes<T: Into<String>>(data: &HashMap<String, String>, key: T) -> Vec<String> {
     let key: String = key.into();
     let Some(nodes) = data.get(&key) else {
         return Vec::new();
@@ -62,7 +63,7 @@ fn extract_pass_votation<T: Into<String>>(
 fn extract_key_derivator<T: Into<String>>(
     data: &HashMap<String, String>,
     key: T,
-    default: KeyDerivator
+    default: KeyDerivator,
 ) -> Result<KeyDerivator, SettingsError> {
     let key: String = key.into();
     let Some(value) = data.get(&key) else {
@@ -78,7 +79,7 @@ fn extract_key_derivator<T: Into<String>>(
 fn extract_digest_derivator<T: Into<String>>(
     data: &HashMap<String, String>,
     key: T,
-    default: DigestDerivator
+    default: DigestDerivator,
 ) -> Result<DigestDerivator, SettingsError> {
     let key: String = key.into();
     let Some(value) = data.get(&key) else {
