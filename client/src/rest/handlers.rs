@@ -13,7 +13,9 @@ use super::{
     bodys::{AuthorizeSubjectBody, ExpectingTransfer, PostEventRequestBody, PutVoteBody},
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
-    responses::{ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse},
+    responses::{
+        ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse, ValidationProofDataResponse,
+    },
 };
 
 #[utoipa::path(
@@ -711,4 +713,20 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
             source: error.to_owned(),
         })),
     }
+}
+
+pub async fn get_validation_proof_handle(
+    id: String,
+    node: NodeAPI,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_validation_proof(id)
+        .await
+        .map(|r| ValidationProofDataResponse::from(r))
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
 }

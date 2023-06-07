@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use taple_core::identifier::Derivable;
-use taple_core::signature::Signature;
+use taple_core::signature::{Signature};
 use taple_core::{
     Acceptance, Approval, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
-    EventProposal, Proposal, SubjectData,
+    EventProposal, Proposal, SubjectData, KeyIdentifier, ValidationProof,
 };
 use utoipa::ToSchema;
 
@@ -204,6 +204,41 @@ impl From<ApprovalPetitionData> for ApprovalPetitionDataResponse {
             hash_event_proporsal: value.hash_event_proporsal.to_str(),
             sender: value.sender.to_str(),
             json_patch: value.json_patch,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ValidationProofDataResponse {
+    pub governance_id: String,
+    pub governance_version: u64,
+    pub subject_id: String,
+    pub sn: u64,
+    pub schema_id: String,
+    pub namespace: String,
+    pub prev_event_hash: String,
+    pub event_hash: String,
+    pub state_hash: String,
+    pub subject_public_key: KeyIdentifier,
+    pub owner: KeyIdentifier,
+    pub creator: KeyIdentifier,
+}
+
+impl From<ValidationProof> for ValidationProofDataResponse {
+    fn from(value: ValidationProof) -> Self {
+        Self {
+            governance_id: value.governance_id.to_str(),
+            governance_version: value.governance_version,
+            subject_id: value.subject_id.to_str(),
+            sn: value.sn,
+            schema_id: value.schema_id,
+            namespace: value.namespace,
+            prev_event_hash: value.prev_event_hash.to_str(),
+            event_hash: value.event_hash.to_str(),
+            state_hash: value.state_hash.to_str(),
+            subject_public_key: value.subject_public_key,
+            owner: value.owner,
+            creator: value.creator,
         }
     }
 }
