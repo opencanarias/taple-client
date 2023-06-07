@@ -1,8 +1,10 @@
-use std::{str::FromStr, collections::HashSet};
+use std::{collections::HashSet, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 use taple_core::{
-    event_request::{CreateRequest, EventRequest, EventRequestType, StateRequest, TransferRequest},
+    event_request::{
+        CreateRequest, EOLRequest, EventRequest, EventRequestType, StateRequest, TransferRequest,
+    },
     identifier::{Derivable, DigestIdentifier, KeyIdentifier, SignatureIdentifier},
     signature::{Signature, SignatureContent},
     ApiError, TimeStamp,
@@ -13,7 +15,8 @@ use utoipa::ToSchema;
 pub enum EventRequestTypeBody {
     Create(CreateRequestBody),
     State(StateRequestBody),
-    Transfer(TransferRequestBody)
+    Transfer(TransferRequestBody),
+    EOL(EOLRequestBody),
 }
 
 impl TryFrom<EventRequestType> for EventRequestTypeBody {
@@ -22,7 +25,10 @@ impl TryFrom<EventRequestType> for EventRequestTypeBody {
         match value {
             EventRequestType::Create(data) => Ok(EventRequestTypeBody::Create(data.try_into()?)),
             EventRequestType::State(data) => Ok(EventRequestTypeBody::State(data.try_into()?)),
-            EventRequestType::Transfer(data) => Ok(EventRequestTypeBody::Transfer(data.try_into()?)),
+            EventRequestType::Transfer(data) => {
+                Ok(EventRequestTypeBody::Transfer(data.try_into()?))
+            }
+            EventRequestType::EOL(data) => Ok(EventRequestTypeBody::EOL(data.try_into()?)),
         }
     }
 }
@@ -33,7 +39,10 @@ impl TryInto<EventRequestType> for EventRequestTypeBody {
         match self {
             EventRequestTypeBody::Create(data) => Ok(EventRequestType::Create(data.try_into()?)),
             EventRequestTypeBody::State(data) => Ok(EventRequestType::State(data.try_into()?)),
-            EventRequestTypeBody::Transfer(data) => Ok(EventRequestType::Transfer(data.try_into()?))
+            EventRequestTypeBody::Transfer(data) => {
+                Ok(EventRequestType::Transfer(data.try_into()?))
+            }
+            EventRequestTypeBody::EOL(data) => Ok(EventRequestType::EOL(data.try_into()?)),
         }
     }
 }
@@ -71,9 +80,35 @@ impl TryInto<CreateRequest> for CreateRequestBody {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct EOLRequestBody {
+    pub subject_id: String,
+}
+
+impl TryInto<EOLRequest> for EOLRequestBody {
+    type Error = ApiError;
+
+    fn try_into(self) -> Result<EOLRequest, Self::Error> {
+        Ok(EOLRequest {
+            subject_id: DigestIdentifier::from_str(&self.subject_id).map_err(|_| {
+                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for subject id"))
+            })?,
+        })
+    }
+}
+
+impl TryFrom<EOLRequest> for EOLRequestBody {
+    type Error = ApiError;
+    fn try_from(value: EOLRequest) -> Result<Self, Self::Error> {
+        Ok(EOLRequestBody {
+            subject_id: value.subject_id.to_str(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TransferRequestBody {
     pub subject_id: String,
-    pub public_key: String
+    pub public_key: String,
 }
 
 impl TryInto<TransferRequest> for TransferRequestBody {
@@ -137,7 +172,7 @@ pub struct ExpectingTransfer {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AuthorizeSubjectBody {
     pub subject_id: String,
-    pub providers: Vec<String>
+    pub providers: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
