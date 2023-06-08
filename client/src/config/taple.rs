@@ -9,7 +9,7 @@ impl SettingsGenerator for TapleSettings {
     fn generate(data: &HashMap<String, String>) -> Result<Self, SettingsError> {
         Ok(TapleSettings {
             network: NetworkSettings {
-                p2p_port: extract_from_map(&data, "p2pport", 50000u32)?,
+                p2p_port: extract_from_map(&data, "p2pport", 0)?,
                 addr: extract_from_map(&data, "addr", "/ip4/0.0.0.0/tcp".into())?,
                 known_nodes: extract_known_nodes(&data, "knownnodes"),
             },
