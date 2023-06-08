@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use taple_core::identifier::Derivable;
-use taple_core::signature::Signature;
+use taple_core::signature::{Signature, SignatureContent};
 use taple_core::{
     Acceptance, Approval, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
-    EventProposal, Proposal, SubjectData,
+    EventProposal, Proposal, SubjectData, SignatureIdentifier,
 };
 use utoipa::ToSchema;
 
@@ -202,6 +202,21 @@ impl From<ApprovalPetitionData> for ApprovalPetitionDataResponse {
             hash_event_proporsal: value.hash_event_proporsal.to_str(),
             sender: value.sender.to_str(),
             json_patch: value.json_patch,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct SignatureDataResponse {
+    pub content: SignatureContent,
+    pub signature: SignatureIdentifier
+}
+
+impl From<Signature> for SignatureDataResponse {
+    fn from(value: Signature) -> Self {
+        Self {
+            content: value.content,
+            signature: value.signature
         }
     }
 }

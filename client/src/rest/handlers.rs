@@ -3,7 +3,7 @@ use std::{collections::HashSet, str::FromStr};
 use serde::Serialize;
 use taple_core::{
     identifier::{Derivable, DigestIdentifier},
-    Acceptance, Event, KeyIdentifier,
+    Acceptance, KeyIdentifier
 };
 use warp::Rejection;
 
@@ -13,7 +13,10 @@ use super::{
     bodys::{AuthorizeSubjectBody, ExpectingTransfer, PostEventRequestBody, PutVoteBody},
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
-    responses::{ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse},
+    responses::{
+        ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse,
+        SignatureDataResponse,
+    },
 };
 
 #[utoipa::path(
@@ -711,4 +714,25 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
             source: error.to_owned(),
         })),
     }
+}
+
+pub async fn get_validation_proof_handle(
+    id: String,
+    node: NodeAPI,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node
+            .get_validation_proof(id)
+            .await
+            .map(|r| {
+                r.into_iter()
+                    .map(|s| SignatureDataResponse::from(s))
+                    .collect::<Vec<SignatureDataResponse>>()
+            })
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
 }
