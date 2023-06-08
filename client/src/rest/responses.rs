@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use taple_core::identifier::Derivable;
-use taple_core::signature::{Signature};
+use taple_core::signature::{Signature, SignatureContent};
 use taple_core::{
     Acceptance, Approval, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
-    EventProposal, Proposal, SubjectData, KeyIdentifier, ValidationProof,
+    EventProposal, Proposal, SubjectData, SignatureIdentifier,
 };
 use utoipa::ToSchema;
 
@@ -14,13 +14,11 @@ use crate::rest::bodys::SignatureRequest;
 pub enum AcceptanceResponse {
     Ok,
     Ko,
-    Error,
 }
 
 impl From<Acceptance> for AcceptanceResponse {
     fn from(value: Acceptance) -> Self {
         match value {
-            Acceptance::Error => Self::Error,
             Acceptance::Ko => Self::Ko,
             Acceptance::Ok => Self::Ok,
         }
@@ -209,36 +207,16 @@ impl From<ApprovalPetitionData> for ApprovalPetitionDataResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ValidationProofDataResponse {
-    pub governance_id: String,
-    pub governance_version: u64,
-    pub subject_id: String,
-    pub sn: u64,
-    pub schema_id: String,
-    pub namespace: String,
-    pub prev_event_hash: String,
-    pub event_hash: String,
-    pub state_hash: String,
-    pub subject_public_key: KeyIdentifier,
-    pub owner: KeyIdentifier,
-    pub creator: KeyIdentifier,
+pub struct SignatureDataResponse {
+    pub content: SignatureContent,
+    pub signature: SignatureIdentifier
 }
 
-impl From<ValidationProof> for ValidationProofDataResponse {
-    fn from(value: ValidationProof) -> Self {
+impl From<Signature> for SignatureDataResponse {
+    fn from(value: Signature) -> Self {
         Self {
-            governance_id: value.governance_id.to_str(),
-            governance_version: value.governance_version,
-            subject_id: value.subject_id.to_str(),
-            sn: value.sn,
-            schema_id: value.schema_id,
-            namespace: value.namespace,
-            prev_event_hash: value.prev_event_hash.to_str(),
-            event_hash: value.event_hash.to_str(),
-            state_hash: value.state_hash.to_str(),
-            subject_public_key: value.subject_public_key,
-            owner: value.owner,
-            creator: value.creator,
+            content: value.content,
+            signature: value.signature
         }
     }
 }
