@@ -14,13 +14,11 @@ use crate::rest::bodys::SignatureRequest;
 pub enum AcceptanceResponse {
     Ok,
     Ko,
-    Error,
 }
 
 impl From<Acceptance> for AcceptanceResponse {
     fn from(value: Acceptance) -> Self {
         match value {
-            Acceptance::Error => Self::Error,
             Acceptance::Ko => Self::Ko,
             Acceptance::Ok => Self::Ok,
         }
