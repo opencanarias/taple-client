@@ -4,6 +4,7 @@ use super::handlers::{
     get_single_request_handler, get_subject_handler, get_validation_proof_handle,
     post_event_request_handler, post_expecting_transfer_handler,
     post_preauthorized_subjects_handler, put_approval_handler,
+    post_generate_keys_handler
 };
 use super::{
     error::Error,
@@ -29,6 +30,7 @@ pub fn routes(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Reje
         .or(post_expecting_transfer(sender.clone()))
         .or(get_events_of_subject(sender.clone()))
         .or(get_validation_proof(sender.clone()))
+        .or(post_generate_keys(sender.clone()))
 }
 
 pub fn get_single_request(
@@ -113,6 +115,14 @@ pub fn put_approval(
         .and(with_sender(sender))
         .and(with_body())
         .and_then(put_approval_handler)
+        .recover(handle_rejection)
+}
+
+pub fn post_generate_keys(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "keys")
+        .and(warp::post())
+        .and(with_sender(sender))
+        .and_then(post_generate_keys_handler)
         .recover(handle_rejection)
 }
 

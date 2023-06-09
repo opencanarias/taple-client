@@ -3,7 +3,7 @@ use std::{collections::HashSet, str::FromStr};
 use serde::Serialize;
 use taple_core::{
     identifier::{Derivable, DigestIdentifier},
-    Acceptance, KeyIdentifier
+    Acceptance, KeyIdentifier,
 };
 use warp::Rejection;
 
@@ -14,8 +14,7 @@ use super::{
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
     responses::{
-        ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse,
-        SignatureDataResponse,
+        ApprovalPetitionDataResponse, EventResponse, SignatureDataResponse, SubjectDataResponse,
     },
 };
 
@@ -170,10 +169,20 @@ pub async fn post_event_request_handler(
     handle_data(data)
 }
 
+pub async fn post_generate_keys_handler(node: NodeAPI) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = node.generate_keys().await;
+    handle_data(result)
+}
+
 pub async fn post_expecting_transfer_handler(
     node: NodeAPI,
     body: ExpectingTransfer,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let public_key = node.generate_keys().await;
+    if public_key.is_err() {
+        return handle_data(public_key);
+    }
+    let public_key = public_key.unwrap();
     let subject_id = match DigestIdentifier::from_str(&body.subject_id) {
         Ok(subject_id) => subject_id,
         Err(_error) => {
@@ -183,11 +192,13 @@ pub async fn post_expecting_transfer_handler(
             ))))
         }
     };
-    let data = node
-        .expecting_transfer(subject_id)
-        .await
-        .map(|id| id.to_str());
-    handle_data(data)
+    let result = node
+        .add_preauthorize_subject(&subject_id, &HashSet::new())
+        .await;
+    if result.is_err() {
+        return handle_data(result);
+    }
+    handle_data(Ok(public_key))
 }
 
 pub async fn post_preauthorized_subjects_handler(
@@ -198,7 +209,7 @@ pub async fn post_preauthorized_subjects_handler(
         for value in body.iter() {
             let subject_id = match DigestIdentifier::from_str(&value.subject_id) {
                 Ok(subject_id) => subject_id,
-                Err(error) => {
+                Err(_error) => {
                     break 'result Err(ApiError::InvalidParameters(format!(
                         "Invalid digest identifier {}",
                         value.subject_id
@@ -209,7 +220,7 @@ pub async fn post_preauthorized_subjects_handler(
             for provider in value.providers.iter() {
                 let provider = match KeyIdentifier::from_str(provider) {
                     Ok(provider) => provider,
-                    Err(error) => {
+                    Err(_error) => {
                         break 'result Err(ApiError::InvalidParameters(format!(
                             "Invalid key identifier {}",
                             provider
@@ -721,14 +732,11 @@ pub async fn get_validation_proof_handle(
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node
-            .get_validation_proof(id)
-            .await
-            .map(|r| {
-                r.into_iter()
-                    .map(|s| SignatureDataResponse::from(s))
-                    .collect::<Vec<SignatureDataResponse>>()
-            })
+        node.get_validation_proof(id).await.map(|r| {
+            r.into_iter()
+                .map(|s| SignatureDataResponse::from(s))
+                .collect::<Vec<SignatureDataResponse>>()
+        })
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
