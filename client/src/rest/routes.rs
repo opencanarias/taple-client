@@ -1,8 +1,8 @@
 use super::handlers::{
     get_all_governances_handler, get_all_subjects_handler, get_event_handler,
-    get_events_of_subject_handler, get_governance_handler, get_pending_requests_handler,
-    get_single_request_handler, get_subject_handler, get_validation_proof_handle,
-    post_event_request_handler, post_expecting_transfer_handler,
+    get_events_of_subject_handler, get_governance_handler, get_governance_subjects_handle,
+    get_pending_requests_handler, get_single_request_handler, get_subject_handler,
+    get_validation_proof_handle, post_event_request_handler, post_expecting_transfer_handler,
     post_preauthorized_subjects_handler, put_approval_handler,
 };
 use super::{
@@ -29,6 +29,7 @@ pub fn routes(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Reje
         .or(post_expecting_transfer(sender.clone()))
         .or(get_events_of_subject(sender.clone()))
         .or(get_validation_proof(sender.clone()))
+        .or(get_governance_subjects(sender.clone()))
 }
 
 pub fn get_single_request(
@@ -158,12 +159,23 @@ pub fn get_event(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = R
 }
 
 pub fn get_validation_proof(
-    sender: NodeAPI
+    sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "subjects" / String / "vproof")
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_validation_proof_handle)
+        .recover(handle_rejection)
+}
+
+pub fn get_governance_subjects(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "governances" / String / "subjects")
+        .and(warp::get())
+        .and(with_sender(sender))
+        .and(warp::query::<GetAllSubjectsQuery>())
+        .and_then(get_governance_subjects_handle)
         .recover(handle_rejection)
 }
 

@@ -736,3 +736,25 @@ pub async fn get_validation_proof_handle(
     };
     handle_data(result)
 }
+
+pub async fn get_governance_subjects_handle(
+    id: String,
+    node: NodeAPI,
+    parameters: GetAllSubjectsQuery,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node
+            .get_governance_subjects(id, parameters.from, parameters.quantity)
+            .await
+            .map(|r| {
+                r.into_iter()
+                    .map(|s| SubjectDataResponse::from(s))
+                    .collect::<Vec<SubjectDataResponse>>()
+            })
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
+}
