@@ -4,7 +4,7 @@ use super::handlers::{
     get_single_request_handler, get_subject_handler, get_validation_proof_handle,
     post_event_request_handler, post_expecting_transfer_handler,
     post_preauthorized_subjects_handler, put_approval_handler,
-    post_generate_keys_handler
+    post_generate_keys_handler, get_taple_request_handler
 };
 use super::{
     error::Error,
@@ -31,6 +31,7 @@ pub fn routes(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Reje
         .or(get_events_of_subject(sender.clone()))
         .or(get_validation_proof(sender.clone()))
         .or(post_generate_keys(sender.clone()))
+        .or(get_taple_request(sender.clone()))
 }
 
 pub fn get_single_request(
@@ -40,6 +41,16 @@ pub fn get_single_request(
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_single_request_handler)
+        .recover(handle_rejection)
+}
+
+pub fn get_taple_request(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "request" / String)
+        .and(warp::get())
+        .and(with_sender(sender))
+        .and_then(get_taple_request_handler)
         .recover(handle_rejection)
 }
 

@@ -14,7 +14,7 @@ use super::{
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
     responses::{
-        ApprovalPetitionDataResponse, EventResponse, SignatureDataResponse, SubjectDataResponse,
+        ApprovalPetitionDataResponse, EventResponse, SignatureDataResponse, SubjectDataResponse, TapleRequestResponse,
     },
 };
 
@@ -332,6 +332,20 @@ pub async fn get_single_request_handler(
         node.get_single_request(id)
             .await
             .map(|r| ApprovalPetitionDataResponse::from(r))
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
+}
+
+pub async fn get_taple_request_handler(
+    request_id: String,
+    node: NodeAPI,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
+        node.get_request(id).await.map(|data| TapleRequestResponse::from(data))
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
