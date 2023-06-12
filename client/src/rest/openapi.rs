@@ -5,7 +5,7 @@ use utoipa::{
 use std::sync::Arc;
 use super::{bodys::{
     CreateRequestBody, EventRequestTypeBody, PostEventRequestBody, PutVoteBody,
-    StateRequestBody, SignatureRequestContent, SignatureRequest
+    FactRequestBody, SignatureRequestContent, SignatureRequest
 }, responses::{AcceptanceResponse, EvaluationResponse, EventContentResponse,
     ApprovalResponse, ApprovalContentResponse, ProposalResponse,
     EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse
@@ -33,7 +33,7 @@ use warp::{
     ),
     components(
         schemas(
-            StateRequestBody,
+            FactRequestBody,
             SignatureRequestContent,
             SignatureRequest,
             CreateRequestBody,
