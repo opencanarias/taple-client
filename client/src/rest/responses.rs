@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use taple_core::identifier::Derivable;
 use taple_core::signature::{Signature, SignatureContent};
 use taple_core::{
-    Acceptance, ApiError, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
+    Acceptance, Approval, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
     EventProposal, Proposal, SignatureIdentifier, SubjectData,
 };
 use utoipa::ToSchema;

@@ -4,7 +4,7 @@ use utoipa::IntoParams;
 #[into_params(parameter_in = Query)]
 pub struct GetAllSubjectsQuery {
     pub from: Option<String>,
-    pub quantity: Option<usize>,
+    pub quantity: Option<i64>,
 }
 
 #[derive(Debug, Clone, Deserialize, IntoParams)]
@@ -12,4 +12,10 @@ pub struct GetAllSubjectsQuery {
 pub struct GetEventsOfSubjectQuery {
     pub from: Option<i64>,
     pub quantity: Option<i64>,
+}
+
+#[derive(Debug, Clone, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct GetApprovalsQuery {
+    pub status: Option<String>
 }

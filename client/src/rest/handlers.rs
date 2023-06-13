@@ -12,7 +12,7 @@ use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 use super::{
     bodys::{AuthorizeSubjectBody, ExpectingTransfer, PostEventRequestBody, PutVoteBody},
     error::Error,
-    querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
+    querys::{GetAllSubjectsQuery, GetApprovalsQuery, GetEventsOfSubjectQuery},
     responses::{
         ApprovalPetitionDataResponse, EventResponse, SignatureDataResponse, SubjectDataResponse,
     },
@@ -226,6 +226,7 @@ pub async fn post_preauthorized_subjects_handler(
     handle_data(result.map(|_| body))
 }
 
+/*
 #[utoipa::path(
     get,
     path = "/approvals",
@@ -326,6 +327,36 @@ pub async fn get_single_request_handler(
         )))
     };
     handle_data(result)
+}
+*/
+
+pub async fn get_approval_handler(
+    id: String,
+    node: NodeAPI,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_approval(id)
+            .await
+            .map(|r| ApprovalPetitionDataResponse::from(r.0))
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
+}
+
+pub async fn get_approvals_handler(
+    node: NodeAPI,
+    parameters: GetApprovalsQuery,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let data = node.get_approvals(parameters.status).await.map(|result| {
+        result
+            .into_iter()
+            .map(|r| ApprovalPetitionDataResponse::from(r))
+            .collect::<Vec<ApprovalPetitionDataResponse>>()
+    });
+    handle_data(data)
 }
 
 #[utoipa::path(
