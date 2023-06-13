@@ -3767,10 +3767,7 @@ dependencies = [
 [[package]]
 name = "taple-core"
 version = "0.2.0-dev"
-<<<<<<< HEAD
-source = "git+https://github.com/opencanarias/taple-core#fa072a6893975fbcbc50ed0311f00fef1b2e4ca0"
-=======
->>>>>>> main
+source = "git+https://github.com/opencanarias/taple-core#dbb462d0b84fd89ca737b64bf95e8b2bb177368a"
 dependencies = [
  "async-std",
  "async-trait",
@@ -3807,7 +3804,6 @@ dependencies = [
  "tokio-stream",
  "unsigned-varint",
  "url",
- "utoipa",
  "wasm-gc-api",
  "wasmtime",
 ]
