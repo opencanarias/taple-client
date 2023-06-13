@@ -6,6 +6,19 @@ use super::{error::SettingsError, extract_from_map, extract_option, SettingsGene
 
 impl SettingsGenerator for TapleSettings {
     fn generate(data: &HashMap<String, String>) -> Result<Self, SettingsError> {
+        let database_path = if let Some(path) = data.get("path") {
+            path.clone()
+        } else {
+            log::warn!("Database path was not defined");
+            let path = if let Some(home_path) = home::home_dir() {
+                home_path
+            } else {
+                std::env::temp_dir()
+            };
+            let path = format!("{}/.taple/db", path.display());
+            log::warn!("Database defaults to {}", path);
+            path
+        };
         Ok(TapleSettings {
             network: NetworkSettings {
                 p2p_port: extract_from_map(&data, "p2pport", 0)?,
@@ -30,7 +43,7 @@ impl SettingsGenerator for TapleSettings {
                 smartcontracts_directory: String::from("../contracts"), // TODO: CAMBIAR EN UN FUTURO
             },
             database: DatabaseSettings {
-                path: extract_from_map(&data, "path", "/tmp/data".into())?,
+                path: database_path,
             },
         })
     }
