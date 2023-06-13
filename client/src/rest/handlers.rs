@@ -691,30 +691,14 @@ pub async fn get_event_handler(
     sn: u64,
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    // TODO: Analyze if an alternative method is necessary
-    if let Ok(id) = DigestIdentifier::from_str(&id) {
-        let response = node
-            .get_event_of_subject(id, Some(sn as i64), Some(1))
-            .await;
-        if response.is_ok() {
-            let Some(event) = response.unwrap().pop() else {
-                return Err(warp::reject::custom(Error::NotFound("Event not found".into())));
-            };
-            handle_data::<EventResponse>(Ok(event.into()))
-        } else {
-            let response = response.map(|ve| {
-                ve.into_iter()
-                    .map(|e| EventResponse::from(e))
-                    .collect::<Vec<EventResponse>>()
-            });
-            handle_data::<Vec<EventResponse>>(response)
-        }
+    let response = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_event(id, sn).await
     } else {
-        let result: Result<Vec<EventResponse>, ApiError> = Err(ApiError::InvalidParameters(
+        Err(ApiError::InvalidParameters(
             format!("ID specified is not a valid Digest Identifier"),
-        ));
-        handle_data::<Vec<EventResponse>>(result)
-    }
+        ))
+    };
+    handle_data(response)
 }
 
 pub fn handle_data<T: Serialize + std::fmt::Debug>(
