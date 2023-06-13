@@ -130,7 +130,7 @@ pub async fn get_all_subjects_handler(
     context_path = "/api",
     request_body(content = PostEventRequestBody, content_type = "application/json", description = "Event Request type and payload with the associated signature"),
     responses(
-        (status = 202, description = "Event Request Created", body = RequestData, // TODO: Cambiar
+        (status = 202, description = "Event Request Created", body = String,
         example = json!(
             {
                 "request": {
@@ -234,7 +234,7 @@ pub async fn post_preauthorized_subjects_handler(
     operation_id = "Get all the pending requests for Approval",
     context_path = "/api",
     responses(
-        (status = 200, description = "All pending requests", body =  [EventRequest],
+        (status = 200, description = "All pending requests", body =  [ApprovalPetitionDataResponse],
         example = json!(
             [
                 {
@@ -284,7 +284,7 @@ pub async fn get_pending_requests_handler(
     operation_id = "Get a specific pending request for Approval",
     context_path = "/api",
     responses(
-        (status = 200, description = "The pending request", body = EventRequest,
+        (status = 200, description = "The pending request", body = ApprovalPetitionDataResponse,
         example = json!(
             {
                 "request": {
@@ -400,6 +400,7 @@ pub async fn put_approval_handler(
     };
     handle_data(result)
 }
+
 #[utoipa::path(
     get,
     path = "/governances/{id}",
@@ -505,7 +506,7 @@ pub async fn get_all_governances_handler(
         ("quantity" = Option<usize>, Query, description = "Quantity of events requested"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = [Event],
+        (status = 200, description = "Subjects Data successfully retrieved", body = [EventResponse],
         example = json!(
             [
                 {
@@ -616,7 +617,7 @@ pub async fn get_events_of_subject_handler(
             .await
             .map(|ve| {
                 ve.into_iter()
-                    .map(|e| EventResponse::from(e))
+                    .map(|e| EventResponse::try_from(e).unwrap())
                     .collect::<Vec<EventResponse>>()
             })
     } else {
@@ -638,7 +639,7 @@ pub async fn get_events_of_subject_handler(
         ("sn" = u64, Path, description = "Event sn"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = Event,
+        (status = 200, description = "Subjects Data successfully retrieved", body = EventResponse,
         example = json!(
             {
                 "event_content": {
@@ -705,11 +706,11 @@ pub async fn get_event_handler(
             let Some(event) = response.unwrap().pop() else {
                 return Err(warp::reject::custom(Error::NotFound("Event not found".into())));
             };
-            handle_data::<EventResponse>(Ok(event.into()))
+            handle_data::<EventResponse>(Ok(EventResponse::try_from(event).unwrap()))
         } else {
             let response = response.map(|ve| {
                 ve.into_iter()
-                    .map(|e| EventResponse::from(e))
+                    .map(|e| EventResponse::try_from(e).unwrap())
                     .collect::<Vec<EventResponse>>()
             });
             handle_data::<Vec<EventResponse>>(response)
