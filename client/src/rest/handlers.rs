@@ -3,7 +3,7 @@ use std::{collections::HashSet, str::FromStr};
 use serde::Serialize;
 use taple_core::{
     identifier::{Derivable, DigestIdentifier},
-    Acceptance, Event, KeyIdentifier,
+    Acceptance, KeyIdentifier,
 };
 use warp::Rejection;
 
@@ -13,7 +13,9 @@ use super::{
     bodys::{AuthorizeSubjectBody, ExpectingTransfer, PostEventRequestBody, PutVoteBody},
     error::Error,
     querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
-    responses::{ApprovalPetitionDataResponse, EventResponse, SubjectDataResponse},
+    responses::{
+        ApprovalPetitionDataResponse, EventResponse, SignatureDataResponse, SubjectDataResponse,
+    },
 };
 
 #[utoipa::path(
@@ -128,7 +130,7 @@ pub async fn get_all_subjects_handler(
     context_path = "/api",
     request_body(content = PostEventRequestBody, content_type = "application/json", description = "Event Request type and payload with the associated signature"),
     responses(
-        (status = 202, description = "Event Request Created", body = RequestData, // TODO: Cambiar
+        (status = 202, description = "Event Request Created", body = String,
         example = json!(
             {
                 "request": {
@@ -231,7 +233,7 @@ pub async fn post_preauthorized_subjects_handler(
     operation_id = "Get all the pending requests for Approval",
     context_path = "/api",
     responses(
-        (status = 200, description = "All pending requests", body =  [EventRequest],
+        (status = 200, description = "All pending requests", body =  [ApprovalPetitionDataResponse],
         example = json!(
             [
                 {
@@ -281,7 +283,7 @@ pub async fn get_pending_requests_handler(
     operation_id = "Get a specific pending request for Approval",
     context_path = "/api",
     responses(
-        (status = 200, description = "The pending request", body = EventRequest,
+        (status = 200, description = "The pending request", body = ApprovalPetitionDataResponse,
         example = json!(
             {
                 "request": {
@@ -367,6 +369,7 @@ pub async fn put_approval_handler(
     };
     handle_data(result)
 }
+
 #[utoipa::path(
     get,
     path = "/governances/{id}",
@@ -472,7 +475,7 @@ pub async fn get_all_governances_handler(
         ("quantity" = Option<usize>, Query, description = "Quantity of events requested"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = [Event],
+        (status = 200, description = "Subjects Data successfully retrieved", body = [EventResponse],
         example = json!(
             [
                 {
@@ -583,7 +586,7 @@ pub async fn get_events_of_subject_handler(
             .await
             .map(|ve| {
                 ve.into_iter()
-                    .map(|e| EventResponse::from(e))
+                    .map(|e| EventResponse::try_from(e).unwrap())
                     .collect::<Vec<EventResponse>>()
             })
     } else {
@@ -605,7 +608,7 @@ pub async fn get_events_of_subject_handler(
         ("sn" = u64, Path, description = "Event sn"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = Event,
+        (status = 200, description = "Subjects Data successfully retrieved", body = EventResponse,
         example = json!(
             {
                 "event_content": {
@@ -672,11 +675,11 @@ pub async fn get_event_handler(
             let Some(event) = response.unwrap().pop() else {
                 return Err(warp::reject::custom(Error::NotFound("Event not found".into())));
             };
-            handle_data::<EventResponse>(Ok(event.into()))
+            handle_data::<EventResponse>(Ok(EventResponse::try_from(event).unwrap()))
         } else {
             let response = response.map(|ve| {
                 ve.into_iter()
-                    .map(|e| EventResponse::from(e))
+                    .map(|e| EventResponse::try_from(e).unwrap())
                     .collect::<Vec<EventResponse>>()
             });
             handle_data::<Vec<EventResponse>>(response)
@@ -711,4 +714,43 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
             source: error.to_owned(),
         })),
     }
+}
+
+pub async fn get_validation_proof_handle(
+    id: String,
+    node: NodeAPI,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_validation_proof(id).await.map(|r| {
+            r.into_iter()
+                .map(|s| SignatureDataResponse::from(s))
+                .collect::<Vec<SignatureDataResponse>>()
+        })
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
+}
+
+pub async fn get_governance_subjects_handle(
+    id: String,
+    node: NodeAPI,
+    parameters: GetAllSubjectsQuery,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_governance_subjects(id, parameters.from, parameters.quantity)
+            .await
+            .map(|r| {
+                r.into_iter()
+                    .map(|s| SubjectDataResponse::from(s))
+                    .collect::<Vec<SubjectDataResponse>>()
+            })
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
 }

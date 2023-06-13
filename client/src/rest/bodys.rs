@@ -1,7 +1,8 @@
-use std::{collections::HashSet, str::FromStr};
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use taple_core::{
+    crypto::KeyMaterial,
     event_request::{
         CreateRequest, EOLRequest, EventRequest, EventRequestType, StateRequest, TransferRequest,
     },

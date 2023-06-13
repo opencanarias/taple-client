@@ -5,10 +5,10 @@ use utoipa::{
 use std::sync::Arc;
 use super::{bodys::{
     CreateRequestBody, EventRequestTypeBody, PostEventRequestBody, PutVoteBody,
-    StateRequestBody, SignatureRequestContent, SignatureRequest
+    StateRequestBody, SignatureRequestContent, SignatureRequest, TransferRequestBody, EOLRequestBody
 }, responses::{AcceptanceResponse, EvaluationResponse, EventContentResponse,
     ApprovalResponse, ApprovalContentResponse, ProposalResponse,
-    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse
+    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse, 
 }};
 use super::handlers::{
     __path_get_all_governances_handler, __path_get_all_subjects_handler, __path_get_event_handler,
@@ -49,8 +49,12 @@ use warp::{
             ProposalResponse,
             EventProposalResponse,
             SubjectDataResponse,
-            ApprovalPetitionDataResponse
-        )
+            ApprovalPetitionDataResponse, 
+            EventContentResponse,
+            EventContentResponse,
+            TransferRequestBody,
+            EOLRequestBody
+       )
     ),
     modifiers(&SecurityAddon),
     security(),
