@@ -24,7 +24,7 @@ impl SettingsGenerator for TapleSettings {
                 p2p_port: extract_from_map(&data, "p2pport", 0)?,
                 addr: extract_from_map(&data, "addr", "/ip4/0.0.0.0/tcp".into())?,
                 known_nodes: extract_known_nodes(&data, "knownnodes"),
-                external_address: extract_known_nodes(&data, "externaladdress"),
+                external_address: extract_known_nodes(&data, "externaladdresses"),
             },
             node: NodeSettings {
                 key_derivator: extract_key_derivator(&data, "keyderivator", KeyDerivator::Ed25519)?,
