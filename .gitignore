@@ -1,4 +1,6 @@
 /target
+contracts/target
+contracts/src/lib.rs
 /.vscode
 .DS_Store
 data.md
