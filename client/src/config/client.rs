@@ -56,6 +56,10 @@ pub fn client_settings_builder() -> ConfigGenerator {
                     .unwrap()
                     .help("List of access points to use by the node. Each element is separated by ';'")
                     .build(),
+                SettingSchemaBuilder::new("externaladdresses")
+                    .unwrap()
+                    .help("List of listener addresses to use by the node. Each element is separated by ';'")
+                    .build(),
         ]).unwrap()
         .group(
             "node",
