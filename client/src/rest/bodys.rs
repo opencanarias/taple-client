@@ -171,7 +171,6 @@ pub struct ExpectingTransfer {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AuthorizeSubjectBody {
-    pub subject_id: String,
     pub providers: Vec<String>,
 }
 

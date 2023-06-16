@@ -1,5 +1,7 @@
+use crate::rest::querys::AddKeysQuery;
+
 use super::handlers::{
-    get_all_governances_handler, get_all_subjects_handler, get_event_handler,
+    get_all_governances_handler, get_subjects_handler, get_event_handler,
     get_events_of_subject_handler, get_governance_handler, get_pending_requests_handler,
     get_single_request_handler, get_subject_handler, get_validation_proof_handle,
     post_event_request_handler, post_expecting_transfer_handler,
@@ -81,7 +83,7 @@ pub fn get_all_subjects(
         .and(warp::get())
         .and(with_sender(sender))
         .and(warp::query::<GetAllSubjectsQuery>())
-        .and_then(get_all_subjects_handler)
+        .and_then(get_subjects_handler)
         .recover(handle_rejection)
 }
 
@@ -133,6 +135,7 @@ pub fn post_generate_keys(sender: NodeAPI) -> impl Filter<Extract = impl Reply, 
     warp::path!("api" / "keys")
         .and(warp::post())
         .and(with_sender(sender))
+        .and(warp::query::<AddKeysQuery>())
         .and_then(post_generate_keys_handler)
         .recover(handle_rejection)
 }
@@ -140,7 +143,7 @@ pub fn post_generate_keys(sender: NodeAPI) -> impl Filter<Extract = impl Reply, 
 pub fn post_preauthorized_subjects(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "subjects" / "authorize")
+    warp::path!("api" / "authorizeds" / String)
         .and(warp::post())
         .and(with_sender(sender))
         .and(with_body())
@@ -155,6 +158,7 @@ pub fn post_expecting_transfer(
         .and(warp::post())
         .and(with_sender(sender))
         .and(with_body())
+        .and(warp::query::<AddKeysQuery>())
         .and_then(post_expecting_transfer_handler)
         .recover(handle_rejection)
 }
