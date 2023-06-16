@@ -11,7 +11,7 @@ use super::{bodys::{
     EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse
 }};
 use super::handlers::{
-    __path_get_all_governances_handler, __path_get_all_subjects_handler, __path_get_event_handler,
+    __path_get_all_governances_handler, __path_get_subjects_handler, __path_get_event_handler,
     __path_get_events_of_subject_handler,
     __path_get_governance_handler, __path_get_pending_requests_handler,
     __path_get_single_request_handler, __path_get_subject_handler,
@@ -27,7 +27,7 @@ use warp::{
 #[derive(OpenApi)]
 #[openapi(
     paths(get_single_request_handler, post_event_request_handler, get_subject_handler, 
-        get_all_subjects_handler, get_events_of_subject_handler, get_event_handler, 
+        get_subjects_handler, get_events_of_subject_handler, get_event_handler, 
         get_pending_requests_handler, put_approval_handler,
         get_all_governances_handler, get_governance_handler
     ),
