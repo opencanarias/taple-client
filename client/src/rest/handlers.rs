@@ -184,38 +184,6 @@ pub async fn post_generate_keys_handler(
     handle_data(result)
 }
 
-pub async fn post_expecting_transfer_handler(
-    node: NodeAPI,
-    body: ExpectingTransfer,
-    parameters: AddKeysQuery,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let derivator = parameters
-        .algorithm
-        .unwrap_or(KeyAlgorithms::Ed25519)
-        .into();
-    let public_key = node.add_keys(derivator).await;
-    if public_key.is_err() {
-        return handle_data(public_key);
-    }
-    let public_key = public_key.unwrap();
-    let subject_id = match DigestIdentifier::from_str(&body.subject_id) {
-        Ok(subject_id) => subject_id,
-        Err(_error) => {
-            return handle_data::<()>(Err(ApiError::InvalidParameters(format!(
-                "Invalid digest identifier {}",
-                body.subject_id
-            ))))
-        }
-    };
-    let result = node
-        .add_preauthorize_subject(&subject_id, &HashSet::new())
-        .await;
-    if result.is_err() {
-        return handle_data(result);
-    }
-    handle_data(Ok(public_key))
-}
-
 pub async fn post_preauthorized_subjects_handler(
     id: String,
     node: NodeAPI,
