@@ -13,15 +13,20 @@ use super::{
     querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
 };
 use serde::de::DeserializeOwned;
+use serde_json::map::Keys;
+use taple_core::crypto::KeyPair;
 use taple_core::NodeAPI;
 use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
 
-pub fn routes(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn routes(
+    sender: NodeAPI,
+    keys: KeyPair,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_subject(sender.clone())
         .or(get_all_subjects(sender.clone()))
         .or(get_all_governances(sender.clone()))
         .or(get_subject(sender.clone()))
-        .or(post_event_request(sender.clone()))
+        .or(post_event_request(sender.clone(), keys.clone()))
         .or(get_governance(sender.clone()))
         .or(get_events_of_subject(sender.clone()))
         .or(get_event(sender.clone()))
@@ -108,10 +113,12 @@ pub fn get_all_governances(
 
 pub fn post_event_request(
     sender: NodeAPI,
+    keys: KeyPair,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "requests")
         .and(warp::post())
         .and(with_sender(sender))
+        .and(with_keys(keys))
         .and(with_body())
         .and_then(post_event_request_handler)
         .recover(handle_rejection)
@@ -195,6 +202,12 @@ pub fn with_sender(
     sender: NodeAPI,
 ) -> impl Filter<Extract = (NodeAPI,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || sender.clone())
+}
+
+pub fn with_keys(
+    keys: KeyPair,
+) -> impl Filter<Extract = (KeyPair,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || keys.clone())
 }
 
 pub fn with_body<T: DeserializeOwned + Send>(

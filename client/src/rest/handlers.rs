@@ -2,8 +2,11 @@ use std::{collections::HashSet, str::FromStr};
 
 use serde::Serialize;
 use taple_core::{
+    crypto::{KeyMaterial, KeyPair},
+    event_request::EventRequest,
     identifier::{Derivable, DigestIdentifier},
-    Acceptance, KeyIdentifier,
+    signature::Signature,
+    Acceptance, EventRequestType, KeyIdentifier,
 };
 use warp::Rejection;
 
@@ -12,7 +15,9 @@ use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 use crate::{rest::querys::AddKeysQuery, rest::querys::KeyAlgorithms};
 
 use super::{
-    bodys::{AuthorizeSubjectBody, PostEventRequestBody, PutVoteBody},
+    bodys::{
+        AuthorizeSubjectBody, PostEventRequestBody, PostEventRequestBodyPreSignature, PutVoteBody,
+    },
     error::Error,
     querys::{GetAllSubjectsQuery, GetApprovalsQuery, GetEventsOfSubjectQuery},
     responses::{
@@ -160,15 +165,30 @@ pub async fn get_subjects_handler(
 )]
 pub async fn post_event_request_handler(
     node: NodeAPI,
-    body: PostEventRequestBody,
+    keys: KeyPair,
+    body: PostEventRequestBodyPreSignature,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data = match body.try_into() {
-        Ok(external_request) => node
-            .external_request(external_request)
-            .await
-            .map(|id| id.to_str()),
-        Err(error) => Err(error),
+    let signer = KeyIdentifier::new(keys.get_key_derivator(), &keys.public_key_bytes());
+    let Ok(request) = body.request.try_into() else {
+        return Err(warp::reject::custom(
+            Error::InvalidParameters("Invalid request".to_owned()),
+        ));
     };
+    let signature = match body.signature {
+        Some(signature) => {
+            let signature = signature.try_into();
+            if signature.is_err() {
+                return handle_data(signature);
+            } else {
+                signature.unwrap()
+            }
+        }
+        None => Signature::new(&request, signer, &keys).expect("Error signing request"),
+    };
+    let data = node
+        .external_request(EventRequest { request, signature })
+        .await
+        .map(|id| id.to_str());
     handle_data(data)
 }
 
