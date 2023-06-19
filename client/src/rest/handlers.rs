@@ -9,12 +9,15 @@ use warp::Rejection;
 
 use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 
+use crate::{rest::querys::AddKeysQuery, rest::querys::KeyAlgorithms};
+
 use super::{
-    bodys::{AuthorizeSubjectBody, ExpectingTransfer, PostEventRequestBody, PutVoteBody},
+    bodys::{AuthorizeSubjectBody, PostEventRequestBody, PutVoteBody},
     error::Error,
     querys::{GetAllSubjectsQuery, GetApprovalsQuery, GetEventsOfSubjectQuery},
     responses::{
         ApprovalPetitionDataResponse, EventResponse, SignatureDataResponse, SubjectDataResponse,
+        TapleRequestResponse,
     },
 };
 
@@ -106,13 +109,13 @@ pub async fn get_subject_handler(
         (status = 500, description = "Internal Server Error"),
     )
 )]
-pub async fn get_all_subjects_handler(
+pub async fn get_subjects_handler(
     node: NodeAPI,
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     // TODO: NAMESPACE DECIDIR CÓMO ESPECIFICAR
     let data = node
-        .get_all_subjects("namespace1".into(), parameters.from, parameters.quantity)
+        .get_subjects("namespace1".into(), parameters.from, parameters.quantity)
         .await
         .map(|s| {
             s.into_iter()
@@ -169,58 +172,49 @@ pub async fn post_event_request_handler(
     handle_data(data)
 }
 
-pub async fn post_expecting_transfer_handler(
+pub async fn post_generate_keys_handler(
     node: NodeAPI,
-    body: ExpectingTransfer,
+    parameters: AddKeysQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let subject_id = match DigestIdentifier::from_str(&body.subject_id) {
-        Ok(subject_id) => subject_id,
-        Err(_error) => {
-            return handle_data::<()>(Err(ApiError::InvalidParameters(format!(
-                "Invalid digest identifier {}",
-                body.subject_id
-            ))))
-        }
-    };
-    let data = node
-        .expecting_transfer(subject_id)
-        .await
-        .map(|id| id.to_str());
-    handle_data(data)
+    let derivator = parameters
+        .algorithm
+        .unwrap_or(KeyAlgorithms::Ed25519)
+        .into();
+    let result = node.add_keys(derivator).await;
+    handle_data(result)
 }
 
 pub async fn post_preauthorized_subjects_handler(
+    id: String,
     node: NodeAPI,
-    body: Vec<AuthorizeSubjectBody>,
+    body: AuthorizeSubjectBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = 'result: {
-        for value in body.iter() {
-            let subject_id = match DigestIdentifier::from_str(&value.subject_id) {
-                Ok(subject_id) => subject_id,
-                Err(error) => {
+        let subject_id = match DigestIdentifier::from_str(&id) {
+            Ok(subject_id) => subject_id,
+            Err(_error) => {
+                break 'result Err(ApiError::InvalidParameters(format!(
+                    "Invalid digest identifier {}",
+                    id
+                )))
+            }
+        };
+        let mut providers = HashSet::new();
+        for provider in body.providers.iter() {
+            let provider = match KeyIdentifier::from_str(provider) {
+                Ok(provider) => provider,
+                Err(_error) => {
                     break 'result Err(ApiError::InvalidParameters(format!(
-                        "Invalid digest identifier {}",
-                        value.subject_id
+                        "Invalid key identifier {}",
+                        provider
                     )))
                 }
             };
-            let mut providers = HashSet::new();
-            for provider in value.providers.iter() {
-                let provider = match KeyIdentifier::from_str(provider) {
-                    Ok(provider) => provider,
-                    Err(error) => {
-                        break 'result Err(ApiError::InvalidParameters(format!(
-                            "Invalid key identifier {}",
-                            provider
-                        )))
-                    }
-                };
-                providers.insert(provider);
-            }
-            if let Err(error) = node.add_preauthorize_subject(&subject_id, &providers).await {
-                break 'result Err(error);
-            };
+            providers.insert(provider);
         }
+        if let Err(error) = node.add_preauthorize_subject(&subject_id, &providers).await {
+            break 'result Err(error);
+        };
         Ok(())
     };
     handle_data(result.map(|_| body))
@@ -359,6 +353,22 @@ pub async fn get_approvals_handler(
     handle_data(data)
 }
 
+pub async fn get_taple_request_handler(
+    request_id: String,
+    node: NodeAPI,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
+        node.get_request(id)
+            .await
+            .map(|data| TapleRequestResponse::from(data))
+    } else {
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(result)
+}
+
 #[utoipa::path(
     put,
     path = "/approvals{id}",
@@ -483,7 +493,7 @@ pub async fn get_all_governances_handler(
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let data = node
-        .get_all_governances("namespace1".into(), parameters.from, parameters.quantity)
+        .get_governances("namespace1".into(), parameters.from, parameters.quantity)
         .await
         .map(|result| {
             result
@@ -613,7 +623,7 @@ pub async fn get_events_of_subject_handler(
     parameters: GetEventsOfSubjectQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_event_of_subject(id, parameters.from, parameters.quantity)
+        node.get_events(id, parameters.from, parameters.quantity)
             .await
             .map(|ve| {
                 ve.into_iter()
@@ -697,30 +707,14 @@ pub async fn get_event_handler(
     sn: u64,
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    // TODO: Analyze if an alternative method is necessary
-    if let Ok(id) = DigestIdentifier::from_str(&id) {
-        let response = node
-            .get_event_of_subject(id, Some(sn as i64), Some(1))
-            .await;
-        if response.is_ok() {
-            let Some(event) = response.unwrap().pop() else {
-                return Err(warp::reject::custom(Error::NotFound("Event not found".into())));
-            };
-            handle_data::<EventResponse>(Ok(EventResponse::try_from(event).unwrap()))
-        } else {
-            let response = response.map(|ve| {
-                ve.into_iter()
-                    .map(|e| EventResponse::try_from(e).unwrap())
-                    .collect::<Vec<EventResponse>>()
-            });
-            handle_data::<Vec<EventResponse>>(response)
-        }
+    let response = if let Ok(id) = DigestIdentifier::from_str(&id) {
+        node.get_event(id, sn).await
     } else {
-        let result: Result<Vec<EventResponse>, ApiError> = Err(ApiError::InvalidParameters(
-            format!("ID specified is not a valid Digest Identifier"),
-        ));
-        handle_data::<Vec<EventResponse>>(result)
-    }
+        Err(ApiError::InvalidParameters(format!(
+            "ID specified is not a valid Digest Identifier"
+        )))
+    };
+    handle_data(response)
 }
 
 pub fn handle_data<T: Serialize + std::fmt::Debug>(

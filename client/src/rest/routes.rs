@@ -1,8 +1,10 @@
+use crate::rest::querys::AddKeysQuery;
+
 use super::handlers::{
-    get_all_governances_handler, get_all_subjects_handler, get_event_handler,
+    get_all_governances_handler, get_approval_handler, get_approvals_handler, get_event_handler,
     get_events_of_subject_handler, get_governance_handler, get_governance_subjects_handle,
-    get_approval_handler, get_approvals_handler, get_subject_handler,
-    get_validation_proof_handle, post_event_request_handler, post_expecting_transfer_handler,
+    get_subject_handler, get_subjects_handler, get_taple_request_handler,
+    get_validation_proof_handle, post_event_request_handler, post_generate_keys_handler,
     post_preauthorized_subjects_handler, put_approval_handler,
 };
 use super::querys::GetApprovalsQuery;
@@ -25,12 +27,10 @@ pub fn routes(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Reje
         .or(get_event(sender.clone()))
         .or(put_approval(sender.clone()))
         .or(post_preauthorized_subjects(sender.clone()))
-        .or(post_expecting_transfer(sender.clone()))
         .or(get_events_of_subject(sender.clone()))
         .or(get_validation_proof(sender.clone()))
-        .or(get_governance_subjects(sender.clone()))
-        .or(get_approval(sender.clone()))
-        .or(get_approvals(sender.clone()))
+        .or(post_generate_keys(sender.clone()))
+        .or(get_taple_request(sender.clone()))
 }
 
 pub fn get_approval(
@@ -43,7 +43,17 @@ pub fn get_approval(
         .recover(handle_rejection)
 }
 
-pub fn get_approvals(
+pub fn get_taple_request(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "request" / String)
+        .and(warp::get())
+        .and(with_sender(sender))
+        .and_then(get_taple_request_handler)
+        .recover(handle_rejection)
+}
+
+pub fn get_pending_requests(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "approvals")
@@ -71,7 +81,7 @@ pub fn get_all_subjects(
         .and(warp::get())
         .and(with_sender(sender))
         .and(warp::query::<GetAllSubjectsQuery>())
-        .and_then(get_all_subjects_handler)
+        .and_then(get_subjects_handler)
         .recover(handle_rejection)
 }
 
@@ -119,25 +129,25 @@ pub fn put_approval(
         .recover(handle_rejection)
 }
 
+pub fn post_generate_keys(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "keys")
+        .and(warp::post())
+        .and(with_sender(sender))
+        .and(warp::query::<AddKeysQuery>())
+        .and_then(post_generate_keys_handler)
+        .recover(handle_rejection)
+}
+
 pub fn post_preauthorized_subjects(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "subjects" / "authorize")
+    warp::path!("api" / "authorizeds" / String)
         .and(warp::post())
         .and(with_sender(sender))
         .and(with_body())
         .and_then(post_preauthorized_subjects_handler)
-        .recover(handle_rejection)
-}
-
-pub fn post_expecting_transfer(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "transfer")
-        .and(warp::post())
-        .and(with_sender(sender))
-        .and(with_body())
-        .and_then(post_expecting_transfer_handler)
         .recover(handle_rejection)
 }
 

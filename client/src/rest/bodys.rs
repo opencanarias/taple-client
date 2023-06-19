@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use taple_core::{
     crypto::KeyMaterial,
     event_request::{
-        CreateRequest, EOLRequest, EventRequest, EventRequestType, StateRequest, TransferRequest,
+        CreateRequest, EOLRequest, EventRequest, EventRequestType, FactRequest, TransferRequest,
     },
     identifier::{Derivable, DigestIdentifier, KeyIdentifier, SignatureIdentifier},
     signature::{Signature, SignatureContent},
@@ -15,7 +15,7 @@ use utoipa::ToSchema;
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum EventRequestTypeBody {
     Create(CreateRequestBody),
-    State(StateRequestBody),
+    Fact(FactRequestBody),
     Transfer(TransferRequestBody),
     EOL(EOLRequestBody),
 }
@@ -25,7 +25,7 @@ impl TryFrom<EventRequestType> for EventRequestTypeBody {
     fn try_from(value: EventRequestType) -> Result<Self, Self::Error> {
         match value {
             EventRequestType::Create(data) => Ok(EventRequestTypeBody::Create(data.try_into()?)),
-            EventRequestType::State(data) => Ok(EventRequestTypeBody::State(data.try_into()?)),
+            EventRequestType::Fact(data) => Ok(EventRequestTypeBody::Fact(data.try_into()?)),
             EventRequestType::Transfer(data) => {
                 Ok(EventRequestTypeBody::Transfer(data.try_into()?))
             }
@@ -39,7 +39,7 @@ impl TryInto<EventRequestType> for EventRequestTypeBody {
     fn try_into(self) -> Result<EventRequestType, Self::Error> {
         match self {
             EventRequestTypeBody::Create(data) => Ok(EventRequestType::Create(data.try_into()?)),
-            EventRequestTypeBody::State(data) => Ok(EventRequestType::State(data.try_into()?)),
+            EventRequestTypeBody::Fact(data) => Ok(EventRequestType::Fact(data.try_into()?)),
             EventRequestTypeBody::Transfer(data) => {
                 Ok(EventRequestType::Transfer(data.try_into()?))
             }
@@ -53,6 +53,8 @@ pub struct CreateRequestBody {
     pub governance_id: String,
     pub schema_id: String,
     pub namespace: String,
+    pub name: String,
+    pub public_key: String
 }
 
 impl TryFrom<CreateRequest> for CreateRequestBody {
@@ -62,6 +64,8 @@ impl TryFrom<CreateRequest> for CreateRequestBody {
             governance_id: value.governance_id.to_str(),
             schema_id: value.schema_id,
             namespace: value.namespace,
+            name: value.name,
+            public_key: value.public_key.to_str(),
         })
     }
 }
@@ -76,6 +80,10 @@ impl TryInto<CreateRequest> for CreateRequestBody {
             })?,
             schema_id: self.schema_id,
             namespace: self.namespace,
+            name: self.name,
+            public_key: KeyIdentifier::from_str(&self.public_key).map_err(|_| {
+                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for governance id"))
+            })?,
         })
     }
 }
@@ -138,48 +146,41 @@ impl TryFrom<TransferRequest> for TransferRequestBody {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct StateRequestBody {
+pub struct FactRequestBody {
     pub subject_id: String,
-    pub invokation: String,
+    pub payload: String,
 }
 
-impl TryFrom<StateRequest> for StateRequestBody {
+impl TryFrom<FactRequest> for FactRequestBody {
     type Error = ApiError;
-    fn try_from(value: StateRequest) -> Result<Self, Self::Error> {
-        Ok(StateRequestBody {
+    fn try_from(value: FactRequest) -> Result<Self, Self::Error> {
+        Ok(FactRequestBody {
             subject_id: value.subject_id.to_str(),
-            invokation: value.invokation,
+            payload: value.payload,
         })
     }
 }
 
-impl TryInto<StateRequest> for StateRequestBody {
+impl TryInto<FactRequest> for FactRequestBody {
     type Error = ApiError;
-    fn try_into(self) -> Result<StateRequest, Self::Error> {
-        Ok(StateRequest {
+    fn try_into(self) -> Result<FactRequest, Self::Error> {
+        Ok(FactRequest {
             subject_id: DigestIdentifier::from_str(&self.subject_id).map_err(|_| {
                 ApiError::InvalidParameters(format!("Invalid DigestIdentifier for subject id"))
             })?,
-            invokation: self.invokation,
+            payload: self.payload,
         })
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ExpectingTransfer {
-    pub subject_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AuthorizeSubjectBody {
-    pub subject_id: String,
     pub providers: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PostEventRequestBody {
     pub request: EventRequestTypeBody,
-    pub timestamp: u64,
     pub signature: SignatureRequest,
 }
 
@@ -188,7 +189,6 @@ impl TryFrom<EventRequest> for PostEventRequestBody {
     fn try_from(value: EventRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             request: value.request.try_into()?,
-            timestamp: value.timestamp.time,
             signature: value.signature.try_into()?,
         })
     }
@@ -199,9 +199,6 @@ impl TryInto<EventRequest> for PostEventRequestBody {
     fn try_into(self) -> Result<EventRequest, Self::Error> {
         Ok(EventRequest {
             request: self.request.try_into()?,
-            timestamp: TimeStamp {
-                time: self.timestamp,
-            },
             signature: self.signature.try_into()?,
         })
     }

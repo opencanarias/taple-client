@@ -7,7 +7,7 @@ extern crate env_logger;
 use taple_core::Event;
 use taple_core::event_content::{EventContent, Metadata};
 use taple_core::event_request::{
-    CreateRequest, EventRequest, EventRequestType, RequestPayload, StateRequest,
+    CreateRequest, EventRequest, EventRequestType, RequestPayload, FactRequest,
 };
 use taple_core::signature::{Signature, SignatureContent};
 use taple_core::SubjectData;
@@ -146,7 +146,7 @@ impl NodeBuilderAPI {
         #[openapi(
         paths(get_subject_handler, get_all_subjects_handler, get_events_of_subject_handler, get_event_handler, get_event_properties_handler),
         components(
-            schemas(SubjectData, Payload, PostEventBody, Event, EventRequestType, Signature, EventContent, SignatureContent, EventRequest, Metadata, CreateRequest, StateRequest, RequestPayload)
+            schemas(SubjectData, Payload, PostEventBody, Event, EventRequestType, Signature, EventContent, SignatureContent, EventRequest, Metadata, CreateRequest, FactRequest, RequestPayload)
         ),
         modifiers(&SecurityAddon),
         tags(

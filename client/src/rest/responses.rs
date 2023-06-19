@@ -1,13 +1,15 @@
+use crate::rest::bodys::PostEventRequestBody;
+use crate::rest::bodys::SignatureRequest;
 use serde::{Deserialize, Serialize};
+use taple_core::ApiError;
 use taple_core::identifier::Derivable;
+use taple_core::request::{RequestState, TapleRequest};
 use taple_core::signature::{Signature, SignatureContent};
 use taple_core::{
-    Acceptance, ApiError, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
+    Acceptance, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
     EventProposal, Proposal, SignatureIdentifier, SubjectData,
 };
 use utoipa::ToSchema;
-
-use crate::rest::bodys::{PostEventRequestBody, SignatureRequest};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum AcceptanceResponse {
@@ -231,6 +233,44 @@ impl From<Signature> for SignatureDataResponse {
         Self {
             content: value.content,
             signature: value.signature,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TapleRequestResponse {
+    id: String,
+    subject_id: Option<String>,
+    sn: Option<u64>,
+    event_request: PostEventRequestBody,
+    state: RequestStateResponse,
+}
+
+impl From<TapleRequest> for TapleRequestResponse {
+    fn from(value: TapleRequest) -> Self {
+        Self {
+            id: value.id.to_str(),
+            subject_id: value.subject_id.map(|id| id.to_str()),
+            sn: value.sn,
+            event_request: value.event_request.try_into().unwrap(),
+            state: value.state.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub enum RequestStateResponse {
+    Finished,
+    Error,
+    Processing,
+}
+
+impl From<RequestState> for RequestStateResponse {
+    fn from(value: RequestState) -> Self {
+        match value {
+            RequestState::Finished => Self::Finished,
+            RequestState::Error => Self::Error,
+            RequestState::Processing => Self::Processing,
         }
     }
 }
