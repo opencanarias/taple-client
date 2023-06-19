@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 pub use taple_core::{DatabaseSettings, NetworkSettings, NodeSettings, TapleSettings};
 use taple_core::{DigestDerivator, KeyDerivator};
 
@@ -40,7 +40,11 @@ impl SettingsGenerator for TapleSettings {
                 passvotation: extract_pass_votation(&data, "passvotation")?,
                 dev_mode: extract_from_map(&data, "devmode", false)?,
                 req_res: false,
-                smartcontracts_directory: String::from("../contracts"), // TODO: CAMBIAR EN UN FUTURO
+                smartcontracts_directory: extract_from_map(
+                    &data,
+                    "contractsdkpath",
+                    String::from_str("../contracts").unwrap(),
+                )?,
             },
             database: DatabaseSettings {
                 path: database_path,

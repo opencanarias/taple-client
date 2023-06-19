@@ -5,18 +5,18 @@ use utoipa::{
 use std::sync::Arc;
 use super::{bodys::{
     CreateRequestBody, EventRequestTypeBody, PostEventRequestBody, PutVoteBody,
-    FactRequestBody, SignatureRequestContent, SignatureRequest
+    FactRequestBody,
+    SignatureRequestContent, SignatureRequest, TransferRequestBody, EOLRequestBody
 }, responses::{AcceptanceResponse, EvaluationResponse, EventContentResponse,
     ApprovalResponse, ApprovalContentResponse, ProposalResponse,
-    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse
+    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse, 
 }};
 use super::handlers::{
     __path_get_all_governances_handler, __path_get_subjects_handler, __path_get_event_handler,
     __path_get_events_of_subject_handler,
-    __path_get_governance_handler, __path_get_pending_requests_handler,
-    __path_get_single_request_handler, __path_get_subject_handler,
+    __path_get_governance_handler, __path_get_subject_handler,
     __path_post_event_request_handler,
-    __path_put_approval_handler,
+    __path_put_approval_handler
 };
 use warp::{
     http::Uri,
@@ -26,10 +26,10 @@ use warp::{
 };
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_single_request_handler, post_event_request_handler, get_subject_handler, 
+    paths(post_event_request_handler, get_subject_handler, 
         get_subjects_handler, get_events_of_subject_handler, get_event_handler, 
-        get_pending_requests_handler, put_approval_handler,
-        get_all_governances_handler, get_governance_handler
+        put_approval_handler,
+        get_all_governances_handler, get_governance_handler, 
     ),
     components(
         schemas(
@@ -49,8 +49,12 @@ use warp::{
             ProposalResponse,
             EventProposalResponse,
             SubjectDataResponse,
-            ApprovalPetitionDataResponse
-        )
+            ApprovalPetitionDataResponse, 
+            EventContentResponse,
+            EventContentResponse,
+            TransferRequestBody,
+            EOLRequestBody
+       )
     ),
     modifiers(&SecurityAddon),
     security(),

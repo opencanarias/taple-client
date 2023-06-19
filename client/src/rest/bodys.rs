@@ -1,7 +1,8 @@
-use std::{str::FromStr};
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use taple_core::{
+    crypto::KeyMaterial,
     event_request::{
         CreateRequest, EOLRequest, EventRequest, EventRequestType, FactRequest, TransferRequest,
     },
@@ -52,6 +53,8 @@ pub struct CreateRequestBody {
     pub governance_id: String,
     pub schema_id: String,
     pub namespace: String,
+    pub name: String,
+    pub public_key: String
 }
 
 impl TryFrom<CreateRequest> for CreateRequestBody {
@@ -61,6 +64,8 @@ impl TryFrom<CreateRequest> for CreateRequestBody {
             governance_id: value.governance_id.to_str(),
             schema_id: value.schema_id,
             namespace: value.namespace,
+            name: value.name,
+            public_key: value.public_key.to_str(),
         })
     }
 }
@@ -75,6 +80,10 @@ impl TryInto<CreateRequest> for CreateRequestBody {
             })?,
             schema_id: self.schema_id,
             namespace: self.namespace,
+            name: self.name,
+            public_key: KeyIdentifier::from_str(&self.public_key).map_err(|_| {
+                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for governance id"))
+            })?,
         })
     }
 }
@@ -162,11 +171,6 @@ impl TryInto<FactRequest> for FactRequestBody {
             payload: self.payload,
         })
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ExpectingTransfer {
-    pub subject_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

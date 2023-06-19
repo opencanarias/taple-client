@@ -150,4 +150,10 @@ pub fn client_settings_builder() -> ConfigGenerator {
                 .param_type(ParamType::Flag)
                 .build(),
         )
+        .add_setting(
+            SettingSchemaBuilder::new("contractsdkpath")
+                .unwrap()
+                .help("Path to the smart contracts SDK")
+                .build(),
+        )
 }

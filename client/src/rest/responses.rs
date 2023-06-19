@@ -1,11 +1,12 @@
 use crate::rest::bodys::PostEventRequestBody;
 use crate::rest::bodys::SignatureRequest;
 use serde::{Deserialize, Serialize};
+use taple_core::ApiError;
 use taple_core::identifier::Derivable;
 use taple_core::request::{RequestState, TapleRequest};
 use taple_core::signature::{Signature, SignatureContent};
 use taple_core::{
-    Acceptance, Approval, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
+    Acceptance, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
     EventProposal, Proposal, SignatureIdentifier, SubjectData,
 };
 use utoipa::ToSchema;
@@ -27,10 +28,10 @@ impl From<Acceptance> for AcceptanceResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EvaluationResponse {
-    pub preevaluation_hash: String,
-    pub state_hash: String,
+    pub preevaluation_hash: String, // DigestIdentifier
+    pub state_hash: String,         // DigestIdentifier
     pub governance_version: u64,
-    pub acceptance: AcceptanceResponse,
+    pub acceptance: AcceptanceResponse, // Acceptance
     pub approval_required: bool,
 }
 
@@ -40,7 +41,7 @@ impl From<Evaluation> for EvaluationResponse {
             preevaluation_hash: value.preevaluation_hash.to_str(),
             state_hash: value.state_hash.to_str(),
             governance_version: value.governance_version,
-            acceptance: value.acceptance.into(),
+            acceptance: AcceptanceResponse::from(value.acceptance),
             approval_required: value.approval_required,
         }
     }
@@ -48,13 +49,13 @@ impl From<Evaluation> for EvaluationResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ProposalResponse {
-    event_request: PostEventRequestBody,
+    event_request: PostEventRequestBody, // EventRequest
     sn: u64,
-    hash_prev_event: String,
+    hash_prev_event: String, // DigestIdentifier
     gov_version: u64,
-    evaluation: Option<Evaluation>,
+    evaluation: Option<EvaluationResponse>, // Option<Evaluation>
     json_patch: String,
-    evaluation_signatures: Vec<SignatureRequest>,
+    evaluation_signatures: Vec<SignatureRequest>, // HashSet<Signature>
 }
 
 impl From<Proposal> for ProposalResponse {
@@ -64,7 +65,7 @@ impl From<Proposal> for ProposalResponse {
             sn: value.sn,
             hash_prev_event: value.hash_prev_event.to_str(),
             gov_version: value.gov_version,
-            evaluation: value.evaluation,
+            evaluation: Some(EvaluationResponse::from(value.evaluation.unwrap())),
             json_patch: value.json_patch,
             evaluation_signatures: value
                 .evaluation_signatures
@@ -81,60 +82,64 @@ pub struct EventProposalResponse {
     pub subject_signature: SignatureRequest,
 }
 
-impl From<EventProposal> for EventProposalResponse {
-    fn from(value: EventProposal) -> Self {
-        Self {
-            proposal: value.proposal.into(),
+impl TryFrom<EventProposal> for EventProposalResponse {
+    type Error = ApiError;
+
+    fn try_from(value: EventProposal) -> Result<Self, Self::Error> {
+        Ok(Self {
+            proposal: ProposalResponse::from(value.proposal),
             subject_signature: value.subject_signature.try_into().unwrap(),
-        }
+        })
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EventResponse {
-    content: EventContentResponse,
-    signature: SignatureRequest,
+    pub content: EventContentResponse, // Event
+    pub signature: SignatureRequest,   // Signature
 }
 
-impl From<Event> for EventResponse {
-    fn from(value: Event) -> Self {
-        Self {
-            content: value.content.into(),
-            signature: SignatureRequest::try_from(value.signature).unwrap(),
-        }
+impl TryFrom<Event> for EventResponse {
+    type Error = ApiError;
+
+    fn try_from(value: Event) -> Result<Self, Self::Error> {
+        Ok(Self {
+            content: EventContentResponse::try_from(value.content)?,
+            signature: SignatureRequest::try_from(value.signature)?,
+        })
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EventContentResponse {
-    event_proposal: EventProposalResponse,
-    approvals: Vec<ApprovalResponse>,
-    execution: bool,
+    pub event_proposal: EventProposalResponse, // EventProposal
+    pub approvals: Vec<ApprovalResponse>,      // HashSet<Approval>
+    pub execution: bool,
 }
 
-impl From<EventContent> for EventContentResponse {
-    fn from(value: EventContent) -> Self {
-        Self {
-            event_proposal: value.event_proposal.into(),
-            approvals: value.approvals.into_iter().map(|x| x.into()).collect(),
+impl TryFrom<EventContent> for EventContentResponse {
+    type Error = ApiError;
+
+    fn try_from(value: EventContent) -> Result<Self, Self::Error> {
+        Ok(Self {
+            event_proposal: EventProposalResponse::try_from(value.event_proposal)?,
+            approvals: value
+                .approvals
+                .iter()
+                .map(|approval| ApprovalResponse {
+                    content: ApprovalContentResponse::from(approval.content.clone()),
+                    signature: SignatureRequest::try_from(approval.signature.clone()).unwrap(),
+                })
+                .collect(),
             execution: value.execution,
-        }
+        })
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ApprovalResponse {
-    content: ApprovalContentResponse,
-    signature: SignatureRequest,
-}
-
-impl From<Approval> for ApprovalResponse {
-    fn from(value: Approval) -> Self {
-        Self {
-            content: value.content.into(),
-            signature: value.signature.try_into().unwrap(),
-        }
-    }
+    pub content: ApprovalContentResponse,
+    pub signature: SignatureRequest,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -147,22 +152,32 @@ impl From<ApprovalContent> for ApprovalContentResponse {
     fn from(value: ApprovalContent) -> Self {
         Self {
             event_proposal_hash: value.event_proposal_hash.to_str(),
-            acceptance: value.acceptance.try_into().unwrap(),
+            acceptance: AcceptanceResponse::from(value.acceptance),
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
 pub struct SubjectDataResponse {
-    subject_id: String,
-    governance_id: String,
-    sn: u64,
-    public_key: String,
-    namespace: String,
-    schema_id: String,
-    owner: String,
-    creator: String,
-    properties: String,
+    /// Subject identifier
+    pub subject_id: String, // DigestIdentifier
+    /// Governance identifier
+    pub governance_id: String, // DigestIdentifier
+    /// Current sequence number of the subject
+    pub sn: u64,
+    /// Public key of the subject
+    pub public_key: String, // KeyIdentifier
+    pub namespace: String,
+    /// Identifier of the schema used by the subject and defined in associated governance
+    pub schema_id: String,
+    /// Subject owner identifier
+    pub owner: String, // KeyIdentifier
+    /// Subject creator identifier
+    pub creator: String, // KeyIdentifier
+    /// Current status of the subject
+    pub properties: String,
+    /// Indicates if the subject is active or not
+    pub active: bool,
 }
 
 impl From<SubjectData> for SubjectDataResponse {
@@ -177,6 +192,7 @@ impl From<SubjectData> for SubjectDataResponse {
             owner: value.owner.to_str(),
             creator: value.creator.to_str(),
             properties: value.properties,
+            active: value.active,
         }
     }
 }

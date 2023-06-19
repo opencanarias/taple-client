@@ -14,3 +14,5 @@ thiserror = "~1.0"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[workspace]
