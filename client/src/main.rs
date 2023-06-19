@@ -8,7 +8,8 @@ use rest::openapi::{serve_swagger, ApiDoc};
 use std::sync::Arc;
 use std::{error::Error, net::SocketAddr};
 use taple_client::{client_settings_builder, ClientSettings, SettingsGenerator};
-use taple_core::Taple;
+use taple_core::crypto::{Ed25519KeyPair, KeyGenerator, KeyPair, Secp256k1KeyPair};
+use taple_core::{KeyDerivator, Taple};
 use tempfile::tempdir as tempdirf;
 use tokio::signal::unix::{signal, SignalKind};
 use utoipa::OpenApi;
@@ -36,9 +37,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let db = open_db(path);
     let iter = db.iter(leveldb::options::ReadOptions::new());
     for i in iter {
-        log::warn!("{}", i.0.0)
+        log::warn!("{}", i.0 .0)
     }
     let leveldb = LevelDBManager::new(db);
+    if settings.taple.node.secret_key.is_some() && settings.taple.node.seed.is_some() {
+        panic!("You can't set both secret_key and seed");
+    }
+    let derivator = settings.taple.node.key_derivator.clone();
+    let keys = if settings.taple.node.secret_key.is_some() {
+        let current_key = settings.taple.node.secret_key.clone();
+        let str_key = current_key.unwrap();
+        match derivator {
+            KeyDerivator::Ed25519 => KeyPair::Ed25519(Ed25519KeyPair::from_secret_key(
+                &hex::decode(str_key).expect("Generate keypair from secret key"),
+            )),
+            KeyDerivator::Secp256k1 => KeyPair::Secp256k1(Secp256k1KeyPair::from_secret_key(
+                &hex::decode(str_key).expect("Generate keypair from secret key"),
+            )),
+        }
+    } else if settings.taple.node.seed.is_some() {
+        let seed = settings.taple.node.seed.clone().unwrap();
+        match derivator {
+            KeyDerivator::Ed25519 => KeyPair::Ed25519(Ed25519KeyPair::from_seed(seed.as_bytes())),
+            KeyDerivator::Secp256k1 => {
+                KeyPair::Secp256k1(Secp256k1KeyPair::from_seed(seed.as_bytes()))
+            }
+        }
+    } else {
+        panic!("No MC available");
+    };
     ////////////////////
     let mut taple = Taple::new(settings.taple.clone(), leveldb);
     taple.start().await?;
@@ -65,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         warp::serve(
             api_doc
                 .or(swagger_ui)
-                .or(rest::routes::routes(taple.get_api())),
+                .or(rest::routes::routes(taple.get_api(), keys)),
         )
         .bind_with_graceful_shutdown(http_addr, async move {
             stream.recv().await;
@@ -73,7 +100,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .1
         .await;
     } else {
-        warp::serve(api_doc.or(rest::routes::routes(taple.get_api())))
+        warp::serve(api_doc.or(rest::routes::routes(taple.get_api(), keys)))
             .bind_with_graceful_shutdown(http_addr, async move {
                 stream.recv().await;
             })

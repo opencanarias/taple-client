@@ -184,6 +184,12 @@ pub struct PostEventRequestBody {
     pub signature: SignatureRequest,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct PostEventRequestBodyPreSignature {
+    pub request: EventRequestTypeBody,
+    pub signature: Option<SignatureRequest>,
+}
+
 impl TryFrom<EventRequest> for PostEventRequestBody {
     type Error = ApiError;
     fn try_from(value: EventRequest) -> Result<Self, Self::Error> {
