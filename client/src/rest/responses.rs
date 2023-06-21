@@ -9,6 +9,7 @@ use taple_core::{
     Acceptance, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
     EventProposal, Proposal, SignatureIdentifier, SubjectData,
 };
+use taple_json::Value;
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -54,7 +55,7 @@ pub struct ProposalResponse {
     hash_prev_event: String, // DigestIdentifier
     gov_version: u64,
     evaluation: Option<EvaluationResponse>, // Option<Evaluation>
-    json_patch: String,
+    json_patch: Value,
     evaluation_signatures: Vec<SignatureRequest>, // HashSet<Signature>
 }
 
@@ -175,7 +176,7 @@ pub struct SubjectDataResponse {
     /// Subject creator identifier
     pub creator: String, // KeyIdentifier
     /// Current status of the subject
-    pub properties: String,
+    pub properties: Value,
     /// Indicates if the subject is active or not
     pub active: bool,
 }
@@ -205,7 +206,7 @@ pub struct ApprovalPetitionDataResponse {
     governance_version: u64,
     hash_event_proporsal: String,
     sender: String,
-    json_patch: String,
+    json_patch: Value,
 }
 
 impl From<ApprovalPetitionData> for ApprovalPetitionDataResponse {

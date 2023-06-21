@@ -27,6 +27,7 @@ hex = { workspace = true }
 home = { workspace = true }
 
 taple-core = { workspace = true }
+taple_json = { workspace = true }
 
 settings = { path = "../settings" }
 

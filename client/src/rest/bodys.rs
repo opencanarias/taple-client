@@ -1,8 +1,8 @@
 use std::str::FromStr;
+use taple_json::Value;
 
 use serde::{Deserialize, Serialize};
 use taple_core::{
-    crypto::KeyMaterial,
     event_request::{
         CreateRequest, EOLRequest, EventRequest, EventRequestType, FactRequest, TransferRequest,
     },
@@ -148,7 +148,7 @@ impl TryFrom<TransferRequest> for TransferRequestBody {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FactRequestBody {
     pub subject_id: String,
-    pub payload: String,
+    pub payload: Value,
 }
 
 impl TryFrom<FactRequest> for FactRequestBody {
