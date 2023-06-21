@@ -8,7 +8,7 @@ use leveldb::{
 use std::cell::Cell;
 use std::path::Path;
 use std::sync::Arc;
-use taple_core::{DatabaseCollection, DatabaseManager, DbError};
+use taple_core::{DatabaseCollection, DatabaseManager, DbError as Error, test_database_manager_trait};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct StringKey(pub String);
@@ -70,6 +70,14 @@ impl LevelDBManager {
 }
 
 impl DatabaseManager<LDBCollection> for LevelDBManager {
+    fn default() -> Self {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db = open_db(temp_dir.path());
+        Self { 
+            db
+        }
+    }
+
     fn create_collection(&self, _identifier: &str) -> LDBCollection {
         LDBCollection {
             data: self.db.clone(),
@@ -110,25 +118,25 @@ impl LDBCollection {
 }
 
 impl DatabaseCollection for LDBCollection {
-    fn get(&self, key: &str) -> Result<Vec<u8>, DbError> {
+    fn get(&self, key: &str) -> Result<Vec<u8>, Error> {
         let key = self.generate_key(key);
         let result = self.data.get(self.get_read_options(), key);
         match result {
-            Err(_) => Err(DbError::EntryNotFound),
+            Err(_) => Err(Error::EntryNotFound),
             Ok(data) => match data {
                 Some(value) => Ok(value),
-                None => Err(DbError::EntryNotFound),
+                None => Err(Error::EntryNotFound),
             },
         }
     }
 
-    fn put(&self, key: &str, data: Vec<u8>) -> Result<(), DbError> {
+    fn put(&self, key: &str, data: Vec<u8>) -> Result<(), Error> {
         let key = self.generate_key(key);
         let _result = self.data.put(self.get_write_options(), key, &data);
         Ok(())
     }
 
-    fn del(&self, key: &str) -> Result<(), DbError> {
+    fn del(&self, key: &str) -> Result<(), Error> {
         let key = self.generate_key(key);
         let _result = self.data.delete(self.get_write_options(), key);
         Ok(())
@@ -234,159 +242,6 @@ impl<'a> Iterator for RevLDBIterator<'a> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use serde::{Deserialize, Serialize};
-    use std::vec;
-    use taple_core::DbError;
-    use tempfile::tempdir;
-
-    use crate::database::leveldb::open_db;
-
-    use super::{DatabaseCollection, DatabaseManager, LDBCollection, LevelDBManager};
-
-    #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
-    struct Data {
-        id: usize,
-        value: String,
-    }
-
-    fn get_data() -> Result<Vec<Vec<u8>>, DbError> {
-        let data1 = Data {
-            id: 1,
-            value: "A".into(),
-        };
-        let data2 = Data {
-            id: 2,
-            value: "B".into(),
-        };
-        let data3 = Data {
-            id: 3,
-            value: "C".into(),
-        };
-        let Ok(data1) = bincode::serialize::<Data>(&data1) else {
-            return Err(DbError::SerializeError);
-        };
-        let Ok(data2) = bincode::serialize::<Data>(&data2) else {
-            return Err(DbError::SerializeError);
-        };
-        let Ok(data3) = bincode::serialize::<Data>(&data3) else {
-            return Err(DbError::SerializeError);
-        };
-        Ok(vec![data1, data2, data3])
-    }
-
-    #[test]
-    fn basic_operations_test() {
-        let temp_dir = tempdir().unwrap();
-        let db = LevelDBManager::new(open_db(temp_dir.path()));
-        let first_collection = db.create_collection("");
-        let data = get_data().unwrap();
-        // PUT & GET Operations
-        // PUT
-        let result = first_collection.put("a", data[0].clone());
-        assert!(result.is_ok());
-        let result = first_collection.put("b", data[1].clone());
-        assert!(result.is_ok());
-        let result = first_collection.put("c", data[2].clone());
-        assert!(result.is_ok());
-        // GET
-        let result = first_collection.get("a");
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), data[0]);
-        let result = first_collection.get("b");
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), data[1]);
-        let result = first_collection.get("c");
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), data[2]);
-        // DEL
-        let result = first_collection.del("a");
-        assert!(result.is_ok());
-        let result = first_collection.del("b");
-        assert!(result.is_ok());
-        let result = first_collection.del("c");
-        assert!(result.is_ok());
-        // GET OF DELETED ENTRIES
-        let result = first_collection.get("a");
-        assert!(result.is_err());
-        let result = first_collection.get("b");
-        assert!(result.is_err());
-        let result = first_collection.get("c");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn partitions_test() {
-        let temp_dir = tempdir().unwrap();
-        let db = LevelDBManager::new(open_db(temp_dir.path()));
-        let first_collection = db.create_collection("");
-        let second_collection = db.create_collection("");
-        let data = get_data().unwrap();
-        // PUT UNIQUE ENTRIES IN EACH PARTITION
-        let result = first_collection.put("a", data[0].to_owned());
-        assert!(result.is_ok());
-        let result = second_collection.put("b", data[1].to_owned());
-        assert!(result.is_ok());
-        // NO EXIST IDIVIDUALITY
-        let result = first_collection.get("b");
-        assert_eq!(result.unwrap(), data[1]);
-        let result = second_collection.get("a");
-        assert_eq!(result.unwrap(), data[0]);
-    }
-
-    fn build_state(collection: &LDBCollection) {
-        let data = get_data().unwrap();
-        let result = collection.put("a", data[0].to_owned());
-        assert!(result.is_ok());
-        let result = collection.put("b", data[1].to_owned());
-        assert!(result.is_ok());
-        let result = collection.put("c", data[2].to_owned());
-        assert!(result.is_ok());
-    }
-
-    fn build_initial_data() -> (Vec<&'static str>, Vec<Vec<u8>>) {
-        let keys = vec!["a", "b", "c"];
-        let data = get_data().unwrap();
-        let values = vec![data[0].to_owned(), data[1].to_owned(), data[2].to_owned()];
-        (keys, values)
-    }
-
-    #[test]
-    fn iterator_test() {
-        let temp_dir = tempdir().unwrap();
-        let db = LevelDBManager::new(open_db(temp_dir.path()));
-        let first_collection = db.create_collection("");
-        build_state(&first_collection);
-        // ITER TEST
-        let mut iter = first_collection.iter(false, "first".to_string());
-        assert!(iter.next().is_none());
-        let mut iter = first_collection.iter(false, "".to_string());
-        let (keys, data) = build_initial_data();
-        for i in 0..3 {
-            let (key, val) = iter.next().unwrap();
-            assert_eq!(keys[i], key);
-            assert_eq!(data[i], val);
-        }
-        assert!(iter.next().is_none());
-    }
-
-    #[test]
-    fn rev_iterator_test() {
-        let temp_dir = tempdir().unwrap();
-        let db = LevelDBManager::new(open_db(temp_dir.path()));
-        let first_collection = db.create_collection("");
-        build_state(&first_collection);
-        // ITER TEST
-        let mut iter = first_collection.iter(true, "first".to_string());
-        assert!(iter.next().is_none());
-        let mut iter = first_collection.iter(true, "".to_string());
-        let (keys, data) = build_initial_data();
-        for i in (0..3).rev() {
-            let (key, val) = iter.next().unwrap();
-            assert_eq!(keys[i], key);
-            assert_eq!(data[i], val);
-        }
-        assert!(iter.next().is_none());
-    }
+test_database_manager_trait! {
+    unit_test_leveldb_manager:LevelDBManager:LDBCollection
 }
