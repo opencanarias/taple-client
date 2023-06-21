@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use taple_json::Value;
 
 use serde::{Deserialize, Serialize};
 use taple_core::{
@@ -8,7 +7,7 @@ use taple_core::{
     },
     identifier::{Derivable, DigestIdentifier, KeyIdentifier, SignatureIdentifier},
     signature::{Signature, SignatureContent},
-    ApiError, TimeStamp,
+    ApiError, TimeStamp, ValueWrapper,
 };
 use utoipa::ToSchema;
 
@@ -148,7 +147,7 @@ impl TryFrom<TransferRequest> for TransferRequestBody {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FactRequestBody {
     pub subject_id: String,
-    pub payload: Value,
+    pub payload: ValueWrapper,
 }
 
 impl TryFrom<FactRequest> for FactRequestBody {

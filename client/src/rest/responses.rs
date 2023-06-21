@@ -2,6 +2,7 @@ use crate::rest::bodys::PostEventRequestBody;
 use crate::rest::bodys::SignatureRequest;
 use serde::{Deserialize, Serialize};
 use taple_core::ApiError;
+use taple_core::ValueWrapper;
 use taple_core::identifier::Derivable;
 use taple_core::request::{RequestState, TapleRequest};
 use taple_core::signature::{Signature, SignatureContent};
@@ -9,7 +10,6 @@ use taple_core::{
     Acceptance, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
     EventProposal, Proposal, SignatureIdentifier, SubjectData,
 };
-use taple_json::Value;
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -55,7 +55,7 @@ pub struct ProposalResponse {
     hash_prev_event: String, // DigestIdentifier
     gov_version: u64,
     evaluation: Option<EvaluationResponse>, // Option<Evaluation>
-    json_patch: Value,
+    json_patch: ValueWrapper,
     evaluation_signatures: Vec<SignatureRequest>, // HashSet<Signature>
 }
 
@@ -176,7 +176,7 @@ pub struct SubjectDataResponse {
     /// Subject creator identifier
     pub creator: String, // KeyIdentifier
     /// Current status of the subject
-    pub properties: Value,
+    pub properties: ValueWrapper,
     /// Indicates if the subject is active or not
     pub active: bool,
 }
@@ -206,7 +206,7 @@ pub struct ApprovalPetitionDataResponse {
     governance_version: u64,
     hash_event_proporsal: String,
     sender: String,
-    json_patch: Value,
+    json_patch: ValueWrapper,
 }
 
 impl From<ApprovalPetitionData> for ApprovalPetitionDataResponse {

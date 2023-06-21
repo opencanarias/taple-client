@@ -622,7 +622,7 @@ dependencies = [
  "ron",
  "rust-ini",
  "serde",
- "serde_json 1.0.93",
+ "serde_json",
  "toml 0.5.11",
  "yaml-rust",
 ]
@@ -1704,9 +1704,11 @@ dependencies = [
 [[package]]
 name = "json-patch"
 version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f54898088ccb91df1b492cc80029a6fdf1c48ca0db7c6822a8babad69c94658"
 dependencies = [
  "serde",
- "serde_json 1.0.97",
+ "serde_json",
  "thiserror",
  "treediff",
 ]
@@ -1725,6 +1727,8 @@ dependencies = [
 [[package]]
 name = "jsonschema"
 version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e48354c4c4f088714424ddf090de1ff84acc82b2f08c192d46d226ae2529a465"
 dependencies = [
  "ahash 0.8.3",
  "anyhow",
@@ -1744,7 +1748,7 @@ dependencies = [
  "regex",
  "reqwest",
  "serde",
- "serde_json 1.0.97",
+ "serde_json",
  "time",
  "url",
  "uuid",
@@ -3191,7 +3195,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "serde",
- "serde_json 1.0.93",
+ "serde_json",
  "serde_urlencoded",
  "tokio",
  "tower-service",
@@ -3483,20 +3487,10 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.93"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cad406b69c91885b5107daf2c29572f6c8cdb3c66826821e286c533490c0bc76"
-dependencies = [
- "itoa",
- "ryu",
- "serde",
-]
-
-[[package]]
-name = "serde_json"
 version = "1.0.97"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdf3bf93142acad5821c99197022e170842cdbc1c30482b98750c688c640842a"
 dependencies = [
- "borsh",
  "itoa",
  "ryu",
  "serde",
@@ -3770,8 +3764,7 @@ dependencies = [
  "leveldb",
  "log",
  "serde",
- "serde_json 1.0.93",
- "serde_json 1.0.97",
+ "serde_json",
  "serial_test",
  "settings",
  "taple-core",
@@ -3816,7 +3809,7 @@ dependencies = [
  "rmp-serde",
  "serde",
  "serde_cbor",
- "serde_json 1.0.97",
+ "serde_json",
  "sha2 0.10.7",
  "sha3",
  "thiserror",
@@ -4069,8 +4062,10 @@ dependencies = [
 [[package]]
 name = "treediff"
 version = "4.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52984d277bdf2a751072b5df30ec0377febdb02f7696d64c2d7d54630bac4303"
 dependencies = [
- "serde_json 1.0.97",
+ "serde_json",
 ]
 
 [[package]]
@@ -4239,9 +4234,9 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "ureq"
-version = "2.7.0"
+version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4b45063f47caea744e48f5baa99169bd8bd9b882d80a99941141327bbb00f99"
+checksum = "0b11c96ac7ee530603dcdf68ed1557050f374ce55a5a07193ebf8cbc9f8927e9"
 dependencies = [
  "base64 0.21.2",
  "encoding_rs",
@@ -4251,7 +4246,7 @@ dependencies = [
  "rustls",
  "rustls-webpki",
  "serde",
- "serde_json 1.0.93",
+ "serde_json",
  "url",
  "webpki-roots",
 ]
@@ -4287,7 +4282,7 @@ checksum = "b626abb3bbbe41ce00df6dea3d109a83a034930245c3307026d82d71e7a06e43"
 dependencies = [
  "indexmap",
  "serde",
- "serde_json 1.0.93",
+ "serde_json",
  "utoipa-gen",
 ]
 
@@ -4313,7 +4308,7 @@ dependencies = [
  "regex",
  "rust-embed",
  "serde",
- "serde_json 1.0.93",
+ "serde_json",
  "utoipa",
  "zip",
 ]
@@ -4388,7 +4383,7 @@ dependencies = [
  "rustls-pemfile",
  "scoped-tls",
  "serde",
- "serde_json 1.0.93",
+ "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-stream",

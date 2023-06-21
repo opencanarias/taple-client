@@ -21,7 +21,6 @@ keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
 [workspace.dependencies]
 # taple-core = { git = "https://github.com/opencanarias/taple-core", features = ["evaluation", "validation", "aproval"] }
 taple-core = { path = "../taple-core/core", features = ["evaluation", "validation", "aproval"]}
-taple_json = { path = "../taple-core/json", package = "serde_json" }
 
 ## Client
 env_logger = "0.10"
