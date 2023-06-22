@@ -36,6 +36,8 @@ pub fn routes(
         .or(get_validation_proof(sender.clone()))
         .or(post_generate_keys(sender.clone()))
         .or(get_taple_request(sender.clone()))
+        .or(get_approval(sender.clone()))
+        .or(get_pending_requests(sender.clone()))
 }
 
 pub fn get_approval(
