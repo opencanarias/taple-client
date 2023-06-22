@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum Error {
   #[error("Serialization Error")]
   SerializationError,
+  #[error("Deserialization Error")]
+  DeserializationError
 }
