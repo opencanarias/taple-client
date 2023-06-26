@@ -5,7 +5,7 @@ use super::handlers::{
     get_events_of_subject_handler, get_governance_handler, get_governance_subjects_handle,
     get_subject_handler, get_subjects_handler, get_taple_request_handler,
     get_validation_proof_handle, post_event_request_handler, post_generate_keys_handler,
-    post_preauthorized_subjects_handler, put_approval_handler,
+    post_preauthorized_subjects_handler, put_approval_handler, get_taple_request_state_handler,
 };
 use super::querys::GetApprovalsQuery;
 use super::{
@@ -38,6 +38,7 @@ pub fn routes(
         .or(get_taple_request(sender.clone()))
         .or(get_approval(sender.clone()))
         .or(get_pending_requests(sender.clone()))
+        .or(get_taple_request_state(sender.clone()))
 }
 
 pub fn get_approval(
@@ -53,10 +54,20 @@ pub fn get_approval(
 pub fn get_taple_request(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "request" / String)
+    warp::path!("api" / "requests" / String)
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_taple_request_handler)
+        .recover(handle_rejection)
+}
+
+pub fn get_taple_request_state(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "requests" / String / "state")
+        .and(warp::get())
+        .and(with_sender(sender))
+        .and_then(get_taple_request_state_handler)
         .recover(handle_rejection)
 }
 
