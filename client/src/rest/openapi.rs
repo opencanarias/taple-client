@@ -9,14 +9,14 @@ use super::{bodys::{
     SignatureRequestContent, SignatureRequest, TransferRequestBody, EOLRequestBody
 }, responses::{AcceptanceResponse, EvaluationResponse, EventContentResponse,
     ApprovalResponse, ApprovalContentResponse, ProposalResponse,
-    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse, 
+    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse, TapleRequestStateResponse, 
 }};
 use super::handlers::{
     __path_get_all_governances_handler, __path_get_subjects_handler, __path_get_event_handler,
     __path_get_events_of_subject_handler,
     __path_get_governance_handler, __path_get_subject_handler,
     __path_post_event_request_handler,
-    __path_put_approval_handler
+    __path_put_approval_handler,
 };
 use warp::{
     http::Uri,
@@ -24,6 +24,7 @@ use warp::{
     path::{FullPath, Tail},
     Rejection, Reply, redirect,
 };
+
 #[derive(OpenApi)]
 #[openapi(
     paths(post_event_request_handler, get_subject_handler, 
@@ -53,7 +54,8 @@ use warp::{
             EventContentResponse,
             EventContentResponse,
             TransferRequestBody,
-            EOLRequestBody
+            EOLRequestBody,
+            TapleRequestStateResponse
        )
     ),
     modifiers(&SecurityAddon),

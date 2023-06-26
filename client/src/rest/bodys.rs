@@ -2,19 +2,18 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use taple_core::{
-    crypto::KeyMaterial,
     event_request::{
         CreateRequest, EOLRequest, EventRequest, EventRequestType, FactRequest, TransferRequest,
     },
     identifier::{Derivable, DigestIdentifier, KeyIdentifier, SignatureIdentifier},
     signature::{Signature, SignatureContent},
-    ApiError, TimeStamp,
+    ApiError, TimeStamp, ValueWrapper,
 };
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum EventRequestTypeBody {
-    Create(CreateRequestBody),
+    Creation(CreateRequestBody),
     Fact(FactRequestBody),
     Transfer(TransferRequestBody),
     EOL(EOLRequestBody),
@@ -24,7 +23,7 @@ impl TryFrom<EventRequestType> for EventRequestTypeBody {
     type Error = ApiError;
     fn try_from(value: EventRequestType) -> Result<Self, Self::Error> {
         match value {
-            EventRequestType::Create(data) => Ok(EventRequestTypeBody::Create(data.try_into()?)),
+            EventRequestType::Create(data) => Ok(EventRequestTypeBody::Creation(data.try_into()?)),
             EventRequestType::Fact(data) => Ok(EventRequestTypeBody::Fact(data.try_into()?)),
             EventRequestType::Transfer(data) => {
                 Ok(EventRequestTypeBody::Transfer(data.try_into()?))
@@ -38,7 +37,7 @@ impl TryInto<EventRequestType> for EventRequestTypeBody {
     type Error = ApiError;
     fn try_into(self) -> Result<EventRequestType, Self::Error> {
         match self {
-            EventRequestTypeBody::Create(data) => Ok(EventRequestType::Create(data.try_into()?)),
+            EventRequestTypeBody::Creation(data) => Ok(EventRequestType::Create(data.try_into()?)),
             EventRequestTypeBody::Fact(data) => Ok(EventRequestType::Fact(data.try_into()?)),
             EventRequestTypeBody::Transfer(data) => {
                 Ok(EventRequestType::Transfer(data.try_into()?))
@@ -148,7 +147,7 @@ impl TryFrom<TransferRequest> for TransferRequestBody {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FactRequestBody {
     pub subject_id: String,
-    pub payload: String,
+    pub payload: ValueWrapper,
 }
 
 impl TryFrom<FactRequest> for FactRequestBody {

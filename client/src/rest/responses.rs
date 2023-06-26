@@ -1,15 +1,18 @@
 use crate::rest::bodys::PostEventRequestBody;
 use crate::rest::bodys::SignatureRequest;
 use serde::{Deserialize, Serialize};
-use taple_core::ApiError;
 use taple_core::identifier::Derivable;
 use taple_core::request::{RequestState, TapleRequest};
 use taple_core::signature::{Signature, SignatureContent};
+use taple_core::ApiError;
+use taple_core::ValueWrapper;
 use taple_core::{
     Acceptance, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
     EventProposal, Proposal, SignatureIdentifier, SubjectData,
 };
 use utoipa::ToSchema;
+
+use super::bodys::EventRequestTypeBody;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum AcceptanceResponse {
@@ -54,7 +57,7 @@ pub struct ProposalResponse {
     hash_prev_event: String, // DigestIdentifier
     gov_version: u64,
     evaluation: Option<EvaluationResponse>, // Option<Evaluation>
-    json_patch: String,
+    json_patch: ValueWrapper,
     evaluation_signatures: Vec<SignatureRequest>, // HashSet<Signature>
 }
 
@@ -175,7 +178,7 @@ pub struct SubjectDataResponse {
     /// Subject creator identifier
     pub creator: String, // KeyIdentifier
     /// Current status of the subject
-    pub properties: String,
+    pub properties: ValueWrapper,
     /// Indicates if the subject is active or not
     pub active: bool,
 }
@@ -205,7 +208,7 @@ pub struct ApprovalPetitionDataResponse {
     governance_version: u64,
     hash_event_proporsal: String,
     sender: String,
-    json_patch: String,
+    json_patch: ValueWrapper,
 }
 
 impl From<ApprovalPetitionData> for ApprovalPetitionDataResponse {
@@ -239,20 +242,35 @@ impl From<Signature> for SignatureDataResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TapleRequestResponse {
-    id: String,
-    subject_id: Option<String>,
-    sn: Option<u64>,
-    event_request: PostEventRequestBody,
-    state: RequestStateResponse,
+    #[serde(flatten)]
+    pub request: EventRequestTypeBody,
+    pub signature: SignatureRequest,
 }
 
 impl From<TapleRequest> for TapleRequestResponse {
+    fn from(value: TapleRequest) -> Self {
+        let request = value.event_request;
+        Self {
+            request: request.request.try_into().unwrap(),
+            signature: request.signature.try_into().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TapleRequestStateResponse {
+    id: String,
+    subject_id: Option<String>,
+    sn: Option<u64>,
+    state: RequestStateResponse,
+}
+
+impl From<TapleRequest> for TapleRequestStateResponse {
     fn from(value: TapleRequest) -> Self {
         Self {
             id: value.id.to_str(),
             subject_id: value.subject_id.map(|id| id.to_str()),
             sn: value.sn,
-            event_request: value.event_request.try_into().unwrap(),
             state: value.state.into(),
         }
     }
@@ -260,8 +278,11 @@ impl From<TapleRequest> for TapleRequestResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum RequestStateResponse {
+    #[serde(rename = "finished")]
     Finished,
+    #[serde(rename = "error")]
     Error,
+    #[serde(rename = "processing")]
     Processing,
 }
 
