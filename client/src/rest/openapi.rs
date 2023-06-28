@@ -3,20 +3,33 @@ use utoipa::{
     Modify, OpenApi,
 };
 use std::sync::Arc;
-use super::{bodys::{
-    CreateRequestBody, EventRequestTypeBody, PostEventRequestBody, PutVoteBody,
-    FactRequestBody,
-    SignatureRequestContent, SignatureRequest, TransferRequestBody, EOLRequestBody
-}, responses::{AcceptanceResponse, EvaluationResponse, EventContentResponse,
-    ApprovalResponse, ApprovalContentResponse, ProposalResponse,
-    EventProposalResponse, EventResponse, SubjectDataResponse, ApprovalPetitionDataResponse, 
-}};
+use super::responses::{
+    TapleRequestResponse,
+    ApprovalResponseBody,
+    ApprovalRequestResponse,
+    ApprovalEntityResponse,
+    ApprovalStateResponse
+};
+use super::{
+    bodys::
+    {
+        CreateRequestBody, EventRequestBody,
+        FactRequestBody, SignedBody,
+        SignatureBody, TransferRequestBody, EOLRequestBody
+    },
+    responses::{
+        EventContentResponse,
+        SubjectDataResponse,
+        TapleRequestStateResponse,
+        RequestStateResponse,
+        PreauthorizedSubjectsResponse
+    }
+};
 use super::handlers::{
-    __path_get_all_governances_handler, __path_get_subjects_handler, __path_get_event_handler,
+    __path_get_subjects_handler, __path_get_event_handler,
     __path_get_events_of_subject_handler,
-    __path_get_governance_handler, __path_get_subject_handler,
-    __path_post_event_request_handler,
-    __path_put_approval_handler
+    __path_get_subject_handler,
+    __path_patch_approval_handler,
 };
 use warp::{
     http::Uri,
@@ -24,36 +37,34 @@ use warp::{
     path::{FullPath, Tail},
     Rejection, Reply, redirect,
 };
+
 #[derive(OpenApi)]
 #[openapi(
-    paths(post_event_request_handler, get_subject_handler, 
+    paths(get_subject_handler, 
         get_subjects_handler, get_events_of_subject_handler, get_event_handler, 
-        put_approval_handler,
-        get_all_governances_handler, get_governance_handler, 
+        patch_approval_handler, 
     ),
     components(
         schemas(
+            SignedBody<EventContentResponse>,
+            SignedBody<ApprovalRequestResponse>,
+            ApprovalRequestResponse,
+            SignedBody<ApprovalResponseBody>,
+            ApprovalResponseBody,
             FactRequestBody,
-            SignatureRequestContent,
-            SignatureRequest,
+            SignatureBody,
             CreateRequestBody,
-            EventRequestTypeBody,
-            AcceptanceResponse,
-            PostEventRequestBody,
-            PutVoteBody,
-            EventResponse,
+            EventRequestBody,
             EventContentResponse,
-            EvaluationResponse,
-            ApprovalResponse,
-            ApprovalContentResponse,
-            ProposalResponse,
-            EventProposalResponse,
             SubjectDataResponse,
-            ApprovalPetitionDataResponse, 
-            EventContentResponse,
-            EventContentResponse,
             TransferRequestBody,
-            EOLRequestBody
+            EOLRequestBody,
+            TapleRequestStateResponse,
+            RequestStateResponse,
+            ApprovalStateResponse,
+            ApprovalEntityResponse,
+            TapleRequestResponse,
+            PreauthorizedSubjectsResponse
        )
     ),
     modifiers(&SecurityAddon),

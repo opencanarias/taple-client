@@ -1,48 +1,62 @@
 use std::str::FromStr;
 
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use taple_core::{
-    event_request::{
-        CreateRequest, EOLRequest, EventRequest, EventRequestType, FactRequest, TransferRequest,
-    },
     identifier::{Derivable, DigestIdentifier, KeyIdentifier, SignatureIdentifier},
-    signature::{Signature, SignatureContent},
+    request::{EOLRequest, EventRequest, FactRequest, StartRequest, TransferRequest},
+    signature::{Signature, Signed},
     ApiError, TimeStamp, ValueWrapper,
 };
 use utoipa::ToSchema;
 
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct SignedBody<T: ToSchema + Clone + Debug> {
+    #[serde(flatten)]
+    pub content: T,
+    pub signature: SignatureBody,
+}
+
+impl<C: BorshSerialize + BorshDeserialize, T: Clone + Debug + ToSchema + From<C>> From<Signed<C>>
+    for SignedBody<T>
+{
+    fn from(value: Signed<C>) -> Self {
+        Self {
+            content: T::from(value.content),
+            signature: SignatureBody::from(value.signature),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub enum EventRequestTypeBody {
+pub enum EventRequestBody {
     Create(CreateRequestBody),
     Fact(FactRequestBody),
     Transfer(TransferRequestBody),
     EOL(EOLRequestBody),
 }
 
-impl TryFrom<EventRequestType> for EventRequestTypeBody {
-    type Error = ApiError;
-    fn try_from(value: EventRequestType) -> Result<Self, Self::Error> {
+impl From<EventRequest> for EventRequestBody {
+    fn from(value: EventRequest) -> Self {
         match value {
-            EventRequestType::Create(data) => Ok(EventRequestTypeBody::Create(data.try_into()?)),
-            EventRequestType::Fact(data) => Ok(EventRequestTypeBody::Fact(data.try_into()?)),
-            EventRequestType::Transfer(data) => {
-                Ok(EventRequestTypeBody::Transfer(data.try_into()?))
-            }
-            EventRequestType::EOL(data) => Ok(EventRequestTypeBody::EOL(data.try_into()?)),
+            EventRequest::Create(data) => EventRequestBody::Create(data.into()),
+            EventRequest::Fact(data) => EventRequestBody::Fact(data.into()),
+            EventRequest::Transfer(data) => EventRequestBody::Transfer(data.into()),
+            EventRequest::EOL(data) => EventRequestBody::EOL(data.into()),
         }
     }
 }
 
-impl TryInto<EventRequestType> for EventRequestTypeBody {
+impl TryInto<EventRequest> for EventRequestBody {
     type Error = ApiError;
-    fn try_into(self) -> Result<EventRequestType, Self::Error> {
+    fn try_into(self) -> Result<EventRequest, Self::Error> {
         match self {
-            EventRequestTypeBody::Create(data) => Ok(EventRequestType::Create(data.try_into()?)),
-            EventRequestTypeBody::Fact(data) => Ok(EventRequestType::Fact(data.try_into()?)),
-            EventRequestTypeBody::Transfer(data) => {
-                Ok(EventRequestType::Transfer(data.try_into()?))
-            }
-            EventRequestTypeBody::EOL(data) => Ok(EventRequestType::EOL(data.try_into()?)),
+            EventRequestBody::Create(data) => Ok(EventRequest::Create(data.try_into()?)),
+            EventRequestBody::Fact(data) => Ok(EventRequest::Fact(data.try_into()?)),
+            EventRequestBody::Transfer(data) => Ok(EventRequest::Transfer(data.try_into()?)),
+            EventRequestBody::EOL(data) => Ok(EventRequest::EOL(data.try_into()?)),
         }
     }
 }
@@ -53,34 +67,33 @@ pub struct CreateRequestBody {
     pub schema_id: String,
     pub namespace: String,
     pub name: String,
-    pub public_key: String
+    pub public_key: Option<String>,
 }
 
-impl TryFrom<CreateRequest> for CreateRequestBody {
-    type Error = ApiError;
-    fn try_from(value: CreateRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
+impl From<StartRequest> for CreateRequestBody {
+    fn from(value: StartRequest) -> Self {
+        Self {
             governance_id: value.governance_id.to_str(),
             schema_id: value.schema_id,
             namespace: value.namespace,
             name: value.name,
-            public_key: value.public_key.to_str(),
-        })
+            public_key: Some(value.public_key.to_str()),
+        }
     }
 }
 
-impl TryInto<CreateRequest> for CreateRequestBody {
+impl TryInto<StartRequest> for CreateRequestBody {
     type Error = ApiError;
 
-    fn try_into(self) -> Result<CreateRequest, Self::Error> {
-        Ok(CreateRequest {
+    fn try_into(self) -> Result<StartRequest, Self::Error> {
+        Ok(StartRequest {
             governance_id: DigestIdentifier::from_str(&self.governance_id).map_err(|_| {
                 ApiError::InvalidParameters(format!("Invalid DigestIdentifier for governance id"))
             })?,
             schema_id: self.schema_id,
             namespace: self.namespace,
             name: self.name,
-            public_key: KeyIdentifier::from_str(&self.public_key).map_err(|_| {
+            public_key: KeyIdentifier::from_str(&self.public_key.unwrap()).map_err(|_| {
                 ApiError::InvalidParameters(format!("Invalid DigestIdentifier for governance id"))
             })?,
         })
@@ -104,12 +117,11 @@ impl TryInto<EOLRequest> for EOLRequestBody {
     }
 }
 
-impl TryFrom<EOLRequest> for EOLRequestBody {
-    type Error = ApiError;
-    fn try_from(value: EOLRequest) -> Result<Self, Self::Error> {
-        Ok(EOLRequestBody {
+impl From<EOLRequest> for EOLRequestBody {
+    fn from(value: EOLRequest) -> Self {
+        EOLRequestBody {
             subject_id: value.subject_id.to_str(),
-        })
+        }
     }
 }
 
@@ -134,13 +146,12 @@ impl TryInto<TransferRequest> for TransferRequestBody {
     }
 }
 
-impl TryFrom<TransferRequest> for TransferRequestBody {
-    type Error = ApiError;
-    fn try_from(value: TransferRequest) -> Result<Self, Self::Error> {
-        Ok(TransferRequestBody {
+impl From<TransferRequest> for TransferRequestBody {
+    fn from(value: TransferRequest) -> Self {
+        TransferRequestBody {
             subject_id: value.subject_id.to_str(),
             public_key: value.public_key.to_str(),
-        })
+        }
     }
 }
 
@@ -150,13 +161,12 @@ pub struct FactRequestBody {
     pub payload: ValueWrapper,
 }
 
-impl TryFrom<FactRequest> for FactRequestBody {
-    type Error = ApiError;
-    fn try_from(value: FactRequest) -> Result<Self, Self::Error> {
-        Ok(FactRequestBody {
+impl From<FactRequest> for FactRequestBody {
+    fn from(value: FactRequest) -> Self {
+        FactRequestBody {
             subject_id: value.subject_id.to_str(),
             payload: value.payload,
-        })
+        }
     }
 }
 
@@ -178,107 +188,47 @@ pub struct AuthorizeSubjectBody {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct PostEventRequestBody {
-    pub request: EventRequestTypeBody,
-    pub signature: SignatureRequest,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PostEventRequestBodyPreSignature {
-    pub request: EventRequestTypeBody,
-    pub signature: Option<SignatureRequest>,
-}
-
-impl TryFrom<EventRequest> for PostEventRequestBody {
-    type Error = ApiError;
-    fn try_from(value: EventRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            request: value.request.try_into()?,
-            signature: value.signature.try_into()?,
-        })
-    }
-}
-
-impl TryInto<EventRequest> for PostEventRequestBody {
-    type Error = ApiError;
-    fn try_into(self) -> Result<EventRequest, Self::Error> {
-        Ok(EventRequest {
-            request: self.request.try_into()?,
-            signature: self.signature.try_into()?,
-        })
-    }
+    pub request: EventRequestBody,
+    pub signature: Option<SignatureBody>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct SignatureRequest {
-    pub content: SignatureRequestContent,
-    pub signature: String, // SignatureIdentifier,
+pub struct SignatureBody {
+    signer: String, // KeyIdentifier
+    timestamp: u64,
+    value: String, // SignatureIdentifier,
 }
 
-impl TryFrom<Signature> for SignatureRequest {
-    type Error = ApiError;
-    fn try_from(value: Signature) -> Result<Self, Self::Error> {
-        Ok(Self {
-            content: value.content.try_into()?,
-            signature: value.signature.to_str(),
-        })
+impl From<Signature> for SignatureBody {
+    fn from(value: Signature) -> Self {
+        Self {
+            signer: value.signer.to_str(),
+            timestamp: value.timestamp.0,
+            value: value.value.to_str(),
+        }
     }
 }
 
-impl TryInto<Signature> for SignatureRequest {
+impl TryInto<Signature> for SignatureBody {
     type Error = ApiError;
 
     fn try_into(self) -> Result<Signature, Self::Error> {
         Ok(Signature {
-            content: self.content.try_into()?,
-            signature: SignatureIdentifier::from_str(&self.signature).map_err(|_| {
+            signer: KeyIdentifier::from_str(&self.signer).map_err(|_| {
+                ApiError::InvalidParameters(format!("Invalid KeyIdentifier for signature signer"))
+            })?,
+            timestamp: TimeStamp(self.timestamp),
+            value: SignatureIdentifier::from_str(&self.value).map_err(|_| {
                 ApiError::InvalidParameters(format!("Invalid SignatureIdentifier for signature"))
             })?,
         })
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct SignatureRequestContent {
-    pub signer: String,             // KeyIdentifier,
-    pub event_content_hash: String, // DigestIdentifier,
-    pub timestamp: u64,
-}
-
-impl TryFrom<SignatureContent> for SignatureRequestContent {
-    type Error = ApiError;
-    fn try_from(value: SignatureContent) -> Result<Self, Self::Error> {
-        Ok(Self {
-            signer: value.signer.to_str(),
-            event_content_hash: value.event_content_hash.to_str(),
-            timestamp: value.timestamp.time,
-        })
-    }
-}
-
-impl TryInto<SignatureContent> for SignatureRequestContent {
-    type Error = ApiError;
-
-    fn try_into(self) -> Result<SignatureContent, Self::Error> {
-        Ok(SignatureContent {
-            signer: KeyIdentifier::from_str(&self.signer).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid KeyIdentifier for signer"))
-            })?,
-            event_content_hash: DigestIdentifier::from_str(&self.event_content_hash).map_err(
-                |_| {
-                    ApiError::InvalidParameters(format!("Invalid DigestIdentieir for content hash"))
-                },
-            )?,
-            timestamp: TimeStamp {
-                time: self.timestamp,
-            },
-        })
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "approvalType")]
-pub enum PutVoteBody {
+pub enum PatchVoteBody {
     Accept,
     Reject,
 }

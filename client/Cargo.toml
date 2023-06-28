@@ -16,6 +16,7 @@ env_logger = { workspace = true }
 log = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
+borsh = { workspace = true }
 
 tokio = { workspace = true }
 warp = { workspace = true }

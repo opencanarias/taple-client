@@ -1,159 +1,50 @@
-use crate::rest::bodys::PostEventRequestBody;
-use crate::rest::bodys::SignatureRequest;
+use std::collections::HashSet;
+
+use crate::rest::bodys::SignatureBody;
 use serde::{Deserialize, Serialize};
-use taple_core::ApiError;
-use taple_core::ValueWrapper;
 use taple_core::identifier::Derivable;
 use taple_core::request::{RequestState, TapleRequest};
-use taple_core::signature::{Signature, SignatureContent};
+use taple_core::DigestIdentifier;
+use taple_core::KeyIdentifier;
+use taple_core::ValueWrapper;
 use taple_core::{
-    Acceptance, ApprovalContent, ApprovalPetitionData, Evaluation, Event, EventContent,
-    EventProposal, Proposal, SignatureIdentifier, SubjectData,
+    ApprovalEntity, ApprovalRequest, ApprovalState, ApprovalResponse, EvaluationResponse, Event,
+    SubjectData,
 };
 use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub enum AcceptanceResponse {
-    Ok,
-    Ko,
-}
-
-impl From<Acceptance> for AcceptanceResponse {
-    fn from(value: Acceptance) -> Self {
-        match value {
-            Acceptance::Ko => Self::Ko,
-            Acceptance::Ok => Self::Ok,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct EvaluationResponse {
-    pub preevaluation_hash: String, // DigestIdentifier
-    pub state_hash: String,         // DigestIdentifier
-    pub governance_version: u64,
-    pub acceptance: AcceptanceResponse, // Acceptance
-    pub approval_required: bool,
-}
-
-impl From<Evaluation> for EvaluationResponse {
-    fn from(value: Evaluation) -> Self {
-        Self {
-            preevaluation_hash: value.preevaluation_hash.to_str(),
-            state_hash: value.state_hash.to_str(),
-            governance_version: value.governance_version,
-            acceptance: AcceptanceResponse::from(value.acceptance),
-            approval_required: value.approval_required,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ProposalResponse {
-    event_request: PostEventRequestBody, // EventRequest
-    sn: u64,
-    hash_prev_event: String, // DigestIdentifier
-    gov_version: u64,
-    evaluation: Option<EvaluationResponse>, // Option<Evaluation>
-    json_patch: ValueWrapper,
-    evaluation_signatures: Vec<SignatureRequest>, // HashSet<Signature>
-}
-
-impl From<Proposal> for ProposalResponse {
-    fn from(value: Proposal) -> Self {
-        Self {
-            event_request: value.event_request.try_into().unwrap(),
-            sn: value.sn,
-            hash_prev_event: value.hash_prev_event.to_str(),
-            gov_version: value.gov_version,
-            evaluation: Some(EvaluationResponse::from(value.evaluation.unwrap())),
-            json_patch: value.json_patch,
-            evaluation_signatures: value
-                .evaluation_signatures
-                .into_iter()
-                .map(|x| <Signature as TryInto<SignatureRequest>>::try_into(x).unwrap())
-                .collect(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct EventProposalResponse {
-    pub proposal: ProposalResponse,
-    pub subject_signature: SignatureRequest,
-}
-
-impl TryFrom<EventProposal> for EventProposalResponse {
-    type Error = ApiError;
-
-    fn try_from(value: EventProposal) -> Result<Self, Self::Error> {
-        Ok(Self {
-            proposal: ProposalResponse::from(value.proposal),
-            subject_signature: value.subject_signature.try_into().unwrap(),
-        })
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct EventResponse {
-    pub content: EventContentResponse, // Event
-    pub signature: SignatureRequest,   // Signature
-}
-
-impl TryFrom<Event> for EventResponse {
-    type Error = ApiError;
-
-    fn try_from(value: Event) -> Result<Self, Self::Error> {
-        Ok(Self {
-            content: EventContentResponse::try_from(value.content)?,
-            signature: SignatureRequest::try_from(value.signature)?,
-        })
-    }
-}
+use super::bodys::EventRequestBody;
+use super::bodys::SignedBody;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EventContentResponse {
-    pub event_proposal: EventProposalResponse, // EventProposal
-    pub approvals: Vec<ApprovalResponse>,      // HashSet<Approval>
-    pub execution: bool,
+    pub subject_id: String,
+    pub event_request: SignedBody<EventRequestBody>,
+    pub sn: u64,
+    pub patch: ValueWrapper,
+    pub state_hash: String,
+    pub eval_success: bool,
+    pub appr_required: bool,
+    pub approved: bool,
+    pub hash_prev_event: String,
+    pub evaluators: Vec<SignatureBody>,
+    pub approvers: Vec<SignatureBody>,
 }
 
-impl TryFrom<EventContent> for EventContentResponse {
-    type Error = ApiError;
-
-    fn try_from(value: EventContent) -> Result<Self, Self::Error> {
-        Ok(Self {
-            event_proposal: EventProposalResponse::try_from(value.event_proposal)?,
-            approvals: value
-                .approvals
-                .iter()
-                .map(|approval| ApprovalResponse {
-                    content: ApprovalContentResponse::from(approval.content.clone()),
-                    signature: SignatureRequest::try_from(approval.signature.clone()).unwrap(),
-                })
-                .collect(),
-            execution: value.execution,
-        })
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ApprovalResponse {
-    pub content: ApprovalContentResponse,
-    pub signature: SignatureRequest,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ApprovalContentResponse {
-    pub event_proposal_hash: String,
-    pub acceptance: AcceptanceResponse,
-}
-
-impl From<ApprovalContent> for ApprovalContentResponse {
-    fn from(value: ApprovalContent) -> Self {
+impl From<Event> for EventContentResponse {
+    fn from(value: Event) -> Self {
         Self {
-            event_proposal_hash: value.event_proposal_hash.to_str(),
-            acceptance: AcceptanceResponse::from(value.acceptance),
+            subject_id: value.subject_id.to_str(),
+            event_request: SignedBody::<EventRequestBody>::from(value.event_request),
+            sn: value.sn,
+            patch: value.patch,
+            state_hash: value.state_hash.to_str(),
+            eval_success: value.eval_success,
+            appr_required: value.appr_required,
+            approved: value.approved,
+            hash_prev_event: value.hash_prev_event.to_str(),
+            evaluators: value.evaluators.into_iter().map(|s| s.into()).collect(),
+            approvers: value.approvers.into_iter().map(|s| s.into()).collect(),
         }
     }
 }
@@ -197,63 +88,113 @@ impl From<SubjectData> for SubjectDataResponse {
         }
     }
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ApprovalPetitionDataResponse {
-    subject_id: String,
-    sn: u64,
-    governance_id: String,
-    governance_version: u64,
-    hash_event_proporsal: String,
-    sender: String,
-    json_patch: ValueWrapper,
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct ApprovalRequestResponse {
+    // Evaluation Request
+    pub event_request: SignedBody<EventRequestBody>,
+    pub sn: u64,
+    pub gov_version: u64,
+    // Evaluation Response
+    pub patch: ValueWrapper, // cambiar
+    pub state_hash: String,
+    pub hash_prev_event: String,
 }
 
-impl From<ApprovalPetitionData> for ApprovalPetitionDataResponse {
-    fn from(value: ApprovalPetitionData) -> Self {
+impl From<ApprovalRequest> for ApprovalRequestResponse {
+    fn from(value: ApprovalRequest) -> Self {
         Self {
-            subject_id: value.subject_id.to_str(),
+            event_request: value.event_request.into(),
             sn: value.sn,
-            governance_id: value.governance_id.to_str(),
-            governance_version: value.governance_version,
-            hash_event_proporsal: value.hash_event_proporsal.to_str(),
-            sender: value.sender.to_str(),
-            json_patch: value.json_patch,
+            gov_version: value.gov_version,
+            patch: value.patch,
+            state_hash: value.state_hash.to_str(),
+            hash_prev_event: value.hash_prev_event.to_str(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct ApprovalResponseBody {
+    pub appr_req_hash: String,
+    pub approved: bool,
+}
+
+impl From<ApprovalResponse> for ApprovalResponseBody {
+    fn from(value: ApprovalResponse) -> Self {
+        Self {
+            appr_req_hash: value.appr_req_hash.to_str(),
+            approved: value.approved,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub enum ApprovalStateResponse {
+    Pending,
+    Responded,
+    Obsolete,
+}
+
+impl From<ApprovalState> for ApprovalStateResponse {
+    fn from(value: ApprovalState) -> Self {
+        match value {
+            ApprovalState::Pending => Self::Pending,
+            ApprovalState::Responded => Self::Responded,
+            ApprovalState::Obsolete => Self::Obsolete,
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct SignatureDataResponse {
-    pub content: SignatureContent,
-    pub signature: SignatureIdentifier,
+pub struct ApprovalEntityResponse {
+    pub id: String,
+    pub request: SignedBody<ApprovalRequestResponse>,
+    pub reponse: Option<SignedBody<ApprovalResponseBody>>,
+    pub state: ApprovalStateResponse,
 }
 
-impl From<Signature> for SignatureDataResponse {
-    fn from(value: Signature) -> Self {
+impl From<ApprovalEntity> for ApprovalEntityResponse {
+    fn from(value: ApprovalEntity) -> Self {
         Self {
-            content: value.content,
-            signature: value.signature,
+            id: value.id.to_str(),
+            request: value.request.into(),
+            reponse: value.reponse.map(|x| x.into()),
+            state: value.state.into(),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TapleRequestResponse {
-    id: String,
-    subject_id: Option<String>,
-    sn: Option<u64>,
-    event_request: PostEventRequestBody,
-    state: RequestStateResponse,
+    #[serde(flatten)]
+    pub request: EventRequestBody,
+    pub signature: SignatureBody,
 }
 
 impl From<TapleRequest> for TapleRequestResponse {
+    fn from(value: TapleRequest) -> Self {
+        let request = value.event_request;
+        Self {
+            request: request.content.try_into().unwrap(),
+            signature: request.signature.try_into().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TapleRequestStateResponse {
+    id: String,
+    subject_id: Option<String>,
+    sn: Option<u64>,
+    state: RequestStateResponse,
+}
+
+impl From<TapleRequest> for TapleRequestStateResponse {
     fn from(value: TapleRequest) -> Self {
         Self {
             id: value.id.to_str(),
             subject_id: value.subject_id.map(|id| id.to_str()),
             sn: value.sn,
-            event_request: value.event_request.try_into().unwrap(),
             state: value.state.into(),
         }
     }
@@ -261,8 +202,11 @@ impl From<TapleRequest> for TapleRequestResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum RequestStateResponse {
+    #[serde(rename = "finished")]
     Finished,
+    #[serde(rename = "error")]
     Error,
+    #[serde(rename = "processing")]
     Processing,
 }
 
@@ -272,6 +216,21 @@ impl From<RequestState> for RequestStateResponse {
             RequestState::Finished => Self::Finished,
             RequestState::Error => Self::Error,
             RequestState::Processing => Self::Processing,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct PreauthorizedSubjectsResponse {
+    subject_id: String,
+    providers: Vec<String>,
+}
+
+impl From<(DigestIdentifier, HashSet<KeyIdentifier>)> for PreauthorizedSubjectsResponse {
+    fn from(value: (DigestIdentifier, HashSet<KeyIdentifier>)) -> Self {
+        Self {
+            subject_id: value.0.to_str(),
+            providers: value.1.into_iter().map(|i| i.to_str()).collect(),
         }
     }
 }
