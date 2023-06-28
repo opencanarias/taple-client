@@ -39,6 +39,7 @@ home = "0.5.5"
 futures = "0.3.24"
 ureq = { version = "2.6.2", features = ["json", "charset"] } 
 hex = "0.4.3"
+borsh = "~0.10.3"
 
 # API
 config = { version = "0.13.2" }

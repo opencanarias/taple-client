@@ -20,6 +20,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Init logger
     env_logger::init();
     let settings = ClientSettings::generate(&client_settings_builder().build())?;
+    let derivator = settings.taple.node.key_derivator.clone();
     let dev_mode = settings.taple.node.dev_mode;
     let swaggerui = settings.swagger_ui.clone();
     if dev_mode {
@@ -89,18 +90,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .and(warp::path::tail())
             .and(warp::any().map(move || config.clone()))
             .and_then(serve_swagger);
-        warp::serve(
-            api_doc
-                .or(swagger_ui)
-                .or(rest::routes::routes(taple.get_api(), keys)),
-        )
+        warp::serve(api_doc.or(swagger_ui).or(rest::routes::routes(
+            taple.get_api(),
+            keys,
+            derivator,
+        )))
         .bind_with_graceful_shutdown(http_addr, async move {
             stream.recv().await;
         })
         .1
         .await;
     } else {
-        warp::serve(api_doc.or(rest::routes::routes(taple.get_api(), keys)))
+        warp::serve(api_doc.or(rest::routes::routes(taple.get_api(), keys, derivator)))
             .bind_with_graceful_shutdown(http_addr, async move {
                 stream.recv().await;
             })

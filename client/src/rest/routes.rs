@@ -1,84 +1,88 @@
 use crate::rest::querys::AddKeysQuery;
 
 use super::handlers::{
-    get_all_governances_handler, get_approval_handler, get_approvals_handler, get_event_handler,
-    get_events_of_subject_handler, get_governance_handler, get_governance_subjects_handle,
-    get_subject_handler, get_subjects_handler, get_taple_request_handler,
-    get_validation_proof_handle, post_event_request_handler, post_generate_keys_handler,
-    post_preauthorized_subjects_handler, put_approval_handler, get_taple_request_state_handler,
+    get_approval_handler, get_approvals_handler, get_event_handler,
+    get_events_of_subject_handler,
+    get_preauthorized_subjects_handler, get_subject_handler, get_subjects_handler,
+    get_taple_request_handler, get_taple_request_state_handler, get_validation_proof_handle,
+    post_event_request_handler, post_generate_keys_handler, patch_approval_handler,
+    put_preauthorized_subjects_handler,
 };
 use super::querys::GetApprovalsQuery;
 use super::{
     error::Error,
-    querys::{GetAllSubjectsQuery, GetEventsOfSubjectQuery},
+    querys::{GetAllSubjectsQuery, GetWithPagination},
 };
 use serde::de::DeserializeOwned;
-use serde_json::map::Keys;
 use taple_core::crypto::KeyPair;
-use taple_core::NodeAPI;
+use taple_core::{KeyDerivator, NodeAPI};
 use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
 
 pub fn routes(
     sender: NodeAPI,
     keys: KeyPair,
+    derivator: KeyDerivator,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_subject(sender.clone())
         .or(get_all_subjects(sender.clone()))
-        .or(get_all_governances(sender.clone()))
         .or(get_subject(sender.clone()))
-        .or(post_event_request(sender.clone(), keys.clone()))
-        .or(get_governance(sender.clone()))
+        .or(post_event_request(
+            sender.clone(),
+            keys.clone(),
+            derivator.clone(),
+        ))
         .or(get_events_of_subject(sender.clone()))
         .or(get_event(sender.clone()))
-        .or(put_approval(sender.clone()))
+        .or(patch_approval(sender.clone()))
         .or(post_preauthorized_subjects(sender.clone()))
+        .or(get_preauthorized_subjects(sender.clone()))
         .or(get_events_of_subject(sender.clone()))
         .or(get_validation_proof(sender.clone()))
         .or(post_generate_keys(sender.clone()))
-        .or(get_taple_request(sender.clone()))
+        .or(get_event_request(sender.clone()))
         .or(get_approval(sender.clone()))
-        .or(get_pending_requests(sender.clone()))
-        .or(get_taple_request_state(sender.clone()))
+        .or(get_pending_approvals(sender.clone()))
+        .or(get_event_request_state(sender.clone()))
 }
 
 pub fn get_approval(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "approvals" / String)
+    warp::path!("api" / "approval-requests" / String)
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_approval_handler)
         .recover(handle_rejection)
 }
 
-pub fn get_taple_request(
+pub fn get_pending_approvals(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "requests" / String)
+    warp::path!("api" / "approval-requests")
+        .and(warp::get())
+        .and(with_sender(sender))
+        .and(warp::query::<GetApprovalsQuery>())
+        .and_then(get_approvals_handler)
+        .recover(handle_rejection)
+}
+
+pub fn get_event_request(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "event-requests" / String)
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_taple_request_handler)
         .recover(handle_rejection)
 }
 
-pub fn get_taple_request_state(
+pub fn get_event_request_state(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "requests" / String / "state")
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_taple_request_state_handler)
-        .recover(handle_rejection)
-}
-
-pub fn get_pending_requests(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "approvals")
-        .and(warp::get())
-        .and(with_sender(sender))
-        .and(warp::query::<GetApprovalsQuery>())
-        .and_then(get_approvals_handler)
         .recover(handle_rejection)
 }
 
@@ -103,41 +107,22 @@ pub fn get_all_subjects(
         .recover(handle_rejection)
 }
 
-pub fn get_governance(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "governances" / String)
-        .and(warp::get())
-        .and(with_sender(sender))
-        .and_then(get_governance_handler)
-        .recover(handle_rejection)
-}
-
-pub fn get_all_governances(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "governances")
-        .and(warp::get())
-        .and(with_sender(sender))
-        .and(warp::query::<GetAllSubjectsQuery>())
-        .and_then(get_all_governances_handler)
-        .recover(handle_rejection)
-}
-
 pub fn post_event_request(
     sender: NodeAPI,
     keys: KeyPair,
+    derivator: KeyDerivator,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "requests")
+    warp::path!("api" / "event-requests")
         .and(warp::post())
         .and(with_sender(sender))
         .and(with_keys(keys))
+        .and(with_derivator(derivator))
         .and(with_body())
         .and_then(post_event_request_handler)
         .recover(handle_rejection)
 }
 
-pub fn put_approval(
+pub fn patch_approval(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("api" / "approvals" / String)
@@ -145,7 +130,7 @@ pub fn put_approval(
         //.and(warp::header("X-API-KEY"))
         .and(with_sender(sender))
         .and(with_body())
-        .and_then(put_approval_handler)
+        .and_then(patch_approval_handler)
         .recover(handle_rejection)
 }
 
@@ -163,11 +148,22 @@ pub fn post_generate_keys(
 pub fn post_preauthorized_subjects(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "authorizeds" / String)
-        .and(warp::post())
+    warp::path!("api" / "allowed-subjects" / String)
+        .and(warp::put())
         .and(with_sender(sender))
         .and(with_body())
-        .and_then(post_preauthorized_subjects_handler)
+        .and_then(put_preauthorized_subjects_handler)
+        .recover(handle_rejection)
+}
+
+pub fn get_preauthorized_subjects(
+    sender: NodeAPI,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("api" / "allowed-subjects")
+        .and(warp::get())
+        .and(with_sender(sender))
+        .and(warp::query::<GetWithPagination>())
+        .and_then(get_preauthorized_subjects_handler)
         .recover(handle_rejection)
 }
 
@@ -177,7 +173,7 @@ pub fn get_events_of_subject(
     warp::path!("api" / "subjects" / String / "events")
         .and(warp::get())
         .and(with_sender(sender))
-        .and(warp::query::<GetEventsOfSubjectQuery>())
+        .and(warp::query::<GetWithPagination>())
         .and_then(get_events_of_subject_handler)
         .recover(handle_rejection)
 }
@@ -193,21 +189,10 @@ pub fn get_event(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = R
 pub fn get_validation_proof(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "subjects" / String / "vproof")
+    warp::path!("api" / "subjects" / String / "validation")
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_validation_proof_handle)
-        .recover(handle_rejection)
-}
-
-pub fn get_governance_subjects(
-    sender: NodeAPI,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "governances" / String / "subjects")
-        .and(warp::get())
-        .and(with_sender(sender))
-        .and(warp::query::<GetAllSubjectsQuery>())
-        .and_then(get_governance_subjects_handle)
         .recover(handle_rejection)
 }
 
@@ -221,6 +206,12 @@ pub fn with_keys(
     keys: KeyPair,
 ) -> impl Filter<Extract = (KeyPair,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || keys.clone())
+}
+
+pub fn with_derivator(
+    derivator: KeyDerivator,
+) -> impl Filter<Extract = (KeyDerivator,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || derivator.clone())
 }
 
 pub fn with_body<T: DeserializeOwned + Send>(
@@ -271,14 +262,5 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
         }
     } else {
         Err(err)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn test_api_rest() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async move {});
     }
 }
