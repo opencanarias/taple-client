@@ -4,13 +4,13 @@ use crate::rest::bodys::SignatureBody;
 use serde::{Deserialize, Serialize};
 use taple_core::identifier::Derivable;
 use taple_core::request::{RequestState, TapleRequest};
-use taple_core::DigestIdentifier;
 use taple_core::KeyIdentifier;
 use taple_core::ValueWrapper;
 use taple_core::{
-    ApprovalEntity, ApprovalRequest, ApprovalState, ApprovalResponse, EvaluationResponse, Event,
+    ApprovalEntity, ApprovalRequest, ApprovalResponse, ApprovalState, EvaluationResponse, Event,
     SubjectData,
 };
+use taple_core::{DigestIdentifier, ValidationProof};
 use utoipa::ToSchema;
 
 use super::bodys::EventRequestBody;
@@ -218,6 +218,45 @@ impl From<RequestState> for RequestStateResponse {
             RequestState::Processing => Self::Processing,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ValidationProofResponse {
+    pub subject_id: String,
+    pub schema_id: String,
+    pub namespace: String,
+    pub name: String,
+    pub subject_public_key: String,
+    pub governance_id: String,
+    pub genesis_governance_version: u64,
+    pub sn: u64,
+    pub prev_event_hash: String,
+    pub event_hash: String,
+    pub governance_version: u64,
+}
+
+impl From<ValidationProof> for ValidationProofResponse {
+    fn from(value: ValidationProof) -> Self {
+        Self {
+            subject_id: value.subject_id.to_str(),
+            schema_id: value.schema_id,
+            namespace: value.namespace,
+            name: value.name,
+            subject_public_key: value.subject_public_key.to_str(),
+            governance_id: value.governance_id.to_str(),
+            genesis_governance_version: value.governance_version,
+            sn: value.sn,
+            prev_event_hash: value.prev_event_hash.to_str(),
+            event_hash: value.event_hash.to_str(),
+            governance_version: value.governance_version,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct GetProofResponse {
+    pub proof: ValidationProofResponse,
+    pub signatures: Vec<SignatureBody>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

@@ -22,7 +22,9 @@ use super::{
         SubjectDataResponse,
         TapleRequestStateResponse,
         RequestStateResponse,
-        PreauthorizedSubjectsResponse
+        PreauthorizedSubjectsResponse,
+        ValidationProofResponse,
+        GetProofResponse
     }
 };
 use super::handlers::{
@@ -64,7 +66,9 @@ use warp::{
             ApprovalStateResponse,
             ApprovalEntityResponse,
             TapleRequestResponse,
-            PreauthorizedSubjectsResponse
+            PreauthorizedSubjectsResponse,
+            ValidationProofResponse,
+            GetProofResponse
        )
     ),
     modifiers(&SecurityAddon),

@@ -21,8 +21,9 @@ use super::{
     error::Error,
     querys::{GetAllSubjectsQuery, GetApprovalsQuery, GetWithPagination},
     responses::{
-        ApprovalEntityResponse, EventContentResponse, PreauthorizedSubjectsResponse,
-        SubjectDataResponse, TapleRequestResponse, TapleRequestStateResponse,
+        ApprovalEntityResponse, EventContentResponse, GetProofResponse,
+        PreauthorizedSubjectsResponse, SubjectDataResponse, TapleRequestResponse,
+        TapleRequestStateResponse, ValidationProofResponse,
     },
 };
 
@@ -148,8 +149,9 @@ pub async fn get_subjects_handler(
             if let Some(data) = &parameters.governanceid {
                 match DigestIdentifier::from_str(data) {
                     Ok(id) => {
-                        node.get_subjects_by_governance(id, parameters.from, parameters.quantity).await
-                    },
+                        node.get_subjects_by_governance(id, parameters.from, parameters.quantity)
+                            .await
+                    }
                     Err(_) => Err(ApiError::InvalidParameters("governanceid".to_owned())),
                 }
             } else {
@@ -623,11 +625,15 @@ pub async fn get_validation_proof_handle(
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_validation_proof(id).await.map(|r| {
-            r.into_iter()
-                .map(|s| SignatureBody::from(s))
-                .collect::<Vec<SignatureBody>>()
-        })
+        node.get_validation_proof(id)
+            .await
+            .map(|(signatures, proof)| GetProofResponse {
+                proof: ValidationProofResponse::from(proof),
+                signatures: signatures
+                    .into_iter()
+                    .map(|s| SignatureBody::from(s))
+                    .collect::<Vec<SignatureBody>>(),
+            })
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
