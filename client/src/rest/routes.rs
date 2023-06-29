@@ -125,8 +125,8 @@ pub fn post_event_request(
 pub fn patch_approval(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "approvals" / String)
-        .and(warp::put())
+    warp::path!("api" / "approval-requests" / String)
+        .and(warp::patch())
         //.and(warp::header("X-API-KEY"))
         .and(with_sender(sender))
         .and(with_body())
