@@ -43,7 +43,7 @@ impl SettingsGenerator for TapleSettings {
                 smartcontracts_directory: extract_from_map(
                     &data,
                     "contractsdkpath",
-                    String::from_str("../contracts").unwrap(),
+                    String::from_str("./contracts").unwrap(),
                 )?,
             },
             database: DatabaseSettings {

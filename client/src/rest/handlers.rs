@@ -5,7 +5,7 @@ use taple_core::{
     crypto::{KeyMaterial, KeyPair},
     identifier::{Derivable, DigestIdentifier},
     signature::{Signature, Signed},
-    KeyDerivator, KeyIdentifier,
+    ApprovalState, KeyDerivator, KeyIdentifier,
 };
 use warp::Rejection;
 
@@ -300,7 +300,20 @@ pub async fn get_approvals_handler(
     node: NodeAPI,
     parameters: GetApprovalsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data = node.get_approvals(parameters.status).await.map(|result| {
+    let status = match parameters.status {
+        None => None,
+        Some(value) => match value.to_lowercase().as_str() {
+            "pending" => Some(ApprovalState::Pending),
+            "obsolete" => Some(ApprovalState::Obsolete),
+            "responded" => Some(ApprovalState::Responded),
+            other => {
+                return handle_data::<Vec<ApprovalEntityResponse>>(Err(
+                    ApiError::InvalidParameters(format!("status={}", other)),
+                ))
+            }
+        },
+    };
+    let data = node.get_approvals(status).await.map(|result| {
         result
             .into_iter()
             .map(|r| ApprovalEntityResponse::from(r))
