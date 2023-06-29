@@ -79,7 +79,7 @@ pub fn get_event_request(
 pub fn get_event_request_state(
     sender: NodeAPI,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("api" / "requests" / String / "state")
+    warp::path!("api" / "event-requests" / String / "state")
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_taple_request_state_handler)
