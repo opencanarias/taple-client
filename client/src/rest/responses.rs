@@ -158,7 +158,7 @@ impl From<ApprovalEntity> for ApprovalEntityResponse {
         Self {
             id: value.id.to_str(),
             request: value.request.into(),
-            reponse: value.reponse.map(|x| x.into()),
+            reponse: value.response.map(|x| x.into()),
             state: value.state.into(),
         }
     }
