@@ -187,6 +187,7 @@ pub struct TapleRequestStateResponse {
     subject_id: Option<String>,
     sn: Option<u64>,
     state: RequestStateResponse,
+    success: Option<bool>
 }
 
 impl From<TapleRequest> for TapleRequestStateResponse {
@@ -196,6 +197,7 @@ impl From<TapleRequest> for TapleRequestStateResponse {
             subject_id: value.subject_id.map(|id| id.to_str()),
             sn: value.sn,
             state: value.state.into(),
+            success: value.success
         }
     }
 }
