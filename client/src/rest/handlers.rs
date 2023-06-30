@@ -3,10 +3,9 @@ use std::{collections::HashSet, str::FromStr};
 use serde::Serialize;
 use taple_core::{
     crypto::{KeyMaterial, KeyPair},
-    event_request::EventRequest,
     identifier::{Derivable, DigestIdentifier},
-    signature::Signature,
-    Acceptance, EventRequestType, KeyIdentifier,
+    signature::{Signature, Signed},
+    ApprovalState, KeyDerivator, KeyIdentifier,
 };
 use warp::Rejection;
 
@@ -16,13 +15,15 @@ use crate::{rest::querys::AddKeysQuery, rest::querys::KeyAlgorithms};
 
 use super::{
     bodys::{
-        AuthorizeSubjectBody, PostEventRequestBody, PostEventRequestBodyPreSignature, PutVoteBody,
+        AuthorizeSubjectBody, PatchVoteBody, PostEventRequestBodyPreSignature, SignatureBody,
+        SignedBody,
     },
     error::Error,
-    querys::{GetAllSubjectsQuery, GetApprovalsQuery, GetEventsOfSubjectQuery},
+    querys::{GetAllSubjectsQuery, GetApprovalsQuery, GetWithPagination},
     responses::{
-        ApprovalPetitionDataResponse, EventResponse, SignatureDataResponse, SubjectDataResponse,
-        TapleRequestResponse, TapleRequestStateResponse,
+        ApprovalEntityResponse, EventContentResponse, GetProofResponse,
+        PreauthorizedSubjectsResponse, SubjectDataResponse, TapleRequestResponse,
+        TapleRequestStateResponse, ValidationProofResponse,
     },
 };
 
@@ -118,56 +119,76 @@ pub async fn get_subjects_handler(
     node: NodeAPI,
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    // TODO: NAMESPACE DECIDIR CÓMO ESPECIFICAR
-    let data = node
-        .get_subjects("namespace1".into(), parameters.from, parameters.quantity)
-        .await
-        .map(|s| {
-            s.into_iter()
-                .map(|x| SubjectDataResponse::from(x))
-                .collect::<Vec<SubjectDataResponse>>()
-        });
+    enum SubjectType {
+        All,
+        Governances,
+    }
+
+    let subject_type = match &parameters.subject_type {
+        Some(data) => match data.to_lowercase().as_str() {
+            "all" => SubjectType::All,
+            "governances" => {
+                if let Some(_) = &parameters.governanceid {
+                    return handle_data::<SubjectDataResponse>(Err(ApiError::InvalidParameters(
+                        format!("governanceid can not be specified with subject_type=governances"),
+                    )));
+                }
+                SubjectType::Governances
+            }
+            other => {
+                return handle_data::<SubjectDataResponse>(Err(ApiError::InvalidParameters(
+                    format!("unknow parameter {}", other),
+                )));
+            }
+        },
+        None => SubjectType::All,
+    };
+
+    let data = match subject_type {
+        SubjectType::All => {
+            if let Some(data) = &parameters.governanceid {
+                match DigestIdentifier::from_str(data) {
+                    Ok(id) => {
+                        node.get_subjects_by_governance(id, parameters.from, parameters.quantity)
+                            .await
+                    }
+                    Err(_) => Err(ApiError::InvalidParameters("governanceid".to_owned())),
+                }
+            } else {
+                node.get_subjects("".into(), parameters.from, parameters.quantity)
+                    .await
+            }
+        }
+        SubjectType::Governances => {
+            node.get_governances("".into(), parameters.from, parameters.quantity)
+                .await
+        }
+    }
+    .map(|s| {
+        s.into_iter()
+            .map(|x| SubjectDataResponse::from(x))
+            .collect::<Vec<SubjectDataResponse>>()
+    });
     handle_data(data)
 }
 
-#[utoipa::path(
-    post,
-    path = "/requests",
-    tag = "Requests",
-    operation_id = "Create a new Event Request",
-    context_path = "/api",
-    request_body(content = PostEventRequestBody, content_type = "application/json", description = "Event Request type and payload with the associated signature"),
-    responses(
-        (status = 202, description = "Event Request Created", body = String,
-        example = json!(
-            {
-                "request": {
-                    "Create": {
-                        "governance_id": "",
-                        "schema_id": "",
-                        "namespace": "",
-                        "payload": {
-                            "Json": "{\"members\":[{\"description\":\"Sede en España\",\"id\":\"Compañía1\",\"key\":\"EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w\",\"tags\":{}},{\"description\":\"Sede en Inglaterra\",\"id\":\"Compañía2\",\"key\":\"ECQnl-h1vEWmu-ZlPuweR3N1x6SUImyVdPrCLmnJJMyU\",\"tags\":{}}],\"schemas\":[{\"content\":{\"additionalProperties\":false,\"properties\":{\"localizacion\":{\"type\":\"string\"},\"temperatura\":{\"type\":\"integer\"}},\"required\":[\"temperatura\",\"localizacion\"],\"type\":\"object\"},\"id\":\"Prueba\",\"tags\":{}}]}"
-                        }
-                    }
-                },
-                "request_id": "JpxalqMTQcDcLG3dwb8uvcrstJo6pmFEzUwhzi0nGPOA",
-                "timestamp": 1671705355,
-                "subject_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
-                "sn": 0
-            }
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 409, description = "Conflict"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
 pub async fn post_event_request_handler(
     node: NodeAPI,
     keys: KeyPair,
-    body: PostEventRequestBodyPreSignature,
+    derivator: KeyDerivator,
+    mut body: PostEventRequestBodyPreSignature,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
+    // If event request is a creation one and it does not specify a public_key, then a random one must be generated
+    if let super::bodys::EventRequestBody::Create(creation_req) = &mut body.request {
+        if creation_req.public_key.is_none() {
+            let public_key = node.add_keys(derivator).await;
+            if public_key.is_err() {
+                return handle_data(public_key);
+            }
+            let public_key = public_key.unwrap().to_str();
+            creation_req.public_key = Some(public_key);
+        }
+    }
     let signer = KeyIdentifier::new(keys.get_key_derivator(), &keys.public_key_bytes());
     let Ok(request) = body.request.try_into() else {
         return Err(warp::reject::custom(
@@ -186,7 +207,10 @@ pub async fn post_event_request_handler(
         None => Signature::new(&request, signer, &keys).expect("Error signing request"),
     };
     let data = node
-        .external_request(EventRequest { request, signature })
+        .external_request(Signed {
+            content: request,
+            signature,
+        })
         .await
         .map(|id| id.to_str());
     handle_data(data)
@@ -204,7 +228,23 @@ pub async fn post_generate_keys_handler(
     handle_data(result)
 }
 
-pub async fn post_preauthorized_subjects_handler(
+pub async fn get_preauthorized_subjects_handler(
+    node: NodeAPI,
+    parameters: GetWithPagination,
+) -> Result<Box<dyn warp::Reply>, Rejection> {
+    let result = node
+        .get_all_preauthorized_subjects_and_providers(parameters.from, parameters.quantity)
+        .await
+        .map(|x| {
+            Vec::from_iter(
+                x.into_iter()
+                    .map(|s| PreauthorizedSubjectsResponse::from(s)),
+            )
+        });
+    handle_data(result)
+}
+
+pub async fn put_preauthorized_subjects_handler(
     id: String,
     node: NodeAPI,
     body: AuthorizeSubjectBody,
@@ -240,110 +280,6 @@ pub async fn post_preauthorized_subjects_handler(
     handle_data(result.map(|_| body))
 }
 
-/*
-#[utoipa::path(
-    get,
-    path = "/approvals",
-    tag = "Approvals",
-    operation_id = "Get all the pending requests for Approval",
-    context_path = "/api",
-    responses(
-        (status = 200, description = "All pending requests", body =  [ApprovalPetitionDataResponse],
-        example = json!(
-            [
-                {
-                    "request": {
-                        "State": {
-                            "subject_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
-                            "payload": {
-                                "Json": "{\"members\":[{\"description\":\"Sede en España\",\"id\":\"Compañía1\",\"key\":\"EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w\",\"tags\":{}}],\"schemas\":[{\"content\":{\"additionalProperties\":false,\"properties\":{\"localizacion\":{\"type\":\"string\"},\"temperatura\":{\"type\":\"integer\"}},\"required\":[\"temperatura\",\"localizacion\"],\"type\":\"object\"},\"id\":\"Prueba\",\"tags\":{}}]}"
-                            }
-                        }
-                    },
-                    "timestamp": 1671709394,
-                    "signature": {
-                        "content": {
-                            "signer": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                            "event_content_hash": "JhEnzFVF1a-u-rH34cix2A_OXgcfesM6HGOyk7wdrGHk",
-                            "timestamp": 1671709394
-                        },
-                        "signature": "SEnUJq3Y1lbmijKzrc0kuLu-FgMTCyo5PWfDrbi_80bspghCny8Yuvifsmdqq0TjfTUS7sEwmOLir1W_1zeIVyDQ"
-                    },
-                    "approvals": []
-                }
-            ]
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 404, description = "Not Found"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn get_pending_requests_handler(
-    node: NodeAPI,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data = node.get_pending_requests().await.map(|result| {
-        result
-            .into_iter()
-            .map(|r| ApprovalPetitionDataResponse::from(r))
-            .collect::<Vec<ApprovalPetitionDataResponse>>()
-    });
-    handle_data(data)
-}
-
-#[utoipa::path(
-    get,
-    path = "/approvals/{id}",
-    tag = "Approvals",
-    operation_id = "Get a specific pending request for Approval",
-    context_path = "/api",
-    responses(
-        (status = 200, description = "The pending request", body = ApprovalPetitionDataResponse,
-        example = json!(
-            {
-                "request": {
-                    "State": {
-                        "subject_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
-                        "payload": {
-                            "Json": "{\"members\":[{\"description\":\"Sede en España\",\"id\":\"Compañía1\",\"key\":\"EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w\",\"tags\":{}}],\"schemas\":[{\"content\":{\"additionalProperties\":false,\"properties\":{\"localizacion\":{\"type\":\"string\"},\"temperatura\":{\"type\":\"integer\"}},\"required\":[\"temperatura\",\"localizacion\"],\"type\":\"object\"},\"id\":\"Prueba\",\"tags\":{}}]}"
-                        }
-                    }
-                },
-                "timestamp": 1671709394,
-                "signature": {
-                    "content": {
-                        "signer": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                        "event_content_hash": "JhEnzFVF1a-u-rH34cix2A_OXgcfesM6HGOyk7wdrGHk",
-                        "timestamp": 1671709394
-                    },
-                    "signature": "SEnUJq3Y1lbmijKzrc0kuLu-FgMTCyo5PWfDrbi_80bspghCny8Yuvifsmdqq0TjfTUS7sEwmOLir1W_1zeIVyDQ"
-                },
-                "approvals": []
-            }
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 404, description = "Not Found"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn get_single_request_handler(
-    id: String,
-    node: NodeAPI,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_single_request(id)
-            .await
-            .map(|r| ApprovalPetitionDataResponse::from(r))
-    } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
-    };
-    handle_data(result)
-}
-*/
-
 pub async fn get_approval_handler(
     id: String,
     node: NodeAPI,
@@ -351,7 +287,7 @@ pub async fn get_approval_handler(
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_approval(id)
             .await
-            .map(|r| ApprovalPetitionDataResponse::from(r.0))
+            .map(|r| ApprovalEntityResponse::from(r))
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
@@ -364,12 +300,28 @@ pub async fn get_approvals_handler(
     node: NodeAPI,
     parameters: GetApprovalsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data = node.get_approvals(parameters.status).await.map(|result| {
-        result
-            .into_iter()
-            .map(|r| ApprovalPetitionDataResponse::from(r))
-            .collect::<Vec<ApprovalPetitionDataResponse>>()
-    });
+    let status = match parameters.status {
+        None => None,
+        Some(value) => match value.to_lowercase().as_str() {
+            "pending" => Some(ApprovalState::Pending),
+            "obsolete" => Some(ApprovalState::Obsolete),
+            "responded" => Some(ApprovalState::Responded),
+            other => {
+                return handle_data::<Vec<ApprovalEntityResponse>>(Err(
+                    ApiError::InvalidParameters(format!("status={}", other)),
+                ))
+            }
+        },
+    };
+    let data = node
+        .get_approvals(status, parameters.from, parameters.quantity)
+        .await
+        .map(|result| {
+            result
+                .into_iter()
+                .map(|r| ApprovalEntityResponse::from(r))
+                .collect::<Vec<ApprovalEntityResponse>>()
+        });
     handle_data(data)
 }
 
@@ -426,118 +378,25 @@ pub async fn get_taple_request_state_handler(
         (status = 500, description = "Internal Server Error"),
     )
 )]
-pub async fn put_approval_handler(
+pub async fn patch_approval_handler(
     request_id: String,
     node: NodeAPI,
-    body: PutVoteBody,
+    body: PatchVoteBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let acceptance = match body {
-        PutVoteBody::Accept => Acceptance::Ok,
-        PutVoteBody::Reject => Acceptance::Ko,
+        PatchVoteBody::Accept => true,
+        PatchVoteBody::Reject => false,
     };
     let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
         node.approval_request(id, acceptance)
             .await
-            .map(|id| id.to_str())
+            .map(|data| ApprovalEntityResponse::from(data))
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
         )))
     };
     handle_data(result)
-}
-
-#[utoipa::path(
-    get,
-    path = "/governances/{id}",
-    operation_id = "Get Governance Data",
-    tag = "Governances",
-    context_path = "/api",
-    params(
-        ("id" = String, Path, description = "Governance's unique id")
-    ),
-    responses(
-        (status = 200, description = "Subject Data successfully retrieved", body = SubjectDataResponse, 
-            example = json!(
-                {
-                    "subject_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
-                    "governance_id": "",
-                    "sn": 0,
-                    "public_key": "E2tlKVr6wA2GZKoSZi_dwIuz2TVUTCCDpOOwiE2SJbWc",
-                    "namespace": "",
-                    "schema_id": "",
-                    "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                    "properties": "{\"members\":[{\"description\":\"Sede en España\",\"id\":\"Compañía1\",\"key\":\"EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w\",\"tags\":{}},{\"description\":\"Sede en Inglaterra\",\"id\":\"Compañía2\",\"key\":\"ECQnl-h1vEWmu-ZlPuweR3N1x6SUImyVdPrCLmnJJMyU\",\"tags\":{}}],\"schemas\":[{\"content\":{\"additionalProperties\":false,\"properties\":{\"localizacion\":{\"type\":\"string\"},\"temperatura\":{\"type\":\"integer\"}},\"required\":[\"temperatura\",\"localizacion\"],\"type\":\"object\"},\"id\":\"Prueba\",\"tags\":{}}]}"
-                }
-            )
-        ),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 404, description = "Not Found"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn get_governance_handler(
-    id: String,
-    node: NodeAPI,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_subject(id)
-            .await
-            .map(|s| SubjectDataResponse::from(s))
-    } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
-    };
-    handle_data(result)
-}
-
-#[utoipa::path(
-    get,
-    path = "/governances",
-    operation_id = "Get all Governances data",
-    tag = "Governances",
-    context_path = "/api",
-    params(
-        ("from" = Option<String>, Query, description = "Id of initial subject"),
-        ("quantity" = Option<usize>, Query, description = "Quantity of subjects requested")
-    ),
-    responses(
-        (status = 200, description = "Subjets Data successfully retrieved", body = [SubjectDataResponse],
-        example = json!(
-            [
-                {
-                    "subject_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
-                    "governance_id": "",
-                    "sn": 0,
-                    "public_key": "E2tlKVr6wA2GZKoSZi_dwIuz2TVUTCCDpOOwiE2SJbWc",
-                    "namespace": "",
-                    "schema_id": "",
-                    "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                    "properties": "{\"members\":[{\"description\":\"Sede en España\",\"id\":\"Compañía1\",\"key\":\"EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w\",\"tags\":{}},{\"description\":\"Sede en Inglaterra\",\"id\":\"Compañía2\",\"key\":\"ECQnl-h1vEWmu-ZlPuweR3N1x6SUImyVdPrCLmnJJMyU\",\"tags\":{}}],\"schemas\":[{\"content\":{\"additionalProperties\":false,\"properties\":{\"localizacion\":{\"type\":\"string\"},\"temperatura\":{\"type\":\"integer\"}},\"required\":[\"temperatura\",\"localizacion\"],\"type\":\"object\"},\"id\":\"Prueba\",\"tags\":{}}]}"
-                }
-            ]
-        )),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error"),
-    )
-)]
-pub async fn get_all_governances_handler(
-    node: NodeAPI,
-    parameters: GetAllSubjectsQuery,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let data = node
-        .get_governances("namespace1".into(), parameters.from, parameters.quantity)
-        .await
-        .map(|result| {
-            result
-                .into_iter()
-                .map(|s| SubjectDataResponse::from(s))
-                .collect::<Vec<SubjectDataResponse>>()
-        });
-    handle_data(data)
 }
 
 #[utoipa::path(
@@ -552,7 +411,7 @@ pub async fn get_all_governances_handler(
         ("quantity" = Option<usize>, Query, description = "Quantity of events requested"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = [EventResponse],
+        (status = 200, description = "Subjects Data successfully retrieved", body = [EventContentResponse],
         example = json!(
             [
                 {
@@ -656,22 +515,22 @@ pub async fn get_all_governances_handler(
 pub async fn get_events_of_subject_handler(
     id: String,
     node: NodeAPI,
-    parameters: GetEventsOfSubjectQuery,
+    parameters: GetWithPagination,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_events(id, parameters.from, parameters.quantity)
             .await
             .map(|ve| {
                 ve.into_iter()
-                    .map(|e| EventResponse::try_from(e).unwrap())
-                    .collect::<Vec<EventResponse>>()
+                    .map(|e| SignedBody::<EventContentResponse>::from(e))
+                    .collect::<Vec<SignedBody<EventContentResponse>>>()
             })
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
         )))
     };
-    handle_data::<Vec<EventResponse>>(result)
+    handle_data::<Vec<SignedBody<EventContentResponse>>>(result)
 }
 
 #[utoipa::path(
@@ -685,7 +544,7 @@ pub async fn get_events_of_subject_handler(
         ("sn" = u64, Path, description = "Event sn"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = EventResponse,
+        (status = 200, description = "Subjects Data successfully retrieved", body = EventContentResponse,
         example = json!(
             {
                 "event_content": {
@@ -782,11 +641,15 @@ pub async fn get_validation_proof_handle(
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_validation_proof(id).await.map(|r| {
-            r.into_iter()
-                .map(|s| SignatureDataResponse::from(s))
-                .collect::<Vec<SignatureDataResponse>>()
-        })
+        node.get_validation_proof(id)
+            .await
+            .map(|(signatures, proof)| GetProofResponse {
+                proof: ValidationProofResponse::from(proof),
+                signatures: signatures
+                    .into_iter()
+                    .map(|s| SignatureBody::from(s))
+                    .collect::<Vec<SignatureBody>>(),
+            })
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"

@@ -6,11 +6,13 @@ use utoipa::{IntoParams, ToSchema};
 pub struct GetAllSubjectsQuery {
     pub from: Option<String>,
     pub quantity: Option<i64>,
+    pub subject_type: Option<String>,
+    pub governanceid: Option<String>
 }
 
 #[derive(Debug, Clone, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
-pub struct GetEventsOfSubjectQuery {
+pub struct GetWithPagination {
     pub from: Option<i64>,
     pub quantity: Option<i64>,
 }
@@ -39,5 +41,7 @@ impl Into<KeyDerivator> for KeyAlgorithms {
 #[derive(Debug, Clone, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct GetApprovalsQuery {
-    pub status: Option<String>
+    pub status: Option<String>,
+    pub from: Option<String>,
+    pub quantity: Option<i64>,
 }
