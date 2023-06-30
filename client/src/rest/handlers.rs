@@ -313,12 +313,15 @@ pub async fn get_approvals_handler(
             }
         },
     };
-    let data = node.get_approvals(status).await.map(|result| {
-        result
-            .into_iter()
-            .map(|r| ApprovalEntityResponse::from(r))
-            .collect::<Vec<ApprovalEntityResponse>>()
-    });
+    let data = node
+        .get_approvals(status, parameters.from, parameters.quantity)
+        .await
+        .map(|result| {
+            result
+                .into_iter()
+                .map(|r| ApprovalEntityResponse::from(r))
+                .collect::<Vec<ApprovalEntityResponse>>()
+        });
     handle_data(data)
 }
 

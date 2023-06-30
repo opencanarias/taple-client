@@ -41,5 +41,7 @@ impl Into<KeyDerivator> for KeyAlgorithms {
 #[derive(Debug, Clone, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct GetApprovalsQuery {
-    pub status: Option<String>
+    pub status: Option<String>,
+    pub from: Option<String>,
+    pub quantity: Option<i64>,
 }
