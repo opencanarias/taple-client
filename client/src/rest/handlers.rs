@@ -38,7 +38,7 @@ use super::{
     ),
     responses(
         (status = 200, description = "Subject Data successfully retrieved", body = SubjectDataResponse,
-        example = json!(
+        example = json!( 
             {
                 "subject_id": "JKZgYhPjQdWNWWwkac0wSwqLKoOJsT0QimJmj6zjimWc",
                 "governance_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
@@ -47,7 +47,12 @@ use super::{
                 "namespace": "namespace1",
                 "schema_id": "Prueba",
                 "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                "properties": "{\"localizacion\":\"España\",\"temperatura\":10}"
+                "properties": {
+                    "localizacion": "España",
+                    "temperatura": 10
+                },
+                "name": "pedro",
+                "creator": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w"
             }
         )),
         (status = 400, description = "Bad Request"),
@@ -78,7 +83,6 @@ pub async fn get_subject_handler(
     tag = "Subjects",
     operation_id = "Get All Subjects Data",
     context_path = "/api",
-    security(("api_key" = [])),
     params( // TODO: HACE FALTA ACTUALIZAR
         ("from" = Option<String>, Query, description = "Id of initial subject"),
         ("quantity" = Option<usize>, Query, description = "Quantity of subjects requested")
@@ -88,16 +92,6 @@ pub async fn get_subject_handler(
         example = json!(
             [
                 {
-                    "subject_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
-                    "governance_id": "",
-                    "sn": 0,
-                    "public_key": "E2tlKVr6wA2GZKoSZi_dwIuz2TVUTCCDpOOwiE2SJbWc",
-                    "namespace": "",
-                    "schema_id": "",
-                    "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                    "properties": "{\"members\":[{\"description\":\"Sede en España\",\"id\":\"Compañía1\",\"key\":\"EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w\",\"tags\":{}},{\"description\":\"Sede en Inglaterra\",\"id\":\"Compañía2\",\"key\":\"ECQnl-h1vEWmu-ZlPuweR3N1x6SUImyVdPrCLmnJJMyU\",\"tags\":{}}],\"schemas\":[{\"content\":{\"additionalProperties\":false,\"properties\":{\"localizacion\":{\"type\":\"string\"},\"temperatura\":{\"type\":\"integer\"}},\"required\":[\"temperatura\",\"localizacion\"],\"type\":\"object\"},\"id\":\"Prueba\",\"tags\":{}}]}"
-                },
-                {
                     "subject_id": "JKZgYhPjQdWNWWwkac0wSwqLKoOJsT0QimJmj6zjimWc",
                     "governance_id": "J7BgD3dqZ8vO4WEH7-rpWIH-IhMqaSDnuJ3Jb8K6KvL0",
                     "sn": 0,
@@ -105,7 +99,12 @@ pub async fn get_subject_handler(
                     "namespace": "namespace1",
                     "schema_id": "Prueba",
                     "owner": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w",
-                    "properties": "{\"localizacion\":\"España\",\"temperatura\":10}"
+                    "properties": {
+                        "localizacion": "España",
+                        "temperatura": 10
+                    },
+                    "name": "pedro",
+                    "creator": "EFXv0jBIr6BtoqFMR7G_JBSuozRc2jZnu5VGUH2gy6-w"
                 }
             ]
         )),
@@ -172,6 +171,22 @@ pub async fn get_subjects_handler(
     handle_data(data)
 }
 
+#[utoipa::path(
+    post,
+    path = "/event-requests",
+    tag = "Requests",
+    operation_id = "createEventRequest",
+    context_path = "/api",
+    responses(
+        (status = 201, description = "Request Created Successfully", body = String,
+        example = json!(
+            "JKZgYhPjQdWNWWwkac0wSwqLKoOJsT0QimJmj6zjimWc"
+        )),
+        (status = 400, description = "Bad Request"),
+        (status = 409, description = "Conflict"),
+        (status = 500, description = "Internal Server Error"),
+    )
+)]
 pub async fn post_event_request_handler(
     node: NodeAPI,
     keys: KeyPair,

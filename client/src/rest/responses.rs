@@ -59,7 +59,10 @@ pub struct SubjectDataResponse {
     pub sn: u64,
     /// Public key of the subject
     pub public_key: String, // KeyIdentifier
+    /// Namespace of the subject
     pub namespace: String,
+    /// The name of the subject.
+    pub name: String,
     /// Identifier of the schema used by the subject and defined in associated governance
     pub schema_id: String,
     /// Subject owner identifier
@@ -85,6 +88,7 @@ impl From<SubjectData> for SubjectDataResponse {
             creator: value.creator.to_str(),
             properties: value.properties,
             active: value.active,
+            name: value.name,
         }
     }
 }
