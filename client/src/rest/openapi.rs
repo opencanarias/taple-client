@@ -28,10 +28,20 @@ use super::{
     }
 };
 use super::handlers::{
-    __path_get_subjects_handler, __path_get_event_handler,
+    __path_get_allowed_subjects_handler,
+    __path_get_subjects_handler,
+    __path_get_approval_handler,
+    __path_get_approvals_handler,
+    __path_get_event_handler,
     __path_get_events_of_subject_handler,
     __path_get_subject_handler,
+    __path_get_taple_request_handler,
+    __path_get_taple_request_state_handler,
+    __path_get_validation_proof_handle,
     __path_patch_approval_handler,
+    __path_post_event_request_handler,
+    __path_post_generate_keys_handler,
+    __path_put_allowed_subjects_handler,
 };
 use warp::{
     http::Uri,
@@ -42,9 +52,21 @@ use warp::{
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_subject_handler, 
-        get_subjects_handler, get_events_of_subject_handler, get_event_handler, 
-        patch_approval_handler, 
+    paths(
+        get_allowed_subjects_handler,
+        get_subjects_handler,
+        get_approval_handler,
+        get_approvals_handler,
+        get_event_handler,
+        get_events_of_subject_handler,
+        get_subject_handler,
+        get_taple_request_handler,
+        get_taple_request_state_handler,
+        get_validation_proof_handle,
+        patch_approval_handler,
+        post_event_request_handler,
+        post_generate_keys_handler,
+        put_allowed_subjects_handler,
     ),
     components(
         schemas(
@@ -69,7 +91,7 @@ use warp::{
             PreauthorizedSubjectsResponse,
             ValidationProofResponse,
             GetProofResponse
-       )
+        )
     ),
     modifiers(&SecurityAddon),
     security(),
