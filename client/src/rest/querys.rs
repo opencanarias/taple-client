@@ -19,6 +19,13 @@ pub struct GetWithPagination {
 
 #[derive(Debug, Clone, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
+pub struct GetWithPaginationString {
+    pub from: Option<String>,
+    pub quantity: Option<i64>,
+}
+
+#[derive(Debug, Clone, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct AddKeysQuery {
     pub algorithm: Option<KeyAlgorithms>
 }
