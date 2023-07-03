@@ -1,12 +1,13 @@
+use crate::rest::querys::GetWithPaginationString;
 use crate::rest::querys::AddKeysQuery;
 
 use super::handlers::{
     get_approval_handler, get_approvals_handler, get_event_handler,
     get_events_of_subject_handler,
-    get_preauthorized_subjects_handler, get_subject_handler, get_subjects_handler,
+    get_allowed_subjects_handler, get_subject_handler, get_subjects_handler,
     get_taple_request_handler, get_taple_request_state_handler, get_validation_proof_handle,
     post_event_request_handler, post_generate_keys_handler, patch_approval_handler,
-    put_preauthorized_subjects_handler,
+    put_allowed_subjects_handler,
 };
 use super::querys::GetApprovalsQuery;
 use super::{
@@ -152,7 +153,7 @@ pub fn post_preauthorized_subjects(
         .and(warp::put())
         .and(with_sender(sender))
         .and(with_body())
-        .and_then(put_preauthorized_subjects_handler)
+        .and_then(put_allowed_subjects_handler)
         .recover(handle_rejection)
 }
 
@@ -162,8 +163,8 @@ pub fn get_preauthorized_subjects(
     warp::path!("api" / "allowed-subjects")
         .and(warp::get())
         .and(with_sender(sender))
-        .and(warp::query::<GetWithPagination>())
-        .and_then(get_preauthorized_subjects_handler)
+        .and(warp::query::<GetWithPaginationString>())
+        .and_then(get_allowed_subjects_handler)
         .recover(handle_rejection)
 }
 

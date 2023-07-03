@@ -13,13 +13,13 @@ use taple_core::{
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct SignedBody<T: ToSchema + Clone + Debug> {
+pub struct SignedBody<T: Clone + Debug> {
     #[serde(flatten)]
     pub content: T,
     pub signature: SignatureBody,
 }
 
-impl<C: BorshSerialize + BorshDeserialize, T: Clone + Debug + ToSchema + From<C>> From<Signed<C>>
+impl<C: BorshSerialize + BorshDeserialize, T: Clone + Debug + From<C>> From<Signed<C>>
     for SignedBody<T>
 {
     fn from(value: Signed<C>) -> Self {
