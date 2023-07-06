@@ -1,0 +1,21 @@
+#!/bin/bash
+
+TOOLS_IMAGE="opencanarias/taple-tools:0.1"
+
+SIGN_PRIVATE_KEY=$1 
+let input=0
+if [ $2 ]; then #Se lee directamente de argumento
+  input=$2
+elif [ ! -t 0 ]; then # Se lee del redireccionamiento de un fichero al script
+  input=$(less <&0 | tr -d '[:space:]')
+else # Sacamos un error
+  #echo "No payload specified. Reading user input... (Press CTRL+D to insert input)" #CTRL + D inserta el caracter'\04'
+  #read -d $'\04' input </dev/stdin
+  >&2 echo "No <REQUEST> defined"
+  exit 1
+fi
+echo;
+SIGN_PAYLOAD=$input
+
+# docker run --rm -e TOOL=sign -e SIGN_PRIVATE_KEY=$1 -e SIGN_PAYLOAD="$2" $TOOLS_IMAGE
+docker run --rm --name docker-taple-sign $TOOLS_IMAGE taple-sign $SIGN_PRIVATE_KEY $SIGN_PAYLOAD ${@:3}
