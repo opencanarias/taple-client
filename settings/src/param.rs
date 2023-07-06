@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -7,6 +6,8 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use linked_hash_set::LinkedHashSet;
 use toml::Value;
 
+use crate::any::AnyValue;
+use crate::any::SettingsMap;
 use crate::utils::check_if_valid_env;
 use crate::Error;
 
@@ -16,6 +17,7 @@ pub enum ParamType {
     RequiredSet,
     Flag,
     Set,
+    Multivalued,
 }
 
 pub struct SettingSchemaBuilder {
@@ -24,6 +26,7 @@ pub struct SettingSchemaBuilder {
     help: Option<String>,
     param_type: Option<ParamType>,
     section: Option<String>,
+    default: Option<String>,
     group_prefix: Option<String>,
     group_description: Option<String>,
     hidden: bool,
@@ -32,6 +35,7 @@ pub struct SettingSchemaBuilder {
 impl SettingSchemaBuilder {
     pub fn new<T: Into<String>>(id: T) -> Result<Self, Error> {
         let id: String = id.into();
+        let id = id.replace("-", "_");
         if id.is_empty() {
             return Err(Error::EmptyString);
         }
@@ -47,6 +51,7 @@ impl SettingSchemaBuilder {
             group_prefix: None,
             group_description: None,
             hidden: false,
+            default: None,
         })
     }
 
@@ -62,6 +67,7 @@ impl SettingSchemaBuilder {
             section: self.section,
             group_prefix: self.group_prefix,
             group_description: self.group_description,
+            default: self.default,
         }
     }
 
@@ -85,6 +91,11 @@ impl SettingSchemaBuilder {
         self
     }
 
+    pub fn with_default<T: Into<String>>(mut self, value: T) -> Self {
+        self.default = Some(value.into());
+        self
+    }
+
     pub fn hide(mut self, value: bool) -> Self {
         self.hidden = value;
         self
@@ -99,6 +110,7 @@ pub struct SettingSchema {
     param_type: ParamType,
     help: String,
     hidden: bool,
+    default: Option<String>,
     pub(crate) section: Option<String>,
     pub(crate) group_prefix: Option<String>,
     pub(crate) group_description: Option<String>,
@@ -140,11 +152,17 @@ impl SettingSchema {
             ParamType::RequiredSet => result.required(true).action(ArgAction::Set),
             ParamType::Flag => result.action(ArgAction::SetTrue),
             ParamType::Set => result.action(ArgAction::Set),
+            ParamType::Multivalued => result.action(ArgAction::Append),
         };
-        result
+        let result = result
             .long(id.clone())
             .help(self.help.clone())
-            .hide(self.hidden)
+            .hide(self.hidden);
+        if let Some(default) = &self.default {
+            result.default_value(default)
+        } else {
+            result
+        }
     }
 }
 
@@ -214,11 +232,11 @@ impl ConfigGenerator {
         prefix: Option<S>,
         description: Option<D>,
         settings: Vec<SettingSchema>,
-    ) -> Result<Self, Error> 
-    where 
+    ) -> Result<Self, Error>
+    where
         T: Into<String>,
         S: Into<String>,
-        D: Into<String>
+        D: Into<String>,
     {
         let group = group.into();
         if !check_if_valid_env(&group) {
@@ -291,17 +309,24 @@ impl ConfigGenerator {
         Some(file.parse::<toml::Table>().unwrap())
     }
 
-    fn get_from_matches(setting: &SettingSchema, matches: &ArgMatches) -> Option<String> {
+    fn get_from_matches(setting: &SettingSchema, matches: &ArgMatches) -> Option<AnyValue> {
         let id = if let Some(prefix) = &setting.group_prefix {
             format!("{}.{}", prefix, setting.id)
         } else {
             setting.id.clone()
         };
         if let Some(_) = matches.value_source(&id) {
-            if let ParamType::Flag = &setting.param_type {
-                Some(matches.get_one::<bool>(&id).unwrap().to_string())
-            } else {
-                matches.get_one::<String>(&id).cloned()
+            match &setting.param_type {
+                ParamType::Flag => {
+                    Some(AnyValue::new(matches.get_one::<bool>(&id).unwrap().clone()))
+                }
+                ParamType::Multivalued => {
+                    let result: Vec<String> = matches.get_many(&id).unwrap().cloned().collect();
+                    Some(AnyValue::new(result))
+                }
+                _ => Some(AnyValue::new(
+                    matches.get_one::<String>(&id).unwrap().clone(),
+                )),
             }
         } else {
             None
@@ -334,9 +359,9 @@ impl ConfigGenerator {
         }
     }
 
-    pub fn build(mut self) -> HashMap<String, String> {
+    pub fn build(mut self) -> SettingsMap {
         // TOML, CONSOLE, ENV
-        let mut result: HashMap<String, String> = HashMap::new();
+        let mut result = SettingsMap::new();
         let matches = self.get_matches();
         let toml = self.get_toml();
         for mut setting in self.data {
@@ -347,9 +372,17 @@ impl ConfigGenerator {
                 setting.env = format!("{}_{}", prefix, setting.env);
             }
             if let Ok(value) = std::env::var(&setting.env) {
-                result.insert(setting.id, value);
+                if let ParamType::Multivalued = setting.param_type {
+                    let value = value.split(";");
+                    result.insert(
+                        setting.id,
+                        value.map(|s| String::from(s)).collect::<Vec<String>>(),
+                    );
+                } else {
+                    result.insert(setting.id, value);
+                }
             } else if let Some(value) = Self::get_from_matches(&setting, &matches) {
-                result.insert(setting.id, value);
+                result.insert_raw(setting.id, value);
             } else if toml.is_some() {
                 let tmp = toml.as_ref().unwrap();
                 if let Some(group) = &setting.section {
