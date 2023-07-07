@@ -1,49 +1,41 @@
 extern crate env_logger;
 mod database;
 mod rest;
-use database::leveldb::{open_db, LevelDBManager};
-use leveldb::iterator::Iterable;
+use database::leveldb::{open_db, LDBCollection, LevelDBManager};
 use log::info;
 use rest::openapi::{serve_swagger, ApiDoc};
 use std::sync::Arc;
 use std::{error::Error, net::SocketAddr};
 use taple_client::{client_settings_builder, ClientSettings, SettingsGenerator};
 use taple_core::crypto::{Ed25519KeyPair, KeyGenerator, KeyPair, Secp256k1KeyPair};
-use taple_core::{KeyDerivator, Taple};
+use taple_core::{KeyDerivator, Taple, TapleShutdownManager};
 use tempfile::tempdir as tempdirf;
 use tokio::signal::unix::{signal, SignalKind};
 use utoipa::OpenApi;
 use warp::Filter;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() {
     // Init logger
     env_logger::init();
+    if let Err(error) = run().await {
+        log::error!("{}", error);
+    };
+}
+
+async fn run() -> Result<(), Box<dyn Error>> {
     let settings = ClientSettings::generate(&client_settings_builder().build())?;
-    let derivator = settings.taple.node.key_derivator.clone();
-    let dev_mode = settings.taple.node.dev_mode;
-    let swaggerui = settings.swagger_ui.clone();
-    if dev_mode {
-        info!("DEV MODE is enabled. This is not a proper mode for production apps");
-    }
     info!("{:?}", settings);
     // Open DATABASE DIR
     let tempdir;
-    let path = if settings.taple.database.path.is_empty() {
+    let path = if settings.database_path.is_empty() {
         tempdir = tempdirf().unwrap();
         tempdir.path().clone()
     } else {
-        std::path::Path::new(&settings.taple.database.path)
+        std::path::Path::new(&settings.database_path)
     };
     let db = open_db(path);
-    let iter = db.iter(leveldb::options::ReadOptions::new());
-    for i in iter {
-        log::warn!("{}", i.0 .0)
-    }
     let leveldb = LevelDBManager::new(db);
-    if settings.taple.node.secret_key.is_some() && settings.taple.node.seed.is_some() {
-        panic!("You can't set both secret_key and seed");
-    }
     let derivator = settings.taple.node.key_derivator.clone();
     let keys = if settings.taple.node.secret_key.is_some() {
         let current_key = settings.taple.node.secret_key.clone();
@@ -56,25 +48,49 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 &hex::decode(str_key).expect("Generate keypair from secret key"),
             )),
         }
-    } else if settings.taple.node.seed.is_some() {
-        let seed = settings.taple.node.seed.clone().unwrap();
-        match derivator {
-            KeyDerivator::Ed25519 => KeyPair::Ed25519(Ed25519KeyPair::from_seed(seed.as_bytes())),
-            KeyDerivator::Secp256k1 => {
-                KeyPair::Secp256k1(Secp256k1KeyPair::from_seed(seed.as_bytes()))
-            }
-        }
     } else {
         panic!("No MC available");
     };
     ////////////////////
     let mut taple = Taple::new(settings.taple.clone(), leveldb);
+    let shutdown_manager = taple.get_shutdown_manager();
+    let signal_shutdown_manager = taple.get_shutdown_manager();
+    let mut stream = signal(SignalKind::terminate())?;
+    tokio::task::spawn(async move {
+        let mut inner_receiver = signal_shutdown_manager.get_raw_receiver();
+        tokio::select! {
+            _ = inner_receiver.recv() => {
+
+            },
+            _ = stream.recv() => {
+                signal_shutdown_manager.shutdown().await;
+            }
+        };
+    });
     taple.start().await?;
     info!("Controller ID: {}", taple.controller_id().unwrap());
+    if settings.http {
+        log::warn!("HTTP SERVER WILL LISTEN ON {}:{}", settings.http_addr, settings.http_port);
+        start_http_server(settings, taple, keys, derivator, shutdown_manager).await?;
+    } else {
+        log::warn!("HTTP SERVER NOT ENABLED");
+        shutdown_manager.wait_for_shutdown().await;
+    }
+    Ok(())
+}
+
+async fn start_http_server(
+    settings: ClientSettings,
+    taple: Taple<LevelDBManager, LDBCollection>,
+    keys: KeyPair,
+    derivator: KeyDerivator,
+    shutdown_manager: TapleShutdownManager
+) -> Result<(), Box<dyn Error>> {
+    let swaggerui = settings.doc_ui.clone();
     let http_addr = format!("{}:{}", settings.http_addr, settings.http_port)
         .parse::<SocketAddr>()
         .unwrap();
-    let mut stream = signal(SignalKind::terminate())?;
+
     let config = Arc::new(utoipa_swagger_ui::Config::from("/api/doc/json"));
 
     let api_doc = warp::path!("api" / "doc" / "json")
@@ -83,8 +99,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     if swaggerui {
         let swagger_ui = warp::path("api")
-            .and(warp::path("doc"))
-            .and(warp::path("ui"))
+            .and(warp::path("documentation"))
             .and(warp::get())
             .and(warp::path::full())
             .and(warp::path::tail())
@@ -96,14 +111,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             derivator,
         )))
         .bind_with_graceful_shutdown(http_addr, async move {
-            stream.recv().await;
+            shutdown_manager.wait_for_shutdown().await
         })
         .1
         .await;
     } else {
         warp::serve(api_doc.or(rest::routes::routes(taple.get_api(), keys, derivator)))
             .bind_with_graceful_shutdown(http_addr, async move {
-                stream.recv().await;
+                shutdown_manager.wait_for_shutdown().await
             })
             .1
             .await;

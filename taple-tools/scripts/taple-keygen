@@ -1,0 +1,6 @@
+#!/bin/bash
+
+TOOLS_IMAGE="opencanarias/taple-tools:0.1"
+
+#docker run -e TOOL=keygen -e KEYGEN_ALGORITHM=$1 $TOOLS_IMAGE
+docker run --rm --name docker-taple-keygen $TOOLS_IMAGE taple-keygen ${@:1}
