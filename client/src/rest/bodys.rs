@@ -32,9 +32,13 @@ impl<C: BorshSerialize + BorshDeserialize, T: Clone + Debug + From<C>> From<Sign
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum EventRequestBody {
+    /// Initial event from which the subjects are created
     Create(CreateRequestBody),
+    /// Execution events of some of the methods that the smart contract possesses
     Fact(FactRequestBody),
+    /// Events that allow the owner of a subject to be modified
     Transfer(TransferRequestBody),
+    /// Event that closes the life cycle of a subject
     EOL(EOLRequestBody),
 }
 
@@ -63,10 +67,15 @@ impl TryInto<EventRequest> for EventRequestBody {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CreateRequestBody {
+    /// Governance identifier
     pub governance_id: String,
+    /// Subject schema json identifier
     pub schema_id: String,
+    /// Namespace to which the subject belongs
     pub namespace: String,
+    /// Name of subject
     pub name: String,
+    /// Public key of the subject
     pub public_key: Option<String>,
 }
 
@@ -102,6 +111,7 @@ impl TryInto<StartRequest> for CreateRequestBody {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EOLRequestBody {
+    /// Subject identifier
     pub subject_id: String,
 }
 
@@ -127,7 +137,9 @@ impl From<EOLRequest> for EOLRequestBody {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TransferRequestBody {
+    /// Subject identifier
     pub subject_id: String,
+    /// Public key of the new owner
     pub public_key: String,
 }
 
@@ -157,7 +169,9 @@ impl From<TransferRequest> for TransferRequestBody {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FactRequestBody {
+    /// Subject identifier
     pub subject_id: String,
+    /// Changes to be applied to the subject
     pub payload: ValueWrapper,
 }
 
@@ -184,19 +198,25 @@ impl TryInto<FactRequest> for FactRequestBody {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AuthorizeSubjectBody {
+    /// Providers acting on a specific subject
     pub providers: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PostEventRequestBodyPreSignature {
+    /// Type of event request
     pub request: EventRequestBody,
+    /// Signature of the issuer
     pub signature: Option<SignatureBody>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SignatureBody {
+    /// Signature of the issuer
     signer: String, // KeyIdentifier
+    /// Timestamp at which the signature was made
     timestamp: u64,
+    /// Signature value
     value: String, // SignatureIdentifier,
 }
 
@@ -229,6 +249,8 @@ impl TryInto<Signature> for SignatureBody {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "approvalType")]
 pub enum PatchVoteBody {
+    /// Vote to accept a particular request
     Accept,
+    /// Vote to reject a particular request
     Reject,
 }

@@ -7,7 +7,7 @@ use taple_core::request::{RequestState, TapleRequest};
 use taple_core::KeyIdentifier;
 use taple_core::ValueWrapper;
 use taple_core::{
-    ApprovalEntity, ApprovalRequest, ApprovalResponse, ApprovalState, EvaluationResponse, Event,
+    ApprovalEntity, ApprovalRequest, ApprovalResponse, ApprovalState, Event,
     SubjectData,
 };
 use taple_core::{DigestIdentifier, ValidationProof};
@@ -18,16 +18,27 @@ use super::bodys::SignedBody;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EventContentResponse {
+    /// Subject identifier
     pub subject_id: String,
+    /// Signature of the event request
     pub event_request: SignedBody<EventRequestBody>,
+    /// Current sequence number of the subject
     pub sn: u64,
+    /// Changes to be applied to the subject
     pub patch: ValueWrapper,
+    /// Hash of the state
     pub state_hash: String,
+    /// Value specifying if the evaluation process has gone well
     pub eval_success: bool,
+    /// Value specifying if approval is required
     pub appr_required: bool,
+    /// Value specifying if it has been approved
     pub approved: bool,
+    /// Previous event hash
     pub hash_prev_event: String,
+    /// Signatures of the evaluators
     pub evaluators: Vec<SignatureBody>,
+    /// Signatures of the approvers
     pub approvers: Vec<SignatureBody>,
 }
 
@@ -95,12 +106,18 @@ impl From<SubjectData> for SubjectDataResponse {
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApprovalRequestResponse {
     // Evaluation Request
+    /// Signature of the event request
     pub event_request: SignedBody<EventRequestBody>,
+    /// Current sequence number of the subject
     pub sn: u64,
+    /// Governance version
     pub gov_version: u64,
     // Evaluation Response
+    /// Changes to be applied to the subject
     pub patch: ValueWrapper, // cambiar
+    /// Hash of the state
     pub state_hash: String,
+    /// Previous event hash
     pub hash_prev_event: String,
 }
 
@@ -119,7 +136,9 @@ impl From<ApprovalRequest> for ApprovalRequestResponse {
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApprovalResponseBody {
+    /// Hash of the request for approval
     pub appr_req_hash: String,
+    /// Value specifying if it has been approved
     pub approved: bool,
 }
 
@@ -134,8 +153,11 @@ impl From<ApprovalResponse> for ApprovalResponseBody {
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub enum ApprovalStateResponse {
+    /// Request for approval which is in pending status
     Pending,
+    /// Request for approval which is in responded status
     Responded,
+    /// Request for approval that is obsolete due to a subject update
     Obsolete,
 }
 
@@ -151,9 +173,13 @@ impl From<ApprovalState> for ApprovalStateResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ApprovalEntityResponse {
+    /// Approval request identifier
     pub id: String,
+    /// Signature of the request for approval
     pub request: SignedBody<ApprovalRequestResponse>,
+    /// Signature of the petition by approvers
     pub reponse: Option<SignedBody<ApprovalResponseBody>>,
+    /// Current status of the request
     pub state: ApprovalStateResponse,
 }
 
@@ -171,7 +197,9 @@ impl From<ApprovalEntity> for ApprovalEntityResponse {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TapleRequestResponse {
     #[serde(flatten)]
+    /// Type of event issued to taple
     pub request: EventRequestBody,
+    /// Signature of the person who issued the event
     pub signature: SignatureBody,
 }
 
@@ -187,10 +215,15 @@ impl From<TapleRequest> for TapleRequestResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TapleRequestStateResponse {
+    /// Request identifier
     id: String,
+    /// Subject identifier
     subject_id: Option<String>,
+    /// Current sequence number of the subject
     sn: Option<u64>,
+    /// Current status of the request
     state: RequestStateResponse,
+    /// Value that says if the request has been successful
     success: Option<bool>
 }
 
@@ -208,10 +241,13 @@ impl From<TapleRequest> for TapleRequestStateResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum RequestStateResponse {
+    /// Request has been successfully completed
     #[serde(rename = "finished")]
     Finished,
+    /// Request has encountered a problem
     #[serde(rename = "error")]
     Error,
+    /// Reques is being processed
     #[serde(rename = "processing")]
     Processing,
 }
@@ -228,16 +264,27 @@ impl From<RequestState> for RequestStateResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ValidationProofResponse {
+    /// Subject identifier
     pub subject_id: String,
+    /// Subject schema json identifier
     pub schema_id: String,
+    /// Namespace to which the subject belongs
     pub namespace: String,
+    /// Name of subject
     pub name: String,
+    /// Public key of the subject
     pub subject_public_key: String,
+    /// Governance identifier
     pub governance_id: String,
+    /// Governance version of the genesis event
     pub genesis_governance_version: u64,
+    /// Current sequence number of the subject
     pub sn: u64,
+    /// Previous event hash
     pub prev_event_hash: String,
+    /// Hash of the event
     pub event_hash: String,
+    /// Governance version
     pub governance_version: u64,
 }
 
@@ -261,13 +308,17 @@ impl From<ValidationProof> for ValidationProofResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct GetProofResponse {
+    /// Current validation proof
     pub proof: ValidationProofResponse,
+    /// Validators' signatures
     pub signatures: Vec<SignatureBody>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PreauthorizedSubjectsResponse {
-    subject_id: String,
+    /// Subject identifier
+    subject_id: String, // DigestIdentifier
+    /// Providers acting on a specific subject
     providers: Vec<String>,
 }
 
