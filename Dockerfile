@@ -1,19 +1,19 @@
-FROM rust:1.66-slim-buster as builder
+FROM rust:1.67-slim-buster as builder
 WORKDIR /app
 RUN apt update
 RUN apt install -y build-essential
 RUN apt install -y libprotobuf-dev protobuf-compiler
 RUN apt install cmake -y
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo install wasm-gc
-ENV TAPLE_CONTRACTSDKPATH "/app/taple-client/contracts"
 COPY . taple-client
 WORKDIR /app/taple-client
+RUN sed -i '/"taple-tools\/taple-keygen"/d' Cargo.toml
+RUN sed -i '/"taple-tools\/taple-patch"/d' Cargo.toml
+RUN sed -i '/"taple-tools\/taple-sign"/d' Cargo.toml
+RUN mkdir -p "contracts"
+RUN mkdir -p "db"
+ENV TAPLE_SC_BUILD_PATH "/app/taple-client/contracts"
+ENV TAPLE_DBPATH "/app/taple-client/db"
 RUN cargo install --path client
-RUN chmod +777 /app/taple-client/contracts
+# RUN chmod +777 /app/taple-client/contracts
 CMD ["taple-client"]
-
-# FROM debian:buster-slim
-# WORKDIR /home
-# COPY --from=builder /usr/local/cargo/bin/taple-client /usr/local/bin/taple-client
-# CMD ["taple-client"]

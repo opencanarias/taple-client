@@ -65,10 +65,8 @@ pub fn extract_boolean<T: Into<String>>(
     default: bool,
 ) -> Result<bool, SettingsError> {
     let key: String = key.into();
-    let Some(value) = data.get::<String>(&key) else {
+    let Some(value) = data.get::<bool>(&key) else {
         return Ok(default);
     };
-    value
-        .parse::<bool>()
-        .map_err(|_| SettingsError::InvalidTypeParamer(key.clone()))
+    Ok(*value)
 }
