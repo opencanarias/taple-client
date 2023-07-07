@@ -1,4 +1,4 @@
-FROM rust:1.65 as builder
+FROM rust:1.65 AS builder
 WORKDIR /app
 RUN apt update
 RUN apt install -y libprotobuf-dev protobuf-compiler
