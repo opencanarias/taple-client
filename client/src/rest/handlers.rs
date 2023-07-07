@@ -32,7 +32,7 @@ use super::{
     get,
     path = "/approval-requests",
     operation_id = "Get Approval Request Data",
-    tag = "getApprovalRequests",
+    tag = "Aproval",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Approval's unique id"),
@@ -67,7 +67,7 @@ use super::{
                             },
                             "signature": {
                                 "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                                "timestamp": 1688643580647283295,
+                                "timestamp": 168864358,
                                 "value": "SE4yS1Q1Smhm3Az3r6WNFKAGd2Us69vyUA3j5q_riE6MICh_Ub2fSLxNS3Nn-g_CpppvABq6s_c8dF5kbmUir4Ag"
                             }
                         },
@@ -87,7 +87,7 @@ use super::{
                         "hash_prev_event": "JLic8SLrT7tJxA9B3aLaaKaIEuV7Wouo2ogHCid6O4g8",
                         "signature": {
                             "signer": "E0gaiDcPRVmYLUGbseHmBk2_2H-FAlSgaO6ZMOXhh4Gs",
-                            "timestamp": 1688643580696410821,
+                            "timestamp": 168864358,
                             "value": "SEFyfXR6kE04gGdCtXZN-So6nNJAAe1qwnTkl0UuoFpCEEuQhwkZND77o1Y9OVuVus8mgGtyAdTi-A7_0MkDKgBw"
                         }
                     },
@@ -104,7 +104,6 @@ pub async fn get_approvals_handler(
     node: NodeAPI,
     parameters: GetApprovalsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
-    println!("asd:\n{:#?}\n{:#?}\n{:#?}", parameters.from, parameters.quantity, parameters.status);
     let status = match parameters.status {
         None => None,
         Some(value) => match value.to_lowercase().as_str() {
@@ -134,7 +133,7 @@ pub async fn get_approvals_handler(
     get,
     path = "/approval-requests/{id}",
     operation_id = "Get Approval Request Data",
-    tag = "getApprovalRequest",
+    tag = "Aproval",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Approval's unique id")
@@ -165,7 +164,7 @@ pub async fn get_approvals_handler(
                         },
                         "signature": {
                             "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                            "timestamp": 1688643580647283295,
+                            "timestamp": 1688643580,
                             "value": "SE4yS1Q1Smhm3Az3r6WNFKAGd2Us69vyUA3j5q_riE6MICh_Ub2fSLxNS3Nn-g_CpppvABq6s_c8dF5kbmUir4Ag"
                         }
                     },
@@ -185,7 +184,7 @@ pub async fn get_approvals_handler(
                     "hash_prev_event": "JLic8SLrT7tJxA9B3aLaaKaIEuV7Wouo2ogHCid6O4g8",
                     "signature": {
                         "signer": "E0gaiDcPRVmYLUGbseHmBk2_2H-FAlSgaO6ZMOXhh4Gs",
-                        "timestamp": 1688643580696410821,
+                        "timestamp": 1688643580,
                         "value": "SEFyfXR6kE04gGdCtXZN-So6nNJAAe1qwnTkl0UuoFpCEEuQhwkZND77o1Y9OVuVus8mgGtyAdTi-A7_0MkDKgBw"
                     }
                 },
@@ -218,7 +217,7 @@ pub async fn get_approval_handler(
     patch,
     path = "/approval-requests/{id}",
     operation_id = "Set your Aprroval for a request",
-    tag = "patchApproval",
+    tag = "Aproval",
     context_path = "/api",
     request_body(content = PatchVoteBody, content_type = "application/json", description = "Vote of the user for an existing request",
     example = json!(
@@ -255,7 +254,7 @@ pub async fn get_approval_handler(
                         },
                         "signature": {
                             "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                            "timestamp": 1688643580647283295,
+                            "timestamp": 1688643580,
                             "value": "SE4yS1Q1Smhm3Az3r6WNFKAGd2Us69vyUA3j5q_riE6MICh_Ub2fSLxNS3Nn-g_CpppvABq6s_c8dF5kbmUir4Ag"
                         }
                     },
@@ -275,7 +274,7 @@ pub async fn get_approval_handler(
                     "hash_prev_event": "JLic8SLrT7tJxA9B3aLaaKaIEuV7Wouo2ogHCid6O4g8",
                     "signature": {
                         "signer": "E0gaiDcPRVmYLUGbseHmBk2_2H-FAlSgaO6ZMOXhh4Gs",
-                        "timestamp": 1688643580696410821,
+                        "timestamp": 1688643580,
                         "value": "SEFyfXR6kE04gGdCtXZN-So6nNJAAe1qwnTkl0UuoFpCEEuQhwkZND77o1Y9OVuVus8mgGtyAdTi-A7_0MkDKgBw"
                     }
                 },
@@ -284,7 +283,7 @@ pub async fn get_approval_handler(
                     "approved": true,
                     "signature": {
                         "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                        "timestamp": 1688643614072704362,
+                        "timestamp": 168864361,
                         "value": "SERUEr362pHPIcORhUnYPxnW1A_jW675_yphYIQIKaO6wytdh7xwwNTXHW6Q1fs9F6ag8VpTy2DM_5ppRT7irFDg"
                     }
                 },
@@ -322,7 +321,7 @@ pub async fn patch_approval_handler(
     get,
     path = "/allowed-subjects",
     operation_id = "Get Allowed Subject Data",
-    tag = "getAllowedSubjects",
+    tag = "",
     context_path = "/api",
     params( 
         ("from" = Option<String>, Query, description = "Id of initial subject"),
@@ -362,7 +361,7 @@ pub async fn get_allowed_subjects_handler(
     put,
     path = "/allowed-subjects/{id}",
     operation_id = "Put Allowed Subject Data",
-    tag = "putAllowedSubjects",
+    tag = "",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Subject's unique id")
@@ -374,7 +373,6 @@ pub async fn get_allowed_subjects_handler(
         }
     )),
     responses(
-        // Preguntar porque esto creo que debería tener otro código
         (status = 200, description = "Subject Data successfully created", body = AuthorizeSubjectBody,
         example = json!( 
             {
@@ -425,7 +423,7 @@ pub async fn put_allowed_subjects_handler(
 #[utoipa::path(
     post,
     path = "/keys",
-    tag = "Keys",
+    tag = "",
     operation_id = "createKeys",
     context_path = "/api",
     params(
@@ -535,7 +533,7 @@ pub async fn post_event_request_handler(
     get,
     path = "/event-requests/{id}",
     operation_id = "Get Event Request Data",
-    tag = "getEventRequest",
+    tag = "Requests",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Event Request's unique id"),
@@ -563,7 +561,7 @@ pub async fn post_event_request_handler(
                 },
                 "signature": {
                     "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                    "timestamp": 1688643580647283295,
+                    "timestamp": 1688643580,
                     "value": "SE4yS1Q1Smhm3Az3r6WNFKAGd2Us69vyUA3j5q_riE6MICh_Ub2fSLxNS3Nn-g_CpppvABq6s_c8dF5kbmUir4Ag"
                 }
             }
@@ -594,7 +592,7 @@ pub async fn get_taple_request_handler(
     get,
     path = "/event-requests/{id}/state",
     operation_id = "Get Event Request State Data",
-    tag = "getEventRequestState",
+    tag = "Requests",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Event Request's unique id"),
@@ -623,27 +621,6 @@ pub async fn get_taple_request_state_handler(
         node.get_request(id)
             .await
             .map(|data| TapleRequestStateResponse::from(data))
-    } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
-    };
-    handle_data(result)
-}
-
-pub async fn get_governance_subjects_handle(
-    id: String,
-    node: NodeAPI,
-    parameters: GetAllSubjectsQuery,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
-    let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_governance_subjects(id, parameters.from, parameters.quantity)
-            .await
-            .map(|r| {
-                r.into_iter()
-                    .map(|s| SubjectDataResponse::from(s))
-                    .collect::<Vec<SubjectDataResponse>>()
-            })
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
@@ -830,7 +807,7 @@ pub async fn get_subject_handler(
     get,
     path = "/subjects/{id}/validation",
     operation_id = "getValidation",
-    tag = "Events",
+    tag = "Subjects",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Subject's unique id"),
@@ -855,7 +832,7 @@ pub async fn get_subject_handler(
                 "signatures": [
                     {
                         "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                        "timestamp": 1688643031901641767,
+                        "timestamp": 1688643031,
                         "value": "SEF3qN1uKIgNfnK6YlgU7rlCvDCNHhl_tdcRBvQRyGShR8oOOw5tVk8_OUNlyaJV_HsrISeX8jAf4L3diodRZ_Dg"
                     }
                 ]
@@ -893,7 +870,7 @@ pub async fn get_validation_proof_handle(
     path = "/subjects/{id}/events",
     operation_id = "getEvents",
     context_path = "/api",
-    tag = "Events",
+    tag = "Subjects",
     params(
         ("id" = String, Path, description = "Subject's unique id"),
         ("from" = Option<usize>, Query, description = "Initial SN"),
@@ -915,7 +892,7 @@ pub async fn get_validation_proof_handle(
                         },
                         "signature": {
                             "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                            "timestamp": 1688643031881200732,
+                            "timestamp": 1688643031,
                             "value": "SE-tHjb3eWcMvVIYuSBPn0EW4Q5mQs2uswS5HLl0GB0iYVEc5jcOWD78ZHRL8VlO0mtxv9KWt2EI9R9Id2Z5o8CA"
                         }
                     },
@@ -964,7 +941,7 @@ pub async fn get_validation_proof_handle(
                     "approvers": [],
                     "signature": {
                         "signer": "E0gaiDcPRVmYLUGbseHmBk2_2H-FAlSgaO6ZMOXhh4Gs",
-                        "timestamp": 1688643031882530732,
+                        "timestamp": 168864303,
                         "value": "SEnTz4Nw-rX6y00yNF01o__AwyWxyG1s669AetXCfrnxCTSyf67xv8AsnccTOe4fFm-2ZIeRjubdf5FTQHZAd7BQ"
                     }
                 }
@@ -1000,7 +977,7 @@ pub async fn get_events_of_subject_handler(
     get,
     path = "/subjects/{id}/events/{sn}",
     operation_id = "getEvent",
-    tag = "Events",
+    tag = "Subjects",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Subject's unique id"),
@@ -1021,7 +998,7 @@ pub async fn get_events_of_subject_handler(
                     },
                     "signature": {
                         "signer": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                        "timestamp": 1688643031881200732,
+                        "timestamp": 168864303,
                         "value": "SE-tHjb3eWcMvVIYuSBPn0EW4Q5mQs2uswS5HLl0GB0iYVEc5jcOWD78ZHRL8VlO0mtxv9KWt2EI9R9Id2Z5o8CA"
                     }
                 },
@@ -1071,7 +1048,7 @@ pub async fn get_events_of_subject_handler(
                 "approvers": [],
                 "signature": {
                     "signer": "E0gaiDcPRVmYLUGbseHmBk2_2H-FAlSgaO6ZMOXhh4Gs",
-                    "timestamp": 1688643031882530732,
+                    "timestamp": 168864303,
                     "value": "SEnTz4Nw-rX6y00yNF01o__AwyWxyG1s669AetXCfrnxCTSyf67xv8AsnccTOe4fFm-2ZIeRjubdf5FTQHZAd7BQ"
                 }
             }
