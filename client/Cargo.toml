@@ -27,7 +27,7 @@ tempfile = { workspace = true }
 hex = { workspace = true }
 home = { workspace = true }
 
-taple-core = { workspace = true }
+taple-core = { workspace = true, features = ["evaluation", "validation", "aproval"] }
 
 settings = { path = "../settings" }
 

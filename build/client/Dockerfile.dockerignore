@@ -1,4 +1,5 @@
 **/target 
 **/*.rs.bk
 **/*.db
-taple-tools/start.sh
+taple-tools
+settings.toml

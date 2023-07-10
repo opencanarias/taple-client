@@ -5,3 +5,4 @@ contracts/src/lib.rs
 .DS_Store
 data.md
 settings.toml
+taple-tools/start.sh

@@ -5,13 +5,17 @@ RUN apt install -y libprotobuf-dev protobuf-compiler
 RUN apt install cmake -y
 COPY . taple-tools
 WORKDIR /app/taple-tools
-RUN cargo install --path taple-keygen
-RUN cargo install --path taple-sign
+RUN sed -i '/"client"/d' Cargo.toml
+RUN sed -i '/"settings"/d' Cargo.toml
+RUN cargo install --path taple-tools/taple-keygen
+RUN cargo install --path taple-tools/taple-sign
+RUN cargo install --path taple-tools/taple-patch
 
 FROM debian:buster-slim
 WORKDIR /home
 COPY --from=builder /usr/local/cargo/bin/taple-keygen /usr/local/bin/taple-keygen
 COPY --from=builder /usr/local/cargo/bin/taple-sign /usr/local/bin/taple-sign
-COPY ./run.sh ./run.sh
+COPY --from=builder /usr/local/cargo/bin/taple-patch /usr/local/bin/taple-patch
+COPY taple-tools/run.sh ./run.sh
 RUN chmod a+x run.sh
 ENTRYPOINT ["./run.sh"]
