@@ -65,6 +65,13 @@ pub fn extract_boolean<T: Into<String>>(
     default: bool,
 ) -> Result<bool, SettingsError> {
     let key: String = key.into();
+    if let Some(value) = data.get::<String>(&key) {
+        if value == "true" {
+            return Ok(true);
+        } else if value == "false" {
+            return Ok(false);
+        }
+    };
     let Some(value) = data.get::<bool>(&key) else {
         return Ok(default);
     };

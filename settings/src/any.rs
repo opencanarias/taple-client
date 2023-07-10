@@ -1,5 +1,6 @@
 use std::{collections::HashMap};
 
+#[derive(Debug)]
 pub struct SettingsMap {
   map: HashMap<String, AnyValue>
 }
@@ -28,6 +29,7 @@ impl SettingsMap {
   }
 }
 
+#[derive(Debug)]
 pub struct AnyValue {
   data: std::sync::Arc<dyn std::any::Any + Send + Sync + 'static>,
 }
