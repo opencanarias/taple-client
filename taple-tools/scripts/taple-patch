@@ -1,0 +1,5 @@
+#!/bin/bash
+
+TOOLS_IMAGE="taple-tools"
+
+docker run --rm --name docker-taple-patch $TOOLS_IMAGE taple-patch ${@:1}
