@@ -22,7 +22,11 @@ keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
 
 
 [workspace.dependencies]
+<<<<<<< HEAD
 taple-core = { git = "https://github.com/opencanarias/taple-core" }
+=======
+taple-core = { git = "https://github.com/opencanarias/taple-core", features = ["evaluation", "validation", "aproval"] }
+>>>>>>> main
 # taple-core = { path = "../taple-core/core", features = ["evaluation", "validation", "aproval"] }
 
 ## Client
@@ -69,6 +73,7 @@ tempdir = "~0.3"
 libp2p = { version = "0.50.0", features = ["secp256k1"] }
 chrono = { version = "0.4", features = ["clock"] }
 json-patch = "~1"
+serde_yaml = "~0.9"
 
 [profile.release]
 lto = true

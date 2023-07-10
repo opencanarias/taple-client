@@ -1,8 +1,10 @@
+use std::str::FromStr;
+
 use clap::{Parser, ValueEnum};
-use taple_core::crypto::{Ed25519KeyPair, KeyGenerator, KeyMaterial, KeyPair, Secp256k1KeyPair};
-use taple_core::identifier::{Derivable, KeyIdentifier};
 use libp2p::core::PeerId;
 use libp2p::identity::{ed25519::Keypair as EdKeyPair, secp256k1::SecretKey};
+use taple_core::crypto::{Ed25519KeyPair, KeyGenerator, KeyMaterial, KeyPair, Secp256k1KeyPair};
+use taple_core::identifier::{Derivable, KeyIdentifier};
 
 #[derive(Parser, Default, Debug)]
 #[command(override_help = "
@@ -20,8 +22,10 @@ struct Args {
     #[clap(value_enum)]
     mode: Option<Algorithm>,
     /// Show only values
-    #[clap(short, long)]
+    #[clap(short = 's', long = "supress-info")]
     suppress_info: bool,
+    #[clap(short = 'f', long = "format")]
+    format: Option<Format>,
 }
 
 #[derive(Parser, Clone, Debug, ValueEnum, Default)]
@@ -31,8 +35,30 @@ enum Algorithm {
     Secp256k1,
 }
 
+#[derive(Parser, Clone, Debug, ValueEnum, Default)]
+enum Format {
+    #[default]
+    KeyValue,
+    Json,
+    Yaml,
+}
+
+impl FromStr for Format {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "keyvalue" => Ok(Format::KeyValue),
+            "json" => Ok(Format::Json),
+            "yaml" => Ok(Format::Yaml),
+            _ => Err(format!("'{}' is not a valid format", s)),
+        }
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
+    let args: Args = Args::parse();
+    let format = args.format.unwrap_or(Format::KeyValue);
     let (kp, alg_name, peer_id) = match args.mode.unwrap_or(Algorithm::Ed25519) {
         Algorithm::Ed25519 => {
             let keys = generate_ed25519();
@@ -60,31 +86,53 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    show_data(kp, alg_name, args.suppress_info, peer_id);
+    show_data(kp, alg_name, args.suppress_info, peer_id, format);
     Ok(())
 }
 
-fn show_data(kp: KeyPair, alg_name: &str, suppress_info: bool, peer_id: PeerId) {
+fn show_data(kp: KeyPair, alg_name: &str, suppress_info: bool, peer_id: PeerId, format: Format) {
     let private_key = kp.secret_key_bytes();
     let hex_private_key = hex::encode(private_key);
     let public_key = kp.public_key_bytes();
     let key_identifier = KeyIdentifier::new(kp.get_key_derivator(), &public_key).to_str();
-    if !suppress_info {
-        println!(
-            "\x1b[1m\x1b[4m{}\x1b[0m: {}",
-            format!("PRIVATE KEY {} (HEX)", alg_name),
-            hex_private_key
-        );
-        println!(
-            "\x1b[1m\x1b[4m{}\x1b[0m: {}",
-            format!("CONTROLLER ID {}", alg_name),
-            key_identifier
-        );
-        println!("\x1b[1m\x1b[4mPeerID\x1b[0m: {}", peer_id);
-    } else {
-        println!("{}", hex_private_key);
-        println!("{}", key_identifier);
-        println!("{}", peer_id);
+    match format {
+        Format::KeyValue => {
+            if !suppress_info {
+                println!(
+                    "{}: {}",
+                    format!("PRIVATE KEY {} (HEX)", alg_name),
+                    hex_private_key
+                );
+                println!(
+                    "{}: {}",
+                    format!("CONTROLLER ID {}", alg_name),
+                    key_identifier
+                );
+                println!("PeerID: {}", peer_id);
+            } else {
+                println!("{}", hex_private_key);
+                println!("{}", key_identifier);
+                println!("{}", peer_id);
+            }
+        }
+        Format::Json => {
+            let json = serde_json::to_string_pretty(&serde_json::json!({
+                "private_key": hex_private_key,
+                "controller_id": key_identifier,
+                "peer_id": peer_id.to_string()
+            }))
+            .expect("JSON serialization possible");
+            println!("{}", json);
+        }
+        Format::Yaml => {
+            let yaml = serde_yaml::to_string(&serde_json::json!({
+                "private_key": hex_private_key,
+                "controller_id": key_identifier,
+                "peer_id": peer_id.to_string()
+            }))
+            .expect("YAML serialization possible");
+            println!("{}", yaml);
+        }
     }
 }
 
