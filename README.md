@@ -1,14 +1,6 @@
-
-<div align="center">
-<p>⚠️ <b>TAPLE is in early development and <a href="https://www.taple.es/community/DISCLAIMER">should not be used in production</a></b> ⚠️</p>
-<br/>
-<p><img src="https://raw.githubusercontent.com/opencanarias/public-resources/master/images/taple-logo-readme.png"></p>
-</div>
-
-## The main branch is the pre-release, development version of `TAPLE`. Please see the [0.1](https://github.com/opencanarias/taple-client/tree/release-0.1) branch for the latest versions released.
+## This is TAPLE's main branch of work and is not guaranteed to be stable. Released versions are in the "release*" branches
 
 # TAPLE Client
-
 TAPLE (pronounced T+🍎 ['tapəl]) stands for Tracking (Autonomous) of Provenance and Lifecycle Events. TAPLE is a permissioned DLT solution for traceability of assets and processes. It is:
 
 - **Scalable**: Scaling to a sufficient level for traceability use cases. 
@@ -23,7 +15,8 @@ TAPLE Client is the reference application for connecting to the TAPLE DLT networ
 [agpl-badge]: https://img.shields.io/badge/license-AGPL-blue.svg
 [agpl-url]: https://github.com/opencanarias/taple-core/blob/master/LICENSE
 
-[Technology](https://www.taple.es) | [Develop](https://www.taple.es/docs/develop) | [Core](https://github.com/opencanarias/taple-core) | [Client](https://github.com/opencanarias/taple-client) | [Tools](https://github.com/opencanarias/taple-tools)
+[Discover](https://www.taple.es) | [Learn](https://www.taple.es/learn) | [Build](https://www.taple.es/build) | 
+[Code](https://github.com/search?q=topic%3Ataple+org%3Aopencanarias++fork%3Afalse+archived%3Afalse++is%3Apublic&type=repositories)
 
 ## Build From Source
 Rust versión 1.65 or higher is required.
@@ -41,25 +34,7 @@ $ taple-client --version
 Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-client).
 
 ## Usage
-Refer to our [tutorials and developer documentation](https://taple.es/docs/develop/tutorial-from-0/introduction) to learn how to set up and run the application. However, this documentation will indicate the minimum commands to start a node both from the binary and with the Docker image.
-
-Also visit the following [page](https://taple.es/docs/develop/taple-client-config) if you want to check the existing configurations for a TAPLE node.
-
-### Binary usage
-Once installed as described in section [Build From Source](#build-from-source):
-```bash
-# Generate an ED25519 secret key in hexadecimal format. TAPLE Keygen tool can be used with that purpose. Let's suppose 20a3e9463869c57a8d3e950d2ba7c1b51a10e97a446d9c3eba2e5da8e07a6f44
-taple-client -k 20a3e9463869c57a8d3e950d2ba7c1b51a10e97a446d9c3eba2e5da8e07a6f44
-```
-### Docker usage
-```bash
-docker run --name taple1 \
-  -e TAPLE_NODE_SECRETKEY=af9e38bbe732fe67071ee349f6a9bdc4ad0e5b9ef3518666bb273bd580d8d346 \
-  -e RUST_LOG=info \
-  -p 50000:50000 -p 3000:3000 opencanarias/taple-client
-```
-
-Port 50000 is the default port for protocol communications, while port 3000 is the port for the REST API.
+Refer to official TAPLE-Client [documentation](https://www.taple.es/docs/learn/taple-client) and [tutorials](https://www.taple.es/docs/build/taple-client) to learn how to set up and run the application.
 
 ## License
-This project is licensed under the [AGPL license](https://github.com/opencanarias/taple-core/blob/master/LICENSE).
+This project is licensed under the [AGPL license](./LICENSE).
