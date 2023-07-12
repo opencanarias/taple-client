@@ -36,7 +36,7 @@ impl Into<EventRequest> for EventRequestTypeBody {
             Self::Transfer(data) => EventRequest::Transfer(TTreansferRequest {
                 subject_id: DigestIdentifier::from_str(&data.subject_id)
                     .expect("Should be DigestIdentifier"),
-                public_key: KeyIdentifier::from_str(&data.subject_pub_key)
+                public_key: KeyIdentifier::from_str(&data.public_key)
                     .expect("Should be KeyIdentifier"),
             }),
             Self::EOL(data) => EventRequest::EOL(TEOLRequest {
@@ -65,7 +65,7 @@ pub struct FactRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransferRequest {
     pub subject_id: String,
-    pub subject_pub_key: String,
+    pub public_key: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

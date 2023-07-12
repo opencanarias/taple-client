@@ -103,7 +103,7 @@ impl TryInto<StartRequest> for CreateRequestBody {
             namespace: self.namespace,
             name: self.name,
             public_key: KeyIdentifier::from_str(&self.public_key.unwrap()).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for governance id"))
+                ApiError::InvalidParameters(format!("Invalid KeyIdentifier for public key"))
             })?,
         })
     }
