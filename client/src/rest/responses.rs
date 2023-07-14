@@ -22,6 +22,8 @@ pub struct EventContentResponse {
     pub subject_id: String,
     /// Signature of the event request
     pub event_request: SignedBody<EventRequestBody>,
+    /// The version of the governance contract.
+    pub gov_version: u64,
     /// Current sequence number of the subject
     pub sn: u64,
     /// Changes to be applied to the subject
@@ -56,6 +58,7 @@ impl From<Event> for EventContentResponse {
             hash_prev_event: value.hash_prev_event.to_str(),
             evaluators: value.evaluators.into_iter().map(|s| s.into()).collect(),
             approvers: value.approvers.into_iter().map(|s| s.into()).collect(),
+            gov_version: value.gov_version,
         }
     }
 }
