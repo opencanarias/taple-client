@@ -63,11 +63,9 @@ leveldb = "0.8"
 db-key = "0.0.5"
 bincode = "1.0"
 tempfile = "^3.4"
-tempdir = "~0.3"
 
 # TOOLS
 libp2p = { version = "0.50.0", features = ["secp256k1"] }
-chrono = { version = "0.4", features = ["clock"] }
 json-patch = "~1"
 serde_yaml = "~0.9"
 

@@ -19,7 +19,7 @@ pub struct SignedBody<T: Clone + Debug> {
     pub signature: SignatureBody,
 }
 
-impl<C: BorshSerialize + BorshDeserialize, T: Clone + Debug + From<C>> From<Signed<C>>
+impl<C: BorshSerialize + BorshDeserialize + Clone, T: Clone + Debug + From<C>> From<Signed<C>>
     for SignedBody<T>
 {
     fn from(value: Signed<C>) -> Self {
