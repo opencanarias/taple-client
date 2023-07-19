@@ -23,7 +23,7 @@ where
     pub signature: SignatureBody,
 }
 
-impl<C: BorshSerialize + BorshDeserialize, T: for<'a> ToSchema<'a> + Clone + Debug + From<C>>
+impl<C: BorshSerialize + BorshDeserialize + Clone, T: for<'a> ToSchema<'a> + Clone + Debug + From<C>>
     From<Signed<C>> for SignedBody<T>
 {
     fn from(value: Signed<C>) -> Self {

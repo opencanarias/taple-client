@@ -63,6 +63,7 @@ pub struct LevelDBManager {
     db: Arc<Database<StringKey>>,
 }
 
+#[allow(dead_code)]
 impl LevelDBManager {
     pub fn new(db: Arc<Database<StringKey>>) -> Self {
         Self { db }
