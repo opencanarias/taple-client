@@ -24,7 +24,7 @@ use super::{
     responses::{
         ApprovalEntityResponse, EventContentResponse, GetProofResponse,
         PreauthorizedSubjectsResponse, SubjectDataResponse, TapleRequestResponse,
-        TapleRequestStateResponse, ValidationProofResponse,
+        TapleRequestStateResponse, ValidationProofResponse, SignedEvent,
     },
 };
 
@@ -877,7 +877,7 @@ pub async fn get_validation_proof_handle(
         ("quantity" = Option<usize>, Query, description = "Quantity of events requested"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = [SignedBody<EventContentResponse>],
+        (status = 200, description = "Subjects Data successfully retrieved", body = [SignedEvent],
         example = json!(
             [
                 {
@@ -962,15 +962,15 @@ pub async fn get_events_of_subject_handler(
             .await
             .map(|ve| {
                 ve.into_iter()
-                    .map(|e| SignedBody::<EventContentResponse>::from(e))
-                    .collect::<Vec<SignedBody<EventContentResponse>>>()
+                    .map(|e| SignedEvent(SignedBody::<EventContentResponse>::from(e)))
+                    .collect::<Vec<SignedEvent>>()
             })
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"
         )))
     };
-    handle_data::<Vec<SignedBody<EventContentResponse>>>(result)
+    handle_data::<Vec<SignedEvent>>(result)
 }
 
 #[utoipa::path(
@@ -984,7 +984,7 @@ pub async fn get_events_of_subject_handler(
         ("sn" = u64, Path, description = "Event sn"),
     ),
     responses(
-        (status = 200, description = "Subjects Data successfully retrieved", body = SignedBody<EventContentResponse>,
+        (status = 200, description = "Subjects Data successfully retrieved", body = SignedEvent,
         example = json!(
             {
                 "subject_id": "JoifaSpfenD2bEPeBLvUTWh30brm4tKcvdW8exQnkGoQ",
@@ -1064,7 +1064,7 @@ pub async fn get_event_handler(
     node: NodeAPI,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let response = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_event(id, sn).await
+        node.get_event(id, sn).await.map(|e| SignedEvent(e.into()))
     } else {
         Err(ApiError::InvalidParameters(format!(
             "ID specified is not a valid Digest Identifier"

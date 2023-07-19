@@ -7,9 +7,9 @@ RUN apt install cmake -y
 RUN rustup target add wasm32-unknown-unknown
 COPY . taple-client
 WORKDIR /app/taple-client
-RUN sed -i '/"taple-tools\/taple-keygen"/d' Cargo.toml
-RUN sed -i '/"taple-tools\/taple-patch"/d' Cargo.toml
-RUN sed -i '/"taple-tools\/taple-sign"/d' Cargo.toml
+RUN sed -i '/"tools\/keygen"/d' Cargo.toml
+RUN sed -i '/"tools\/patch"/d' Cargo.toml
+RUN sed -i '/"tools\/sign"/d' Cargo.toml
 RUN mkdir -p "contracts"
 RUN mkdir -p "db"
 ENV TAPLE_SC_BUILD_PATH "/app/taple-client/contracts"

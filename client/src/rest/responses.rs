@@ -2,32 +2,52 @@ use std::collections::HashSet;
 
 use crate::rest::bodys::SignatureBody;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use taple_core::identifier::Derivable;
 use taple_core::request::{RequestState, TapleRequest};
 use taple_core::KeyIdentifier;
-use taple_core::ValueWrapper;
 use taple_core::{
-    ApprovalEntity, ApprovalRequest, ApprovalResponse, ApprovalState, Event,
-    SubjectData,
+    ApprovalEntity, ApprovalRequest, ApprovalResponse, ApprovalState, Event, SubjectData,
 };
 use taple_core::{DigestIdentifier, ValidationProof};
 use utoipa::ToSchema;
 
-use super::bodys::EventRequestBody;
 use super::bodys::SignedBody;
+use super::bodys::{EventRequestBody, SignedRequestBody};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignedEvent(pub SignedBody<EventContentResponse>);
+
+impl<'__s> utoipa::ToSchema<'__s> for SignedEvent
+{
+    fn schema() -> (
+        &'__s str,
+        utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+    ) {
+        let schema_event = EventContentResponse::schema();
+        let schema_signature = SignatureBody::schema();
+        (
+            "SignedEvent",
+            utoipa::openapi::ObjectBuilder::new()
+                .property(schema_event.0, schema_event.1)
+                .property(schema_signature.0, schema_signature.1)
+                .into()
+        )
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EventContentResponse {
     /// Subject identifier
     pub subject_id: String,
     /// Signature of the event request
-    pub event_request: SignedBody<EventRequestBody>,
+    pub event_request: SignedRequestBody,
     /// The version of the governance contract.
     pub gov_version: u64,
     /// Current sequence number of the subject
     pub sn: u64,
     /// Changes to be applied to the subject
-    pub patch: ValueWrapper,
+    pub patch: Value,
     /// Hash of the state
     pub state_hash: String,
     /// Value specifying if the evaluation process has gone well
@@ -48,9 +68,11 @@ impl From<Event> for EventContentResponse {
     fn from(value: Event) -> Self {
         Self {
             subject_id: value.subject_id.to_str(),
-            event_request: SignedBody::<EventRequestBody>::from(value.event_request),
+            event_request: SignedRequestBody(SignedBody::<EventRequestBody>::from(
+                value.event_request,
+            )),
             sn: value.sn,
-            patch: value.patch,
+            patch: value.patch.0,
             state_hash: value.state_hash.to_str(),
             eval_success: value.eval_success,
             appr_required: value.appr_required,
@@ -84,7 +106,7 @@ pub struct SubjectDataResponse {
     /// Subject creator identifier
     pub creator: String, // KeyIdentifier
     /// Current status of the subject
-    pub properties: ValueWrapper,
+    pub properties: Value,
     /// Indicates if the subject is active or not
     pub active: bool,
 }
@@ -100,7 +122,7 @@ impl From<SubjectData> for SubjectDataResponse {
             schema_id: value.schema_id,
             owner: value.owner.to_str(),
             creator: value.creator.to_str(),
-            properties: value.properties,
+            properties: value.properties.0,
             active: value.active,
             name: value.name,
         }
@@ -110,14 +132,14 @@ impl From<SubjectData> for SubjectDataResponse {
 pub struct ApprovalRequestResponse {
     // Evaluation Request
     /// Signature of the event request
-    pub event_request: SignedBody<EventRequestBody>,
+    pub event_request: SignedRequestBody,
     /// Current sequence number of the subject
     pub sn: u64,
     /// Governance version
     pub gov_version: u64,
     // Evaluation Response
     /// Changes to be applied to the subject
-    pub patch: ValueWrapper, // cambiar
+    pub patch: Value,
     /// Hash of the state
     pub state_hash: String,
     /// Previous event hash
@@ -127,10 +149,10 @@ pub struct ApprovalRequestResponse {
 impl From<ApprovalRequest> for ApprovalRequestResponse {
     fn from(value: ApprovalRequest) -> Self {
         Self {
-            event_request: value.event_request.into(),
+            event_request: SignedRequestBody(value.event_request.into()),
             sn: value.sn,
             gov_version: value.gov_version,
-            patch: value.patch,
+            patch: value.patch.0,
             state_hash: value.state_hash.to_str(),
             hash_prev_event: value.hash_prev_event.to_str(),
         }
@@ -174,14 +196,54 @@ impl From<ApprovalState> for ApprovalStateResponse {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignedApprovalRequestResponse(pub SignedBody<ApprovalRequestResponse>);
+
+impl<'__s> utoipa::ToSchema<'__s> for SignedApprovalRequestResponse {
+    fn schema() -> (
+        &'__s str,
+        utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+    ) {
+        let schema_approval = ApprovalRequestResponse::schema();
+        let schema_signature = SignatureBody::schema();
+        (
+            "SignedApprovalRequestResponse",
+            utoipa::openapi::ObjectBuilder::new()
+                .property(schema_approval.0, schema_approval.1)
+                .property(schema_signature.0, schema_signature.1)
+                .into(),
+        )
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignedApprovalResponseBody(pub SignedBody<ApprovalResponseBody>);
+
+impl<'__s> utoipa::ToSchema<'__s> for SignedApprovalResponseBody {
+    fn schema() -> (
+        &'__s str,
+        utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+    ) {
+        let schema_approval = ApprovalResponseBody::schema();
+        let schema_signature = SignatureBody::schema();
+        (
+            "SignedApprovalResponseBody",
+            utoipa::openapi::ObjectBuilder::new()
+                .property(schema_approval.0, schema_approval.1)
+                .property(schema_signature.0, schema_signature.1)
+                .into(),
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ApprovalEntityResponse {
     /// Approval request identifier
     pub id: String,
     /// Signature of the request for approval
-    pub request: SignedBody<ApprovalRequestResponse>,
+    pub request: SignedApprovalRequestResponse,
     /// Signature of the petition by approvers
-    pub reponse: Option<SignedBody<ApprovalResponseBody>>,
+    pub reponse: Option<SignedApprovalResponseBody>,
     /// Current status of the request
     pub state: ApprovalStateResponse,
 }
@@ -190,8 +252,10 @@ impl From<ApprovalEntity> for ApprovalEntityResponse {
     fn from(value: ApprovalEntity) -> Self {
         Self {
             id: value.id.to_str(),
-            request: value.request.into(),
-            reponse: value.response.map(|x| x.into()),
+            request: SignedApprovalRequestResponse(value.request.into()),
+            reponse: value
+                .response
+                .map(|x| SignedApprovalResponseBody(x.into())),
             state: value.state.into(),
         }
     }
@@ -227,7 +291,7 @@ pub struct TapleRequestStateResponse {
     /// Current status of the request
     state: RequestStateResponse,
     /// Value that says if the request has been successful
-    success: Option<bool>
+    success: Option<bool>,
 }
 
 impl From<TapleRequest> for TapleRequestStateResponse {
@@ -237,7 +301,7 @@ impl From<TapleRequest> for TapleRequestStateResponse {
             subject_id: value.subject_id.map(|id| id.to_str()),
             sn: value.sn,
             state: value.state.into(),
-            success: value.success
+            success: value.success,
         }
     }
 }
@@ -314,7 +378,7 @@ pub struct GetProofResponse {
     /// Current validation proof
     pub proof: ValidationProofResponse,
     /// Validators' signatures
-    pub signatures: Vec<SignatureBody>
+    pub signatures: Vec<SignatureBody>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

@@ -2,9 +2,9 @@
 members = [
     "settings",
     "client",
-    "taple-tools/taple-keygen",
-    "taple-tools/taple-patch",
-    "taple-tools/taple-sign"
+    "tools/keygen",
+    "tools/patch",
+    "tools/sign"
 ]
 
 [workspace.package]

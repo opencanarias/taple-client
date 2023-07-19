@@ -98,6 +98,7 @@ async fn start_http_server(
         .map(|| warp::reply::json(&ApiDoc::openapi()));
 
     if swaggerui {
+        log::warn!("DOC SERVER ACTIVATED");
         let swagger_ui = warp::path("api")
             .and(warp::path("documentation"))
             .and(warp::get())

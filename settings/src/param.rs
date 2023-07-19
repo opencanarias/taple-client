@@ -35,11 +35,10 @@ pub struct SettingSchemaBuilder {
 impl SettingSchemaBuilder {
     pub fn new<T: Into<String>>(id: T) -> Result<Self, Error> {
         let id: String = id.into();
-        let id = id.replace("-", "_");
         if id.is_empty() {
             return Err(Error::EmptyString);
         }
-        if !check_if_valid_env(&id) {
+        if !check_if_valid_env(&id.replace("-", "_")) {
             return Err(Error::InvalidStringForEnv(id));
         }
         Ok(Self {
@@ -60,7 +59,7 @@ impl SettingSchemaBuilder {
         SettingSchema {
             id: id.clone(),
             short: self.short.take(),
-            env: id.clone().to_uppercase(),
+            env: id.replace("-", "_").to_uppercase(),
             param_type: self.param_type.unwrap_or(ParamType::Set),
             help: self.help.unwrap_or(id),
             hidden: self.hidden,

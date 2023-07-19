@@ -23,11 +23,11 @@ impl SettingsGenerator for ClientSettings {
         Self: Sized,
     {
         let default_settings = get_default_settings();
-        let ports_offset = extract_from_map(&data, "ports_offset", 0u32)?;
+        let ports_offset = extract_from_map(&data, "ports-offset", 0u32)?;
         let listen_addr = {
             let mut list: Vec<ListenAddr> = Vec::new();
             let data = {
-                let tmp = extract_list(&data, "listen_addr");
+                let tmp = extract_list(&data, "listen-addr");
                 if tmp.is_empty() {
                     default_settings
                         .network
@@ -61,7 +61,7 @@ impl SettingsGenerator for ClientSettings {
 }
 
 fn create_database_path(data: &SettingsMap) -> Result<String, SettingsError> {
-    if let Some(path) = data.get::<String>("dbpath") {
+    if let Some(path) = data.get::<String>("db-path") {
         Ok(path.clone())
     } else {
         log::warn!("Database path was not defined");
@@ -145,6 +145,7 @@ pub fn client_settings_builder() -> ConfigGenerator {
                     .build(),
                 SettingSchemaBuilder::new("doc")
                     .unwrap()
+                    .with_default(false.to_string())
                     .help("Flag to activate OpenAPI documentation endpoint ")
                     .param_type(ParamType::Flag)
                     .build(),
@@ -158,6 +159,7 @@ pub fn client_settings_builder() -> ConfigGenerator {
             vec![SettingSchemaBuilder::new("http")
                 .unwrap()
                 .help("Flag to activate HTTP server")
+                .with_default(false.to_string())
                 .param_type(ParamType::Flag)
                 .build()],
         )
@@ -207,7 +209,7 @@ pub fn client_settings_builder() -> ConfigGenerator {
         )
         .unwrap()
         .add_setting(
-            SettingSchemaBuilder::new("dbpath")
+            SettingSchemaBuilder::new("db-path")
                 .unwrap()
                 .help("Path where to store the database")
                 .short('d')
@@ -215,16 +217,16 @@ pub fn client_settings_builder() -> ConfigGenerator {
         )
         //
         .add_setting(
-            SettingSchemaBuilder::new("secret-key")
+            SettingSchemaBuilder::new("id-private-key")
                 .unwrap()
-                .help("Secret Key in hexadecimal to import into the node")
+                .help("Private Key in hexadecimal to import into the node")
                 .short('k')
                 .build(),
         )
         .add_setting(
-            SettingSchemaBuilder::new("key-derivator")
+            SettingSchemaBuilder::new("id-key-derivator")
                 .unwrap()
-                .help("Key derivator to use by the TAPLE")
+                .help("Key derivator used by the private that employs the TAPLE node")
                 .param_type(ParamType::Enum(vec!["ed25519".into(), "secp256k1".into()]))
                 .with_default(key_derivator_conversion(
                     default_settings.node.key_derivator,
@@ -234,6 +236,7 @@ pub fn client_settings_builder() -> ConfigGenerator {
         .add_setting(
             SettingSchemaBuilder::new("digest-derivator")
                 .unwrap()
+                .hide(true)
                 .help("Digest derivator to use by the TAPLE")
                 .with_default(digest_derivator_conversion(
                     default_settings.node.digest_derivator,
