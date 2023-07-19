@@ -1,53 +1,37 @@
+use super::handlers::{
+    __path_get_allowed_subjects_handler, __path_get_approval_handler, __path_get_approvals_handler,
+    __path_get_event_handler, __path_get_events_of_subject_handler, __path_get_subject_handler,
+    __path_get_subjects_handler, __path_get_taple_request_handler,
+    __path_get_taple_request_state_handler, __path_get_validation_proof_handle,
+    __path_patch_approval_handler, __path_post_event_request_handler,
+    __path_post_generate_keys_handler, __path_put_allowed_subjects_handler,
+};
+use super::responses::{
+    ApprovalEntityResponse, ApprovalRequestResponse, ApprovalResponseBody, ApprovalStateResponse,
+    TapleRequestResponse,
+};
+use super::{
+    bodys::{
+        AuthorizeSubjectBody, CreateRequestBody, EOLRequestBody, EventRequestBody, FactRequestBody,
+        PatchVoteBody, PostEventRequestBodyPreSignature, SignatureBody, SignedRequestBody,
+        TransferRequestBody,
+    },
+    responses::{
+        EventContentResponse, GetProofResponse, PreauthorizedSubjectsResponse,
+        RequestStateResponse, SignedApprovalRequestResponse, SignedApprovalResponseBody,
+        SignedEvent, SubjectDataResponse, TapleRequestStateResponse, ValidationProofResponse,
+    },
+};
+use std::sync::Arc;
 use utoipa::{
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
     Modify, OpenApi,
-};
-use std::sync::Arc;
-use super::responses::{
-    TapleRequestResponse,
-    ApprovalResponseBody,
-    ApprovalRequestResponse,
-    ApprovalEntityResponse,
-    ApprovalStateResponse
-};
-use super::{
-    bodys::
-    {
-        CreateRequestBody, EventRequestBody,
-        FactRequestBody, SignedBody,
-        SignatureBody, TransferRequestBody, EOLRequestBody
-    },
-    responses::{
-        EventContentResponse,
-        SubjectDataResponse,
-        TapleRequestStateResponse,
-        RequestStateResponse,
-        PreauthorizedSubjectsResponse,
-        ValidationProofResponse,
-        GetProofResponse
-    }
-};
-use super::handlers::{
-    __path_get_allowed_subjects_handler,
-    __path_get_subjects_handler,
-    __path_get_approval_handler,
-    __path_get_approvals_handler,
-    __path_get_event_handler,
-    __path_get_events_of_subject_handler,
-    __path_get_subject_handler,
-    __path_get_taple_request_handler,
-    __path_get_taple_request_state_handler,
-    __path_get_validation_proof_handle,
-    __path_patch_approval_handler,
-    __path_post_event_request_handler,
-    __path_post_generate_keys_handler,
-    __path_put_allowed_subjects_handler,
 };
 use warp::{
     http::Uri,
     hyper::{Response, StatusCode},
     path::{FullPath, Tail},
-    Rejection, Reply, redirect,
+    redirect, Rejection, Reply,
 };
 
 #[derive(OpenApi)]
@@ -70,10 +54,11 @@ use warp::{
     ),
     components(
         schemas(
-            SignedBody<EventContentResponse>,
-            SignedBody<ApprovalRequestResponse>,
+            SignedRequestBody,
+            SignedEvent,
+            SignedApprovalRequestResponse,
+            SignedApprovalResponseBody,
             ApprovalRequestResponse,
-            SignedBody<ApprovalResponseBody>,
             ApprovalResponseBody,
             FactRequestBody,
             SignatureBody,
@@ -88,9 +73,12 @@ use warp::{
             ApprovalStateResponse,
             ApprovalEntityResponse,
             TapleRequestResponse,
+            AuthorizeSubjectBody,
             PreauthorizedSubjectsResponse,
             ValidationProofResponse,
-            GetProofResponse
+            PatchVoteBody,
+            GetProofResponse,
+            PostEventRequestBodyPreSignature
         )
     ),
     modifiers(&SecurityAddon),
@@ -122,9 +110,9 @@ pub async fn serve_swagger(
     tail: Tail,
     config: Arc<utoipa_swagger_ui::Config<'static>>,
 ) -> Result<Box<dyn Reply + 'static>, Rejection> {
-    if full_path.as_str() == "/api/doc/ui" {
+    if full_path.as_str() == "/api/documentation" {
         return Ok(Box::new(redirect::found(Uri::from_static(
-            "/api/doc/ui/",
+            "/api/documentation/",
         ))));
     }
 

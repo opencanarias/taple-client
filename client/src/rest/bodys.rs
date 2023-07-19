@@ -3,6 +3,7 @@ use std::str::FromStr;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::fmt::Debug;
 use taple_core::{
     identifier::{Derivable, DigestIdentifier, KeyIdentifier, SignatureIdentifier},
@@ -12,21 +13,50 @@ use taple_core::{
 };
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct SignedBody<T: Clone + Debug> {
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+pub struct SignedBody<T>
+where
+    T: for<'a> ToSchema<'a> + Clone + Debug,
+{
     #[serde(flatten)]
     pub content: T,
     pub signature: SignatureBody,
 }
 
-impl<C: BorshSerialize + BorshDeserialize, T: Clone + Debug + From<C>> From<Signed<C>>
-    for SignedBody<T>
+impl<C: BorshSerialize + BorshDeserialize, T: for<'a> ToSchema<'a> + Clone + Debug + From<C>>
+    From<Signed<C>> for SignedBody<T>
 {
     fn from(value: Signed<C>) -> Self {
         Self {
             content: T::from(value.content),
             signature: SignatureBody::from(value.signature),
         }
+    }
+}
+
+// Utoipa does not properly process structures that accept generics.
+// Consequently, we use this Wrapper pattern to be able to represent the structures
+// in the resulting OpenAPI without also having to write entire new structures.
+// Note that although the "ToSchema" trait is implemented manually, the implementation
+// is simple by calling the internal representations of each attribute of the affected structures.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignedRequestBody(pub SignedBody<EventRequestBody>);
+
+impl<'__s> utoipa::ToSchema<'__s> for SignedRequestBody
+{
+    fn schema() -> (
+        &'__s str,
+        utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+    ) {
+        let schema_event = EventRequestBody::schema();
+        let schema_signature = SignatureBody::schema();
+        (
+            "SignedRequestBody",
+            utoipa::openapi::ObjectBuilder::new()
+                .property(schema_event.0, schema_event.1)
+                .property(schema_signature.0, schema_signature.1)
+                .into()
+        )
     }
 }
 
@@ -172,14 +202,14 @@ pub struct FactRequestBody {
     /// Subject identifier
     pub subject_id: String,
     /// Changes to be applied to the subject
-    pub payload: ValueWrapper,
+    pub payload: Value,
 }
 
 impl From<FactRequest> for FactRequestBody {
     fn from(value: FactRequest) -> Self {
         FactRequestBody {
             subject_id: value.subject_id.to_str(),
-            payload: value.payload,
+            payload: value.payload.0,
         }
     }
 }
@@ -191,7 +221,7 @@ impl TryInto<FactRequest> for FactRequestBody {
             subject_id: DigestIdentifier::from_str(&self.subject_id).map_err(|_| {
                 ApiError::InvalidParameters(format!("Invalid DigestIdentifier for subject id"))
             })?,
-            payload: self.payload,
+            payload: ValueWrapper(self.payload),
         })
     }
 }

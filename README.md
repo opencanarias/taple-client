@@ -33,8 +33,18 @@ $ taple-client --version
 ## Docker images
 Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-client).
 
+If you want to build the images yourself, then you should do it in the following way:
+```sh
+DOCKER_BUILDKIT=1 docker build -f /path/to/Dockerfile .
+```
+
+You can build both the image of the client and the image of the TAPLE tools. Both Dockerfile can be found in the build directory. The command should be executed from the root directory.
+
 ## Usage
 Refer to official TAPLE-Client [documentation](https://www.taple.es/docs/learn/taple-client) and [tutorials](https://www.taple.es/docs/build/taple-client) to learn how to set up and run the application.
+
+## Taple Tools
+This repository also contains the set of available Taple tools. You can consult the "tools" directory for more information about them.
 
 ## License
 This project is licensed under the [AGPL license](./LICENSE).

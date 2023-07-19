@@ -8,13 +8,6 @@
 
 # TAPLE Tools
 
-TAPLE (pronounced T+🍎 ['tapəl]) stands for Tracking (Autonomous) of Provenance and Lifecycle Events. TAPLE is a permissioned DLT solution for traceability of assets and processes. It is:
-
-- **Scalable**: Scaling to a sufficient level for traceability use cases. 
-- **Light**: Designed to support resource constrained devices.
-- **Flexible**: Have a flexible and adaptable cryptographic scheme mechanism for a multitude of scenarios.
-- **Energy-efficient**: Rust powered, TAPLE is sustainable and efficient from the point of view of energy consumption.
-
 TAPLE Tools is a set of tools that make it easier for the operator to manage a TAPLE network.
 
 [![AGPL licensed][agpl-badge]][agpl-url]
@@ -35,8 +28,10 @@ $ git clone https://github.com/opencanarias/taple-tools.git
 $ cd taple-tools
 $ cargo install --path taple-keygen
 $ cargo install --path taple-sign
+$ cargo install --path taple-patch
 $ taple-keygen -h
 $ taple-sign -h
+$ taple-patch -h
 ```
 ## Docker images
 Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-tools). The project includes [bash scripts](./scripts/) that allow for running utilities stored in the Docker image as if they were native applications. You will have to assign execution permissions to the scripts and add, optionally, add them to the path. 
@@ -46,8 +41,10 @@ $ git clone https://github.com/opencanarias/taple-tools.git
 $ cd taple-tools
 $ chmod +x ./scripts/taple-keygen
 $ chmod +x ./scripts/taple-sign
+$ chmod +x ./scripts/taple-patch
 $ ./scripts/taple-keygen -h
 $ ./scripts/taple-sign -h
+$ ./scripts/taple-patch -h
 ```
 
 ## License

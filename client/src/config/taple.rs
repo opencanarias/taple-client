@@ -12,24 +12,24 @@ impl SettingsGenerator for TapleSettings {
         Ok(TapleSettings {
             network: NetworkSettings {
                 listen_addr: Vec::new(),
-                known_nodes: extract_list(&data, "known_node"),
-                external_address: extract_list(&data, "external_addresses"),
+                known_nodes: extract_list(&data, "known-node"),
+                external_address: extract_list(&data, "external-addresses"),
             },
             node: NodeSettings {
                 key_derivator: extract_key_derivator(
                     &data,
-                    "key_derivator",
+                    "id-key-derivator",
                     default_settings.node.key_derivator,
                 )?,
-                secret_key: extract_option(&data, "secret_key")?,
+                secret_key: extract_option(&data, "id-private-key")?,
                 digest_derivator: extract_digest_derivator(
                     &data,
-                    "digest_derivator",
+                    "digest-derivator",
                     default_settings.node.digest_derivator,
                 )?,
-                replication_factor: extract_from_map(&data, "msg_rep_factor", 0.25f64)?,
-                timeout: extract_from_map(&data, "msg_timeout", 3000u32)?,
-                passvotation: extract_pass_votation(&data, "approval_mode")?,
+                replication_factor: extract_from_map(&data, "msg-rep-factor", 0.25f64)?,
+                timeout: extract_from_map(&data, "msg-timeout", 3000u32)?,
+                passvotation: extract_pass_votation(&data, "approval-mode")?,
                 smartcontracts_directory: create_contracts_build_path(&data)?,
             },
         })
