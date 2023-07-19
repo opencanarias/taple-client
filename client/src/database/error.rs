@@ -1,6 +1,7 @@
 use thiserror::Error;
 use leveldb::database;
 
+#[allow(dead_code)]
 #[derive(Error, Debug)]
 pub enum WrapperLevelDBErrors {
     #[error("Internal LevelDB::Error")]

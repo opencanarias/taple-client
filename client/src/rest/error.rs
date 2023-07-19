@@ -2,6 +2,7 @@ use taple_core::ApiError;
 use thiserror::Error;
 use warp::reject;
 
+#[allow(dead_code)]
 #[derive(Error, Debug, Clone)]
 pub enum Error {
     #[error("Bad Request: {0}")]
