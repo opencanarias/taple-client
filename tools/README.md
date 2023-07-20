@@ -1,50 +1,32 @@
-<div align="center">
-<p>⚠️ <b>TAPLE is in early development and <a href="https://www.taple.es/community/DISCLAIMER/">should not be used in production</a></b> ⚠️</p>
-<br/>
-<p><img src="https://raw.githubusercontent.com/opencanarias/public-resources/master/images/taple-logo-readme.png"></p>
-</div>
-
-## The main branch is the pre-release, development version of `TAPLE`. Please see the [0.1](https://github.com/opencanarias/taple-tools/tree/release-0.1) branch for the latest versions released.
-
 # TAPLE Tools
 
-TAPLE Tools is a set of tools that make it easier for the operator to manage a TAPLE network.
+TAPLE Tools are a group of utilities designed to facilitate the use of TAPLE Client, especially during testing and prototyping. TAPLE Tools are included within TAPLE Client repository. 
 
-[![AGPL licensed][agpl-badge]][agpl-url]
+## Build From Source
 
-[agpl-badge]: https://img.shields.io/badge/license-AGPL-blue.svg
-[agpl-url]: https://github.com/opencanarias/taple-core/blob/master/LICENSE
+Rust versión 1.66 or higher is required.
 
-[Technology](https://www.taple.es) | [Develop](https://www.taple.es/docs/develop) | [Core](https://github.com/opencanarias/taple-core) | [Client](https://github.com/opencanarias/taple-client) | [Tools](https://github.com/opencanarias/taple-tools)
-
-## Usage
-You can choose how to use the tools by either compiling the code and running them natively or through the Docker image.
-
-Visit the [TAPLE Tools guide](https://www.taple.es/docs/develop/taple-tools) to learn how to use the tools.
-
-### Build From Source
 ```bash
-$ git clone https://github.com/opencanarias/taple-tools.git
-$ cd taple-tools
-$ cargo install --path taple-keygen
-$ cargo install --path taple-sign
-$ cargo install --path taple-patch
+$ git clone https://github.com/opencanarias/taple-client.git
+$ cd taple-client
+$ sudo apt install -y libprotobuf-dev protobuf-compiler cmake
+$ cargo install --path tools/taple-keygen
+$ cargo install --path tools/taple-patch
+$ cargo install --path tools/taple-sign
 $ taple-keygen -h
 $ taple-sign -h
 $ taple-patch -h
 ```
-## Docker images
-Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-tools). The project includes [bash scripts](./scripts/) that allow for running utilities stored in the Docker image as if they were native applications. You will have to assign execution permissions to the scripts and add, optionally, add them to the path. 
 
-```bash
-$ git clone https://github.com/opencanarias/taple-tools.git
-$ cd taple-tools
-$ chmod +x ./scripts/taple-keygen
-$ chmod +x ./scripts/taple-sign
-$ chmod +x ./scripts/taple-patch
-$ ./scripts/taple-keygen -h
-$ ./scripts/taple-sign -h
-$ ./scripts/taple-patch -h
+## Usage
+Visit the [TAPLE Tools guide](https://www.taple.es/docs/learn/client-tools) to learn how to use the tools.
+
+## Docker images
+Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-tools).
+
+If you want to build the image yourself, then you should do it in the following way:
+```sh
+docker build -f ./Dockerfile.tools -t taple-tools .
 ```
 
 ## License

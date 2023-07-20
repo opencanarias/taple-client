@@ -1,5 +1,8 @@
 #!/bin/bash
 
-TOOLS_IMAGE="taple-tools"
+TOOLS_IMAGE="opencanarias/taple-tools:0.2"
+
+# Update to last compatible version
+docker pull $TOOLS_IMAGE > /dev/null 2> /dev/null
 
 docker run --rm --name docker-taple-patch $TOOLS_IMAGE taple-patch ${@:1}
