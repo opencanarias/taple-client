@@ -111,7 +111,8 @@ pub async fn get_approvals_handler(
         Some(value) => match value.to_lowercase().as_str() {
             "pending" => Some(ApprovalState::Pending),
             "obsolete" => Some(ApprovalState::Obsolete),
-            "responded" => Some(ApprovalState::Responded),
+            "responded_accepted" => Some(ApprovalState::RespondedAccepted),
+            "responded_rejected" => Some(ApprovalState::RespondedRejected),
             other => {
                 return handle_data::<Vec<ApprovalEntityResponse>>(Err(
                     ApiError::InvalidParameters(format!("status={}", other)),
@@ -304,8 +305,8 @@ pub async fn patch_approval_handler(
     body: PatchVoteBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let acceptance = match body {
-        PatchVoteBody::Accept => true,
-        PatchVoteBody::Reject => false,
+        PatchVoteBody::RespondedAccepted => true,
+        PatchVoteBody::RespondedRejected => false,
     };
     let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
         node.approval_request(id, acceptance)

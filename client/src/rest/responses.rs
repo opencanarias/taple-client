@@ -180,8 +180,10 @@ impl From<ApprovalResponse> for ApprovalResponseBody {
 pub enum ApprovalStateResponse {
     /// Request for approval which is in pending status
     Pending,
-    /// Request for approval which is in responded status
-    Responded,
+    /// Request for approval which is in responded status and accepted
+    RespondedAccepted,
+    /// Request for approval which is in responded status and rejected
+    RespondedRejected,
     /// Request for approval that is obsolete due to a subject update
     Obsolete,
 }
@@ -190,7 +192,8 @@ impl From<ApprovalState> for ApprovalStateResponse {
     fn from(value: ApprovalState) -> Self {
         match value {
             ApprovalState::Pending => Self::Pending,
-            ApprovalState::Responded => Self::Responded,
+            ApprovalState::RespondedAccepted => Self::RespondedAccepted,
+            ApprovalState::RespondedRejected => Self::RespondedRejected,
             ApprovalState::Obsolete => Self::Obsolete,
         }
     }

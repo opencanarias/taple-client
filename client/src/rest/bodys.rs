@@ -277,10 +277,10 @@ impl TryInto<Signature> for SignatureBody {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-#[serde(tag = "approvalType")]
+#[serde(tag = "state")]
 pub enum PatchVoteBody {
     /// Vote to accept a particular request
-    Accept,
+    RespondedAccepted,
     /// Vote to reject a particular request
-    Reject,
+    RespondedRejected,
 }
