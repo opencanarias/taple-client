@@ -1,6 +1,8 @@
 use std::{collections::HashSet, str::FromStr};
 
+use leveldb::error;
 use serde::Serialize;
+use serde_json::Value;
 use taple_core::{
     crypto::{KeyMaterial, KeyPair},
     identifier::{Derivable, DigestIdentifier},
@@ -446,8 +448,12 @@ pub async fn post_generate_keys_handler(
         .algorithm
         .unwrap_or(KeyAlgorithms::Ed25519)
         .into();
-    let result = node.add_keys(derivator).await;
-    handle_data(result)
+    match node.add_keys(derivator).await {
+        Ok(key) => handle_data(Ok(serde_json::json!({
+            "public_key": key.to_str(),
+        }))),
+        Err(error) => handle_data(Err::<Value, ApiError>(error)),
+    }
 }
 
 #[utoipa::path(
@@ -519,14 +525,17 @@ pub async fn post_event_request_handler(
         }
         None => Signature::new(&request, signer, &keys).expect("Error signing request"),
     };
-    let data = node
+    match node
         .external_request(Signed {
             content: request,
             signature,
         })
-        .await
-        .map(|id| id.to_str());
-    handle_data(data)
+        .await {
+        Ok(id) => handle_data(Ok(serde_json::json!({
+            "request_id": id.to_str(),
+        }))),
+        Err(error) => handle_data(Err::<Value, ApiError>(error)),
+        }
 }
 
 #[utoipa::path(
