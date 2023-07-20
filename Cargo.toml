@@ -22,51 +22,54 @@ keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
 
 
 [workspace.dependencies]
-# taple-core = { git = "https://github.com/opencanarias/taple-core" }
-taple-core = { path = "../taple-core/core", features = ["evaluation", "validation", "aproval"] }
+taple-core = { git = "https://github.com/opencanarias/taple-core", features =  ["evaluation", "validation", "aproval"] }
+# taple-core = { path = "../taple-core/core", features = ["evaluation", "validation", "aproval"] }
 
 ## Client
-env_logger = "0.10"
-log = "0.4"
-async-trait = "0.1.56"
+env_logger = "^0.10"
+log = "^0.4"
+async-trait = "^0.1.56"
 utoipa = "3"
 utoipa-swagger-ui = "3"
-tokio = { version = "1.20", features = ["default", "time", "rt", "rt-multi-thread", "sync", "macros", "signal"] }
-warp = { version = "0.3.3" }
-serde = "1.0.152"
-serde_json = "1.0"
-thiserror = "1.0"
-home = "0.5.5"
+tokio = { version = "^1.20", features = ["default", "time", "rt", "rt-multi-thread", "sync", "macros", "signal"] }
+warp = { version = "^0.3.3" }
+serde = { version = "^1.0.100", default-features = false }
+serde_json = { version = "^1.0.97" }
+thiserror = "^1.0"
+home = "^0.5.5"
 
 ## REST
-futures = "0.3.24"
+futures = "^0.3.24"
 ureq = { version = "2.6.2", features = ["json", "charset"] } 
-hex = "0.4.3"
-borsh = "~0.10.3"
+hex = "^0.4.3"
+borsh = "^0.10.3"
 
 # API
-config = { version = "0.13.2" }
+config = { version = "^0.13.2" }
 
 ## SETTINGS
-clap = {version = "4.1.3", features = ["string"] }
-toml = "0.6.0"
-lazy_static = "1.4.0"
-regex = "1.7.1"
-linked_hash_set = "0.1.4"
+clap = {version = "^4.1.3", features = ["string"] }
+toml = "^0.6.0"
+lazy_static = "^1.4.0"
+regex = "^1.7.1"
+linked_hash_set = "^0.1.4"
 
 ## TEST
-serial_test = "1.0.0"
+serial_test = "^1.0.0"
 
 ## LEVEL DB
-url = "2.3.1"
-leveldb = "0.8"
-db-key = "0.0.5"
+url = "^2.3.1"
+leveldb = "^0.8"
+db-key = "^0.0.5"
 bincode = "1.0"
 tempfile = "^3.4"
 
 # TOOLS
-libp2p = { version = "0.50.0", features = ["secp256k1"] }
-json-patch = "~1"
+libp2p = { version = "^0.45.1", features = [
+    "request-response",
+    "secp256k1",
+], default-features = false }
+json-patch = "^1"
 serde_yaml = "~0.9"
 
 [profile.release]
