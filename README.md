@@ -15,36 +15,40 @@ TAPLE Client is the reference application for connecting to the TAPLE DLT networ
 [agpl-badge]: https://img.shields.io/badge/license-AGPL-blue.svg
 [agpl-url]: https://github.com/opencanarias/taple-core/blob/master/LICENSE
 
-[Discover](https://www.taple.es) | [Learn](https://www.taple.es/learn) | [Build](https://www.taple.es/build) | 
-[Code](https://github.com/search?q=topic%3Ataple+org%3Aopencanarias++fork%3Afalse+archived%3Afalse++is%3Apublic&type=repositories)
+[Discover](https://www.taple.es) | [Learn](https://www.taple.es/learn) | [Build](https://www.taple.es/build) | [Code](https://github.com/search?q=topic%3Ataple+org%3Aopencanarias++fork%3Afalse+archived%3Afalse++is%3Apublic&type=repositories)
 
 ## Build From Source
-Rust versión 1.65 or higher is required.
+Rust versión 1.66 or higher is required.
 
 ```bash
 $ git clone https://github.com/opencanarias/taple-client.git
 $ cd taple-client
-$ apt install -y libprotobuf-dev protobuf-compiler
-$ apt install cmake -y
+$ sudo apt install -y libprotobuf-dev protobuf-compiler cmake
+$ rustup target add wasm32-unknown-unknown
 $ cargo install --path client
 $ taple-client --version
 ```
 
+## Usage
+Example of minimum configuration to start a node. An example identity is used and the REST API is activated. 
+```sh
+taple-client \
+  --http \
+  -k 7a747ddf55cf9b2ceb3b41a7c7ce9f88f835c120644e3c7522d97520668c8520
+```
+
+Refer to official TAPLE-Client [documentation](https://www.taple.es/docs/learn/taple-client) and [tutorials](https://www.taple.es/docs/build/taple-client) to learn how to set up and run the application.
+
 ## Docker images
 Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-client).
 
-If you want to build the images yourself, then you should do it in the following way:
+If you want to build the image yourself, then you should do it in the following way:
 ```sh
-DOCKER_BUILDKIT=1 docker build -f /path/to/Dockerfile .
+docker build -f ./Dockerfile.client -t taple-client .
 ```
 
-You can build both the image of the client and the image of the TAPLE tools. Both Dockerfile can be found in the build directory. The command should be executed from the root directory.
-
-## Usage
-Refer to official TAPLE-Client [documentation](https://www.taple.es/docs/learn/taple-client) and [tutorials](https://www.taple.es/docs/build/taple-client) to learn how to set up and run the application.
-
 ## Taple Tools
-This repository also contains the set of available Taple tools. You can consult the "tools" directory for more information about them.
+TAPLE Tools are a group of utilities designed to facilitate the use of TAPLE Client, especially during testing and prototyping. Look at this [README](./tools/README.md) for more information. 
 
 ## License
 This project is licensed under the [AGPL license](./LICENSE).

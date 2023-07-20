@@ -1,12 +1,7 @@
-FROM rust:1.65 AS builder
+FROM rust:1.66-slim-buster as builder
+RUN apt update; apt install -y build-essential libprotobuf-dev protobuf-compiler cmake
 WORKDIR /app
-RUN apt update
-RUN apt install -y libprotobuf-dev protobuf-compiler
-RUN apt install cmake -y
-COPY . tools
-WORKDIR /app/tools
-RUN sed -i '/"client"/d' Cargo.toml
-RUN sed -i '/"settings"/d' Cargo.toml
+COPY . .
 RUN cargo install --path tools/keygen
 RUN cargo install --path tools/sign
 RUN cargo install --path tools/patch

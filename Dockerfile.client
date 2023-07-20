@@ -1,0 +1,13 @@
+FROM rust:1.66-slim-buster as builder
+RUN apt update; apt install -y build-essential libprotobuf-dev protobuf-compiler cmake
+RUN rustup target add wasm32-unknown-unknown
+WORKDIR /app/taple-client
+COPY . .
+RUN cargo install --path client
+WORKDIR /app
+RUN mkdir -p "contracts"
+RUN mkdir -p "db"
+ENV TAPLE_SC_BUILD_PATH "/app/contracts"
+ENV TAPLE_DB_PATH "/app/db"
+
+CMD ["taple-client"]
