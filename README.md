@@ -2,9 +2,10 @@
   <p><img src="https://raw.githubusercontent.com/opencanarias/public-resources/master/images/taple-logo-readme.png"></p>
 </div>
 
-**The main branch is the pre-release, development version of `TAPLE`. Please see the [0.1](https://github.com/opencanarias/taple-core/tree/release-0.1) branch for the latest versions released.**
+**The main branch is the pre-release, development version of `TAPLE`. Please see the [0.2](https://github.com/opencanarias/taple-core/tree/release-0.2) branch for the latest versions released.**
 
 # TAPLE Client
+
 TAPLE (pronounced T+🍎 ['tapəl]) stands for Tracking (Autonomous) of Provenance and Lifecycle Events. TAPLE is a permissioned DLT solution for traceability of assets and processes. It is:
 
 - **Scalable**: Scaling to a sufficient level for traceability use cases. 
@@ -22,6 +23,7 @@ TAPLE Client is the reference application for connecting to the TAPLE DLT networ
 [Discover](https://www.taple.es) | [Learn](https://www.taple.es/learn) | [Build](https://www.taple.es/build) | [Code](https://github.com/search?q=topic%3Ataple+org%3Aopencanarias++fork%3Afalse+archived%3Afalse++is%3Apublic&type=repositories)
 
 ## Build From Source
+
 Rust versión 1.66 or higher is required.
 
 ```bash
@@ -34,7 +36,9 @@ $ taple-client --version
 ```
 
 ## Usage
-Example of minimum configuration to start a node. An example identity is used and the REST API is activated. 
+
+Example of minimum configuration to start a node. An example identity is used and the REST API is activated.
+
 ```sh
 taple-client \
   --http \
@@ -44,15 +48,19 @@ taple-client \
 Refer to official TAPLE-Client [documentation](https://www.taple.es/docs/learn/taple-client) and [tutorials](https://www.taple.es/docs/build/taple-client) to learn how to set up and run the application.
 
 ## Docker images
+
 Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-client).
 
 If you want to build the image yourself, then you should do it in the following way:
+
 ```sh
 docker build -f ./Dockerfile.client -t taple-client .
 ```
 
 ## Taple Tools
-TAPLE Tools are a group of utilities designed to facilitate the use of TAPLE Client, especially during testing and prototyping. Look at this [README](./tools/README.md) for more information. 
+
+TAPLE Tools are a group of utilities designed to facilitate the use of TAPLE Client, especially during testing and prototyping. Look at this [README](./tools/README.md) for more information.
 
 ## License
+
 This project is licensed under the [AGPL license](./LICENSE).

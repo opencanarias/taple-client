@@ -8,7 +8,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.0-dev"
+version = "0.2.0"
 authors = ["Open Canarias S.L.<taple@opencanarias.com>"]
 edition = "2021"
 description = "TAPLE Client official implementation"
@@ -22,8 +22,7 @@ keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
 
 
 [workspace.dependencies]
-taple-core = { git = "https://github.com/opencanarias/taple-core", features =  ["evaluation", "validation", "aproval"] }
-# taple-core = { path = "../taple-core/core", features = ["evaluation", "validation", "aproval"] }
+taple-core = { git = "https://github.com/opencanarias/taple-core", features =  ["evaluation", "validation", "aproval"], tag = "v0.2.0" }
 
 ## Client
 env_logger = "^0.10"
