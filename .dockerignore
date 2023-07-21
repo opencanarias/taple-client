@@ -2,3 +2,5 @@
 **/*.rs.bk
 **/*.db
 settings.toml
+.dockerignore
+Dockerfile.*
