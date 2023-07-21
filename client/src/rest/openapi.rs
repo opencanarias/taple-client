@@ -8,7 +8,7 @@ use super::handlers::{
 };
 use super::responses::{
     ApprovalEntityResponse, ApprovalRequestResponse, ApprovalResponseBody, ApprovalStateResponse,
-    TapleRequestResponse,
+    TapleRequestResponse, ErrorResponse,
 };
 use super::{
     bodys::{
@@ -78,7 +78,8 @@ use warp::{
             ValidationProofResponse,
             PatchVoteBody,
             GetProofResponse,
-            PostEventRequestBodyPreSignature
+            PostEventRequestBodyPreSignature,
+            ErrorResponse
         )
     ),
     modifiers(&SecurityAddon),

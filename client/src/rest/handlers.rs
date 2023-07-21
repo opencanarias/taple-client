@@ -512,7 +512,7 @@ pub async fn post_event_request_handler(
     let signer = KeyIdentifier::new(keys.get_key_derivator(), &keys.public_key_bytes());
     let Ok(request) = body.request.try_into() else {
         return Err(warp::reject::custom(
-            Error::InvalidParameters("Invalid request".to_owned()),
+            Error::InvalidParameters{error: "Invalid request".to_owned()},
         ));
     };
     let signature = match body.signature {
@@ -1089,16 +1089,25 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
     match &data {
         Ok(data) => return Ok(Box::new(warp::reply::json(&data))),
         Err(ApiError::InvalidParameters(msg)) => Err(warp::reject::custom(
-            Error::InvalidParameters(msg.to_owned()),
+            Error::InvalidParameters {
+                error: msg.to_owned()
+            },
         )),
-        Err(ApiError::NotFound(msg)) => Err(warp::reject::custom(Error::NotFound(msg.to_owned()))),
+        Err(ApiError::Conflict(msg)) => Err(warp::reject::custom(Error::Conflict{
+            error: msg.to_owned()
+        })),
+        Err(ApiError::NotFound(msg)) => Err(warp::reject::custom(Error::NotFound{
+            error: msg.to_owned()
+        })),
         Err(ApiError::EventCreationError { .. }) => {
             Err(warp::reject::custom(Error::ExecutionError {
                 source: data.unwrap_err(),
             }))
         }
-        Err(ApiError::NotEnoughPermissions(_)) => {
-            Err(warp::reject::custom(Error::NotEnoughPermissions))
+        Err(ApiError::NotEnoughPermissions(msg)) => {
+            Err(warp::reject::custom(Error::NotEnoughPermissions{
+                error: msg.to_owned(),
+            }))
         }
         // Err(ApiError::VoteNotNeeded(msg)) => Err(warp::reject::custom(Error::RequestError(msg.to_owned()))),
         Err(error) => Err(warp::reject::custom(Error::ExecutionError {
