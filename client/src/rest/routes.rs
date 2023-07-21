@@ -1,15 +1,15 @@
-use crate::rest::querys::GetWithPaginationString;
 use crate::rest::querys::AddKeysQuery;
+use crate::rest::querys::GetWithPaginationString;
 
 use super::handlers::{
-    get_approval_handler, get_approvals_handler, get_event_handler,
-    get_events_of_subject_handler,
-    get_allowed_subjects_handler, get_subject_handler, get_subjects_handler,
+    get_allowed_subjects_handler, get_approval_handler, get_approvals_handler, get_event_handler,
+    get_events_of_subject_handler, get_subject_handler, get_subjects_handler,
     get_taple_request_handler, get_taple_request_state_handler, get_validation_proof_handle,
-    post_event_request_handler, post_generate_keys_handler, patch_approval_handler,
+    patch_approval_handler, post_event_request_handler, post_generate_keys_handler,
     put_allowed_subjects_handler,
 };
 use super::querys::GetApprovalsQuery;
+use super::responses::ErrorResponse;
 use super::{
     error::Error,
     querys::{GetAllSubjectsQuery, GetWithPagination},
@@ -17,6 +17,7 @@ use super::{
 use serde::de::DeserializeOwned;
 use taple_core::crypto::KeyPair;
 use taple_core::{KeyDerivator, NodeAPI};
+use warp::body::BodyDeserializeError;
 use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
 
 pub fn routes(
@@ -44,6 +45,7 @@ pub fn routes(
         .or(get_approval(sender.clone()))
         .or(get_pending_approvals(sender.clone()))
         .or(get_event_request_state(sender.clone()))
+        .recover(handle_rejection)
 }
 
 pub fn get_approval(
@@ -53,7 +55,6 @@ pub fn get_approval(
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_approval_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_pending_approvals(
@@ -64,7 +65,6 @@ pub fn get_pending_approvals(
         .and(with_sender(sender))
         .and(warp::query::<GetApprovalsQuery>())
         .and_then(get_approvals_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_event_request(
@@ -74,7 +74,6 @@ pub fn get_event_request(
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_taple_request_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_event_request_state(
@@ -84,7 +83,6 @@ pub fn get_event_request_state(
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_taple_request_state_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_subject(
@@ -94,7 +92,6 @@ pub fn get_subject(
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_subject_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_all_subjects(
@@ -105,7 +102,6 @@ pub fn get_all_subjects(
         .and(with_sender(sender))
         .and(warp::query::<GetAllSubjectsQuery>())
         .and_then(get_subjects_handler)
-        .recover(handle_rejection)
 }
 
 pub fn post_event_request(
@@ -120,7 +116,6 @@ pub fn post_event_request(
         .and(with_derivator(derivator))
         .and(with_body())
         .and_then(post_event_request_handler)
-        .recover(handle_rejection)
 }
 
 pub fn patch_approval(
@@ -132,7 +127,6 @@ pub fn patch_approval(
         .and(with_sender(sender))
         .and(with_body())
         .and_then(patch_approval_handler)
-        .recover(handle_rejection)
 }
 
 pub fn post_generate_keys(
@@ -143,7 +137,6 @@ pub fn post_generate_keys(
         .and(with_sender(sender))
         .and(warp::query::<AddKeysQuery>())
         .and_then(post_generate_keys_handler)
-        .recover(handle_rejection)
 }
 
 pub fn post_preauthorized_subjects(
@@ -154,7 +147,6 @@ pub fn post_preauthorized_subjects(
         .and(with_sender(sender))
         .and(with_body())
         .and_then(put_allowed_subjects_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_preauthorized_subjects(
@@ -165,7 +157,6 @@ pub fn get_preauthorized_subjects(
         .and(with_sender(sender))
         .and(warp::query::<GetWithPaginationString>())
         .and_then(get_allowed_subjects_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_events_of_subject(
@@ -176,7 +167,6 @@ pub fn get_events_of_subject(
         .and(with_sender(sender))
         .and(warp::query::<GetWithPagination>())
         .and_then(get_events_of_subject_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_event(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -184,7 +174,6 @@ pub fn get_event(sender: NodeAPI) -> impl Filter<Extract = impl Reply, Error = R
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_event_handler)
-        .recover(handle_rejection)
 }
 
 pub fn get_validation_proof(
@@ -194,7 +183,6 @@ pub fn get_validation_proof(
         .and(warp::get())
         .and(with_sender(sender))
         .and_then(get_validation_proof_handle)
-        .recover(handle_rejection)
 }
 
 pub fn with_sender(
@@ -221,46 +209,180 @@ pub fn with_body<T: DeserializeOwned + Send>(
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
+    println!("HANDLE REJECTION: {:?}", err);
     if let Some(ref err) = err.find::<Error>() {
         match err {
-            Error::InternalServerError => {
-                let mut response = Response::new(String::from("Internal Server Error").into());
+            Error::InternalServerError { error } => {
+                let error = ErrorResponse {
+                    code: 500,
+                    error: error.to_owned(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
                 *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
                 return Ok(response);
             }
-            Error::ExecutionError { .. } => {
-                let mut response = Response::new(format!("{}", err).into());
+            Error::ExecutionError { source } => {
+                let error = ErrorResponse {
+                    code: 500,
+                    error: source.to_string(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
                 *response.status_mut() = StatusCode::CONFLICT;
                 return Ok(response);
             }
-            Error::InvalidParameters(_) => {
-                let mut response = Response::new(format!("{}", err).into());
+            Error::InvalidParameters { error } => {
+                let error = ErrorResponse {
+                    code: 400,
+                    error: error.to_owned(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
                 *response.status_mut() = StatusCode::BAD_REQUEST;
                 return Ok(response);
             }
-            Error::NotEnoughPermissions => {
-                let mut response = Response::new(
-                    String::from("Not Allowed. The node does not have the permissions to perform the requested operation."
-                ).into());
+            Error::NotEnoughPermissions { error } => {
+                let error = ErrorResponse {
+                    code: 403,
+                    error: error.to_owned(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
                 *response.status_mut() = StatusCode::FORBIDDEN;
                 return Ok(response);
             }
-            Error::NotFound(_) => {
-                let mut response = Response::new(format!("{}", err).into());
+            Error::NotFound { error } => {
+                let error = ErrorResponse {
+                    code: 404,
+                    error: error.to_owned(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
                 *response.status_mut() = StatusCode::NOT_FOUND;
                 return Ok(response);
             }
-            Error::Unauthorized => {
-                let mut response = Response::new(format!("{}", err).into());
+            Error::Unauthorized { error } => {
+                let error = ErrorResponse {
+                    code: 401,
+                    error: error.to_owned(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
                 *response.status_mut() = StatusCode::UNAUTHORIZED;
                 return Ok(response);
             }
-            Error::BadRequest(msg) => {
-                let mut response = Response::new(msg.to_owned().into());
+            Error::BadRequest { error } => {
+                let error = ErrorResponse {
+                    code: 400,
+                    error: error.to_owned(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
                 *response.status_mut() = StatusCode::BAD_REQUEST;
                 return Ok(response);
             }
+            Error::Conflict { error } => {
+                let error = ErrorResponse {
+                    code: 409,
+                    error: error.to_owned(),
+                };
+                let json_response = warp::reply::json(&error);
+                let mut response = Response::new(json_response.into_response().into_body());
+                *response.status_mut() = StatusCode::CONFLICT;
+                return Ok(response);
+            }
         }
+    } else if err.is_not_found() {
+        let error = ErrorResponse {
+            code: 404,
+            error: "Not Found".to_owned(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::NOT_FOUND;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<BodyDeserializeError>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::MethodNotAllowed>() {
+        let error = ErrorResponse {
+            code: 405,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::InvalidHeader>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::MissingCookie>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::PayloadTooLarge>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::MissingHeader>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::InvalidQuery>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::UnsupportedMediaType>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    } else if let Some(ref err) = err.find::<warp::reject::LengthRequired>() {
+        let error = ErrorResponse {
+            code: 400,
+            error: err.to_string(),
+        };
+        let json_response = warp::reply::json(&error);
+        let mut response = Response::new(json_response.into_response().into_body());
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
     } else {
         Err(err)
     }
