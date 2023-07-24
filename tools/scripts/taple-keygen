@@ -1,8 +1,5 @@
 #!/bin/bash
 
-TOOLS_IMAGE="opencanarias/taple-tools:0.2"
-
-# Update to last compatible version
-docker pull $TOOLS_IMAGE > /dev/null 2> /dev/null
+TOOLS_IMAGE="opencanarias/taple-tools:0.2.0"
 
 docker run --rm --name docker-taple-keygen $TOOLS_IMAGE taple-keygen ${@:1}

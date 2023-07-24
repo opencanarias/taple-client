@@ -10,9 +10,9 @@ Rust versión 1.66 or higher is required.
 $ git clone https://github.com/opencanarias/taple-client.git
 $ cd taple-client
 $ sudo apt install -y libprotobuf-dev protobuf-compiler cmake
-$ cargo install --path tools/taple-keygen
-$ cargo install --path tools/taple-patch
-$ cargo install --path tools/taple-sign
+$ cargo install --path tools/keygen
+$ cargo install --path tools/patch
+$ cargo install --path tools/sign
 $ taple-keygen -h
 $ taple-sign -h
 $ taple-patch -h
