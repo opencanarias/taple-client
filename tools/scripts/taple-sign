@@ -1,18 +1,5 @@
 #!/bin/bash
 
-TOOLS_IMAGE="opencanarias/taple-tools:0.2"
+TOOLS_IMAGE="opencanarias/taple-tools:0.2.0"
 
-# Update to last compatible version
-docker pull $TOOLS_IMAGE > /dev/null 2> /dev/null
-
-PRIVATE_KEY=$1
-
-if [ $2 ]; then
-  # request from command line
-  REQUEST=$2
-elif [ ! -t 0 ]; then 
-  # request from pipe
-  REQUEST=$(less <&0 | tr -d '[:space:]')
-fi
-
-docker run --rm --name docker-taple-sign $TOOLS_IMAGE taple-sign $PRIVATE_KEY $REQUEST
+docker run --rm --name docker-taple-sign $TOOLS_IMAGE taple-sign ${@:1}
