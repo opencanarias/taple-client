@@ -100,7 +100,7 @@ async fn start_http_server(
     if swaggerui {
         log::warn!("DOC SERVER ACTIVATED");
         let swagger_ui = warp::path("api")
-            .and(warp::path("documentation"))
+            .and(warp::path("doc"))
             .and(warp::get())
             .and(warp::path::full())
             .and(warp::path::tail())
