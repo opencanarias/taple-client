@@ -117,9 +117,9 @@ pub async fn serve_swagger(
     tail: Tail,
     config: Arc<utoipa_swagger_ui::Config<'static>>,
 ) -> Result<Box<dyn Reply + 'static>, Rejection> {
-    if full_path.as_str() == "/api/documentation" {
+    if full_path.as_str() == "/api/doc" {
         return Ok(Box::new(redirect::found(Uri::from_static(
-            "/api/documentation/",
+            "/api/doc/",
         ))));
     }
 
