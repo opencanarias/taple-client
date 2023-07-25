@@ -1,6 +1,5 @@
 use std::{collections::HashSet, str::FromStr};
 
-use leveldb::error;
 use serde::Serialize;
 use serde_json::Value;
 use taple_core::{
@@ -30,6 +29,8 @@ use super::{
     },
 };
 
+/// Allows to obtain the list of requests for approvals received by the node.
+/// It can also be used, by means of the "status" parameter, to list the requests pending approval.
 #[utoipa::path(
     get,
     path = "/approval-requests",
@@ -132,6 +133,8 @@ pub async fn get_approvals_handler(
     handle_data(data)
 }
 
+
+/// Allows you to obtain a request for approval by its identifier.
 #[utoipa::path(
     get,
     path = "/approval-requests/{id}",
@@ -216,6 +219,7 @@ pub async fn get_approval_handler(
     handle_data(result)
 }
 
+/// Allows you to issue an affirmative or negative approval for a previously received request.
 #[utoipa::path(
     patch,
     path = "/approval-requests/{id}",
@@ -320,6 +324,7 @@ pub async fn patch_approval_handler(
     handle_data(result)
 }
 
+/// Allows to obtain the list of subjects that have been pre-authorized by the node, as well as the identifiers of the nodes from which to obtain them.
 #[utoipa::path(
     get,
     path = "/allowed-subjects",
@@ -360,6 +365,7 @@ pub async fn get_allowed_subjects_handler(
     handle_data(result)
 }
 
+/// Allows a subject to be established as pre-qualified. It can also be used to specify from which nodes in the network the resource should be obtained.
 #[utoipa::path(
     put,
     path = "/allowed-subjects/{id}",
@@ -423,6 +429,8 @@ pub async fn put_allowed_subjects_handler(
     handle_data(result.map(|_| body))
 }
 
+
+/// It allows to generate a pair of cryptographic keys in the node that can then be assigned to a subject. The private key is never revealed.
 #[utoipa::path(
     post,
     path = "/keys",
@@ -433,9 +441,11 @@ pub async fn put_allowed_subjects_handler(
         ("algorithm" = String, Path, description = "Type of algorithm to use (possibilities: Ed25519, Secp256k1)")
     ),
     responses(
-        (status = 201, description = "KeyPair Created Successfully", body = String,
+        (status = 201, description = "Public Key of the generated keypair", body = String,
         example = json!(
-            "ELZ_b-kZzdPykcYuRNC2ZZe_2lCTCUoo60GXfR4cuXMw"
+            {
+                "public_key": "ELZ_b-kZzdPykcYuRNC2ZZe_2lCTCUoo60GXfR4cuXMw"
+            }
         )),
         (status = 400, description = "Bad Request"),
         (status = 500, description = "Internal Server Error"),
@@ -457,6 +467,9 @@ pub async fn post_generate_keys_handler(
     }
 }
 
+/// Allows to send an event request for a subject to the TAPLE node.
+/// These requests can be of any type of event (done, creation, transfer and end of life).
+/// In case of external invocation, the requests can be signed.
 #[utoipa::path(
     post,
     path = "/event-requests",
@@ -468,23 +481,7 @@ pub async fn post_generate_keys_handler(
         (status = 201, description = "Request Created Successfully", body = String,
         example = json!(
             {
-                "request": {
-                    "Fact": {
-                        "subject_id": "JoifaSpfenD2bEPeBLvUTWh30brm4tKcvdW8exQnkGoQ",
-                        "payload": {
-                            "Patch": {
-                                "data": [{
-                                    "op": "add",
-                                    "path": "/members/0",
-                                    "value": {
-                                    "id": "EbwR0yYrCYpTzlN5i5GX_MtAbKRw5y2euv3TqiTgwggs",
-                                    "name": "WPO"
-                                    }
-                                }]
-                            }
-                        }
-                    }
-                }
+                "request_id": "J8618wGO7hH4wRuEeL0Ob5XNI9Q73BlCNlV8cWBORq78"
             }
         )),
         (status = 400, description = "Bad Request"),
@@ -539,6 +536,7 @@ pub async fn post_event_request_handler(
         }
 }
 
+/// Allows to obtain an event request by its identifier
 #[utoipa::path(
     get,
     path = "/event-requests/{id}",
@@ -598,6 +596,7 @@ pub async fn get_taple_request_handler(
     handle_data(result)
 }
 
+/// Allows to obtain the status of an event request by its identifier.
 #[utoipa::path(
     get,
     path = "/event-requests/{id}/state",
@@ -639,6 +638,8 @@ pub async fn get_taple_request_state_handler(
     handle_data(result)
 }
 
+/// Allows to obtain, with pagination, the list of subjects known by the node.
+/// It can also be used to obtain exclusively the governances and all the subjects belonging to a specific one.
 #[utoipa::path(
     get,
     path = "/subjects",
@@ -648,7 +649,7 @@ pub async fn get_taple_request_state_handler(
     params(
         ("subject_type" = Option<String>, Query, description = "Type of subjects requested (possibilities: all, governances)"),
         ("governanceid" = Option<String>, Query, description = "Governance id of subjects requested"),
-        ("from" = Option<String>, Query, description = "Id of initial subject"),
+        ("from" = Option<String>, Query, description = "Identifier of the initial subject to be considered in pagination"),
         ("quantity" = Option<isize>, Query, description = "Quantity of subjects requested")
     ),
     responses(
@@ -748,6 +749,8 @@ pub async fn get_subjects_handler(
     handle_data(data)
 }
 
+
+/// Allows to obtain a specific subject by means of its identifier
 #[utoipa::path(
     get,
     path = "/subjects/{id}",
@@ -813,6 +816,8 @@ pub async fn get_subject_handler(
     handle_data(response)
 }
 
+
+/// Allows to obtain the validation test of the last event for a specified subject.
 #[utoipa::path(
     get,
     path = "/subjects/{id}/validation",
@@ -875,6 +880,7 @@ pub async fn get_validation_proof_handle(
     handle_data(result)
 }
 
+/// Allows to obtain, with pagination, the list of events of a subject.
 #[utoipa::path(
     get,
     path = "/subjects/{id}/events",
@@ -883,7 +889,7 @@ pub async fn get_validation_proof_handle(
     tag = "Subjects",
     params(
         ("id" = String, Path, description = "Subject's unique id"),
-        ("from" = Option<usize>, Query, description = "Initial SN"),
+        ("from" = Option<usize>, Query, description = "SN from which the event list should begin"),
         ("quantity" = Option<usize>, Query, description = "Quantity of events requested"),
     ),
     responses(
@@ -983,6 +989,7 @@ pub async fn get_events_of_subject_handler(
     handle_data::<Vec<SignedEvent>>(result)
 }
 
+/// Allows to obtain a specific event from a subject
 #[utoipa::path(
     get,
     path = "/subjects/{id}/events/{sn}",

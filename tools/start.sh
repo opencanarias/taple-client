@@ -2,8 +2,8 @@
 # 74c417de2174f3a76b0b98343cea3aa35bfd3860cac8bf470092c3e751745c1a
 # 275a94433dc25cd1b5fd026c6afb0bded69866a97fdbadb074289358c2a8cda4
 cargo run --bin taple-sign \
-"74c417de2174f3a76b0b98343cea3aa35bfd3860cac8bf470092c3e751745c1a" \
-"{\"Transfer\":{\"subject_id\":\"JvMW2aJd4kv4khdg2-2AG-A5BwQfL-wIx0gtNSSaXs6w\",\"public_key\":\"Esj8KhxjfFfUhpOt4WZ3I5p5NoZWf1J9Pj6xpXl4Ekv8\"}}"
+"275a94433dc25cd1b5fd026c6afb0bded69866a97fdbadb074289358c2a8cda4" \
+"{\"Transfer\":{\"subject_id\":\"JssmvG0n3AmaSGyk_1_rTGwKIODFZ7qJa5oM0PC3bD6Y\",\"public_key\":\"EI1d35slVNIzGiDeEHEzKzxyEkilLqQDvq4XNt8axhOo\"}}"
 
 
 # MOVIL

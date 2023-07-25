@@ -36,6 +36,12 @@ use warp::{
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        license(
+            name = "AGPL-3.0-only",
+            url = "https://raw.githubusercontent.com/opencanarias/taple-client/main/LICENSE"
+        )
+    ),
     paths(
         get_allowed_subjects_handler,
         get_subjects_handler,
