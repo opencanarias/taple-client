@@ -119,12 +119,12 @@ pub fn client_settings_builder() -> ConfigGenerator {
                 SettingSchemaBuilder::new("known-node")
                     .unwrap()
                     .param_type(ParamType::Multivalued)
-                    .help("Known nodes at startup")
+                    .help("Known node at startup")
                     .build(),
-                SettingSchemaBuilder::new("external-addresses")
+                SettingSchemaBuilder::new("external-address")
                     .unwrap()
                     .param_type(ParamType::Multivalued)
-                    .help("Known external addresses at startup")
+                    .help("Known external address at startup")
                     .build(),
             ],
         )
