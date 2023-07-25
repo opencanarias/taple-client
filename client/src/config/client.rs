@@ -131,6 +131,18 @@ pub fn client_settings_builder() -> ConfigGenerator {
         .unwrap()
         .group(
             "http",
+            Option::<String>::None,
+            Some("Server HTTP configurations"),
+            vec![SettingSchemaBuilder::new("http")
+                .unwrap()
+                .help("Flag to activate HTTP server")
+                .with_default(false.to_string())
+                .param_type(ParamType::Flag)
+                .build()],
+        )
+        .unwrap()
+        .group(
+            "http",
             Some("http"),
             Some("Server HTTP configurations"),
             vec![
@@ -149,18 +161,6 @@ pub fn client_settings_builder() -> ConfigGenerator {
                     .param_type(ParamType::Flag)
                     .build(),
             ],
-        )
-        .unwrap()
-        .group(
-            "http",
-            Option::<String>::None,
-            Some("Server HTTP configurations"),
-            vec![SettingSchemaBuilder::new("http")
-                .unwrap()
-                .help("Flag to activate HTTP server")
-                .with_default(false.to_string())
-                .param_type(ParamType::Flag)
-                .build()],
         )
         .unwrap()
         .group(
