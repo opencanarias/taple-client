@@ -123,7 +123,6 @@ pub fn client_settings_builder() -> ConfigGenerator {
                     .build(),
                 SettingSchemaBuilder::new("external-addresses")
                     .unwrap()
-                    .short('p')
                     .param_type(ParamType::Multivalued)
                     .help("Known external addresses at startup")
                     .build(),
