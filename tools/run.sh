@@ -1,9 +1,15 @@
 #!/bin/bash
 
-if [ $# == 0 ]; then
-  echo -e "${RED}No arguments passed${NC}"
-  exit 1
-else
-  TOOL=$1
-  $TOOL ${@:2}
-fi
+TOOL=""
+ARGS=()
+
+for var in "$@"
+do
+    if [ -z "${TOOL}" ] ; then
+        TOOL=("$var")
+    else
+        ARGS+=("$var")
+    fi
+done
+
+$TOOL "${ARGS[@]}"
