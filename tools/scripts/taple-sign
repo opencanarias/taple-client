@@ -1,5 +1,12 @@
 #!/bin/bash
 
 TOOLS_IMAGE="opencanarias/taple-tools:0.2.0"
+TOOL="taple-sign"
 
-docker run --rm --name docker-taple-sign $TOOLS_IMAGE taple-sign ${@:1}
+ARGS=()
+for var in "$@"
+do
+    ARGS+=("$var")
+done
+
+docker run --rm --name docker-taple-sign ${TOOLS_IMAGE} ${TOOL} "${ARGS[@]}"

@@ -1,5 +1,12 @@
 #!/bin/bash
 
 TOOLS_IMAGE="opencanarias/taple-tools:0.2.0"
+TOOL="taple-keygen"
 
-docker run --rm --name docker-taple-keygen $TOOLS_IMAGE taple-keygen ${@:1}
+ARGS=()
+for var in "$@"
+do
+    ARGS+=("$var")
+done
+
+docker run --rm --name docker-taple-sign ${TOOLS_IMAGE} ${TOOL} "${ARGS[@]}"
