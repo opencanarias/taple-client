@@ -88,29 +88,15 @@ use warp::{
             ErrorResponse
         )
     ),
-    modifiers(&SecurityAddon),
     security(),
     tags(
-        (name = "Subjects"),
-        (name = "Events"),
-        (name = "Requests"),
         (name = "Approvals"),
-        (name = "Governances")
+        (name = "Requests"),
+        (name = "Subjects"),
+        (name = "Others"),
     )
 )]
 pub struct ApiDoc;
-
-struct SecurityAddon;
-
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.as_mut().unwrap(); // We can unwrap safely since there already is components registered.
-        components.add_security_scheme(
-            "api_key",
-            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("x-api-key"))),
-        )
-    }
-}
 
 pub async fn serve_swagger(
     full_path: FullPath,
