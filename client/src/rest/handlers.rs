@@ -29,13 +29,15 @@ use super::{
     },
 };
 
+/// Get approvals
+/// 
 /// Allows to obtain the list of requests for approvals received by the node.
 /// It can also be used, by means of the "status" parameter, to list the requests pending approval.
 #[utoipa::path(
     get,
     path = "/approval-requests",
     operation_id = "Get Approval Request Data",
-    tag = "Aproval",
+    tag = "Approvals",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Approval's unique id"),
@@ -133,13 +135,14 @@ pub async fn get_approvals_handler(
     handle_data(data)
 }
 
-
+/// Get approval by ID
+///
 /// Allows you to obtain a request for approval by its identifier.
 #[utoipa::path(
     get,
     path = "/approval-requests/{id}",
     operation_id = "Get Approval Request Data",
-    tag = "Aproval",
+    tag = "Approvals",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Approval's unique id")
@@ -219,12 +222,14 @@ pub async fn get_approval_handler(
     handle_data(result)
 }
 
+/// Emit approval for request
+///
 /// Allows you to issue an affirmative or negative approval for a previously received request.
 #[utoipa::path(
     patch,
     path = "/approval-requests/{id}",
     operation_id = "Set your Aprroval for a request",
-    tag = "Aproval",
+    tag = "Approvals",
     context_path = "/api",
     request_body(content = PatchVoteBody, content_type = "application/json", description = "Vote of the user for an existing request",
     example = json!(
@@ -324,12 +329,14 @@ pub async fn patch_approval_handler(
     handle_data(result)
 }
 
+/// Get authorized subjects
+///
 /// Allows to obtain the list of subjects that have been pre-authorized by the node, as well as the identifiers of the nodes from which to obtain them.
 #[utoipa::path(
     get,
     path = "/allowed-subjects",
     operation_id = "Get Allowed Subject Data",
-    tag = "",
+    tag = "Others",
     context_path = "/api",
     params( 
         ("from" = Option<String>, Query, description = "Id of initial subject"),
@@ -365,12 +372,14 @@ pub async fn get_allowed_subjects_handler(
     handle_data(result)
 }
 
+/// Set subject as preauthorized
+///
 /// Allows a subject to be established as pre-qualified. It can also be used to specify from which nodes in the network the resource should be obtained.
 #[utoipa::path(
     put,
     path = "/allowed-subjects/{id}",
     operation_id = "Put Allowed Subject Data",
-    tag = "",
+    tag = "Others",
     context_path = "/api",
     params(
         ("id" = String, Path, description = "Subject's unique id")
@@ -429,12 +438,13 @@ pub async fn put_allowed_subjects_handler(
     handle_data(result.map(|_| body))
 }
 
-
+/// Register KeyPair
+///
 /// It allows to generate a pair of cryptographic keys in the node that can then be assigned to a subject. The private key is never revealed.
 #[utoipa::path(
     post,
     path = "/keys",
-    tag = "",
+    tag = "Others",
     operation_id = "createKeys",
     context_path = "/api",
     params(
@@ -467,6 +477,8 @@ pub async fn post_generate_keys_handler(
     }
 }
 
+/// Send event request
+///
 /// Allows to send an event request for a subject to the TAPLE node.
 /// These requests can be of any type of event (done, creation, transfer and end of life).
 /// In case of external invocation, the requests can be signed.
@@ -536,6 +548,8 @@ pub async fn post_event_request_handler(
         }
 }
 
+/// Get event request
+///
 /// Allows to obtain an event request by its identifier
 #[utoipa::path(
     get,
@@ -596,6 +610,8 @@ pub async fn get_taple_request_handler(
     handle_data(result)
 }
 
+/// Get event request state
+///
 /// Allows to obtain the status of an event request by its identifier.
 #[utoipa::path(
     get,
@@ -638,6 +654,8 @@ pub async fn get_taple_request_state_handler(
     handle_data(result)
 }
 
+/// Get subjects
+///
 /// Allows to obtain, with pagination, the list of subjects known by the node.
 /// It can also be used to obtain exclusively the governances and all the subjects belonging to a specific one.
 #[utoipa::path(
@@ -750,6 +768,7 @@ pub async fn get_subjects_handler(
 }
 
 
+/// Get subject by ID
 /// Allows to obtain a specific subject by means of its identifier
 #[utoipa::path(
     get,
@@ -816,7 +835,8 @@ pub async fn get_subject_handler(
     handle_data(response)
 }
 
-
+/// Get validation proof
+///
 /// Allows to obtain the validation test of the last event for a specified subject.
 #[utoipa::path(
     get,
@@ -880,6 +900,8 @@ pub async fn get_validation_proof_handle(
     handle_data(result)
 }
 
+/// Get events of a subject
+///
 /// Allows to obtain, with pagination, the list of events of a subject.
 #[utoipa::path(
     get,
@@ -989,6 +1011,8 @@ pub async fn get_events_of_subject_handler(
     handle_data::<Vec<SignedEvent>>(result)
 }
 
+/// Get an event from a subject 
+///
 /// Allows to obtain a specific event from a subject
 #[utoipa::path(
     get,
