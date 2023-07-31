@@ -13,5 +13,6 @@ RUN mkdir -p "contracts"
 RUN mkdir -p "db"
 ENV TAPLE_SC_BUILD_PATH "/app/contracts"
 ENV TAPLE_DB_PATH "/app/db"
+ENV RUST_LOG "info"
 
 CMD ["taple-client"]
