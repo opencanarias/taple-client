@@ -1,10 +1,12 @@
 use settings::SettingsMap;
-use taple_core::{DigestDerivator, KeyDerivator, get_default_settings};
+use taple_core::{get_default_settings, DigestDerivator, KeyDerivator};
 pub use taple_core::{NetworkSettings, NodeSettings, TapleSettings};
 
 use crate::config::create_path;
 
-use super::{error::SettingsError, extract_from_map, extract_option, SettingsGenerator, extract_list};
+use super::{
+    error::SettingsError, extract_from_map, extract_list, extract_option, SettingsGenerator,
+};
 
 impl SettingsGenerator for TapleSettings {
     fn generate(data: &SettingsMap) -> Result<Self, SettingsError> {

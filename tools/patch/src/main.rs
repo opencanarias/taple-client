@@ -2,16 +2,13 @@ use std::error::Error;
 mod error;
 
 use clap::Parser;
-use serde_json::Value;
 use json_patch::diff;
+use serde_json::Value;
 
 use crate::error::TaplePatchError;
 
 #[derive(Parser, Default, Debug)]
-#[clap(
-    version,
-    about = "TAPLE JSON PATCH generator"
-)]
+#[clap(version, about = "TAPLE JSON PATCH generator")]
 struct Args {
     /// JSON String of the current state
     pub state: String,

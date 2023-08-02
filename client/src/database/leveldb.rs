@@ -8,7 +8,9 @@ use leveldb::{
 use std::cell::Cell;
 use std::path::Path;
 use std::sync::Arc;
-use taple_core::{DatabaseCollection, DatabaseManager, DbError as Error, test_database_manager_trait};
+use taple_core::{
+    test_database_manager_trait, DatabaseCollection, DatabaseManager, DbError as Error,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct StringKey(pub String);
@@ -74,9 +76,7 @@ impl DatabaseManager<LDBCollection> for LevelDBManager {
     fn default() -> Self {
         let temp_dir = tempfile::tempdir().unwrap();
         let db = open_db(temp_dir.path());
-        Self { 
-            db
-        }
+        Self { db }
     }
 
     fn create_collection(&self, _identifier: &str) -> LDBCollection {

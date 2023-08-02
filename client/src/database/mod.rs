@@ -1,2 +1,2 @@
-pub mod leveldb;
 mod error;
+pub mod leveldb;

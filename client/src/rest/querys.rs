@@ -11,7 +11,7 @@ pub struct GetAllSubjectsQuery {
     /// Type of subject (governance, all)
     pub subject_type: Option<String>,
     /// Governance identifier
-    pub governanceid: Option<String>
+    pub governanceid: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, IntoParams)]
@@ -35,7 +35,7 @@ pub struct GetWithPaginationString {
 #[derive(Debug, Clone, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct AddKeysQuery {
-    pub algorithm: Option<KeyAlgorithms>
+    pub algorithm: Option<KeyAlgorithms>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, ToSchema)]
@@ -50,7 +50,7 @@ impl Into<KeyDerivator> for KeyAlgorithms {
     fn into(self) -> KeyDerivator {
         match self {
             KeyAlgorithms::Ed25519 => KeyDerivator::Ed25519,
-            KeyAlgorithms::Secp256k1 => KeyDerivator::Secp256k1
+            KeyAlgorithms::Secp256k1 => KeyDerivator::Secp256k1,
         }
     }
 }

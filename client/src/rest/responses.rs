@@ -18,8 +18,7 @@ use super::bodys::{EventRequestBody, SignedRequestBody};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignedEvent(pub SignedBody<EventContentResponse>);
 
-impl<'__s> utoipa::ToSchema<'__s> for SignedEvent
-{
+impl<'__s> utoipa::ToSchema<'__s> for SignedEvent {
     fn schema() -> (
         &'__s str,
         utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
@@ -31,7 +30,7 @@ impl<'__s> utoipa::ToSchema<'__s> for SignedEvent
             utoipa::openapi::ObjectBuilder::new()
                 .property(schema_event.0, schema_event.1)
                 .property(schema_signature.0, schema_signature.1)
-                .into()
+                .into(),
         )
     }
 }
@@ -256,9 +255,7 @@ impl From<ApprovalEntity> for ApprovalEntityResponse {
         Self {
             id: value.id.to_str(),
             request: SignedApprovalRequestResponse(value.request.into()),
-            reponse: value
-                .response
-                .map(|x| SignedApprovalResponseBody(x.into())),
+            reponse: value.response.map(|x| SignedApprovalResponseBody(x.into())),
             state: value.state.into(),
         }
     }

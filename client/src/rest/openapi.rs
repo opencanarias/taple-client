@@ -8,7 +8,7 @@ use super::handlers::{
 };
 use super::responses::{
     ApprovalEntityResponse, ApprovalRequestResponse, ApprovalResponseBody, ApprovalStateResponse,
-    TapleRequestResponse, ErrorResponse,
+    ErrorResponse, TapleRequestResponse,
 };
 use super::{
     bodys::{
@@ -104,9 +104,7 @@ pub async fn serve_swagger(
     config: Arc<utoipa_swagger_ui::Config<'static>>,
 ) -> Result<Box<dyn Reply + 'static>, Rejection> {
     if full_path.as_str() == "/api/doc" {
-        return Ok(Box::new(redirect::found(Uri::from_static(
-            "/api/doc/",
-        ))));
+        return Ok(Box::new(redirect::found(Uri::from_static("/api/doc/"))));
     }
 
     let path = tail.as_str();

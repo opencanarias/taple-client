@@ -12,8 +12,8 @@ use warp::Rejection;
 
 use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
 
-use crate::{rest::querys::AddKeysQuery, rest::querys::KeyAlgorithms};
 use crate::rest::querys::GetWithPaginationString;
+use crate::{rest::querys::AddKeysQuery, rest::querys::KeyAlgorithms};
 
 use super::{
     bodys::{
@@ -24,13 +24,13 @@ use super::{
     querys::{GetAllSubjectsQuery, GetApprovalsQuery, GetWithPagination},
     responses::{
         ApprovalEntityResponse, EventContentResponse, GetProofResponse,
-        PreauthorizedSubjectsResponse, SubjectDataResponse, TapleRequestResponse,
-        TapleRequestStateResponse, ValidationProofResponse, SignedEvent,
+        PreauthorizedSubjectsResponse, SignedEvent, SubjectDataResponse, TapleRequestResponse,
+        TapleRequestStateResponse, ValidationProofResponse,
     },
 };
 
 /// Get approvals
-/// 
+///
 /// Allows to obtain the list of requests for approvals received by the node.
 /// It can also be used, by means of the "status" parameter, to list the requests pending approval.
 #[utoipa::path(
@@ -338,13 +338,13 @@ pub async fn patch_approval_handler(
     operation_id = "Get Allowed Subject Data",
     tag = "Others",
     context_path = "/api",
-    params( 
+    params(
         ("from" = Option<String>, Query, description = "Id of initial subject"),
         ("quantity" = Option<isize>, Query, description = "Quantity of subjects requested")
     ),
     responses(
         (status = 200, description = "Subject Data successfully retrieved", body = [PreauthorizedSubjectsResponse],
-        example = json!( 
+        example = json!(
             [
                 {
                     "subject_id": "JKZgYhPjQdWNWWwkac0wSwqLKoOJsT0QimJmj6zjimWc",
@@ -392,7 +392,7 @@ pub async fn get_allowed_subjects_handler(
     )),
     responses(
         (status = 200, description = "Subject Data successfully created", body = AuthorizeSubjectBody,
-        example = json!( 
+        example = json!(
             {
                 "providers": []
             }
@@ -540,12 +540,13 @@ pub async fn post_event_request_handler(
             content: request,
             signature,
         })
-        .await {
+        .await
+    {
         Ok(id) => handle_data(Ok(serde_json::json!({
             "request_id": id.to_str(),
         }))),
         Err(error) => handle_data(Err::<Value, ApiError>(error)),
-        }
+    }
 }
 
 /// Get event request
@@ -767,7 +768,6 @@ pub async fn get_subjects_handler(
     handle_data(data)
 }
 
-
 /// Get subject by ID
 /// Allows to obtain a specific subject by means of its identifier
 #[utoipa::path(
@@ -781,7 +781,7 @@ pub async fn get_subjects_handler(
     ),
     responses(
         (status = 200, description = "Subject Data successfully retrieved", body = SubjectDataResponse,
-        example = json!( 
+        example = json!(
             {
                 "subject_id": "JoifaSpfenD2bEPeBLvUTWh30brm4tKcvdW8exQnkGoQ",
                 "governance_id": "",
@@ -1011,7 +1011,7 @@ pub async fn get_events_of_subject_handler(
     handle_data::<Vec<SignedEvent>>(result)
 }
 
-/// Get an event from a subject 
+/// Get an event from a subject
 ///
 /// Allows to obtain a specific event from a subject
 #[utoipa::path(
@@ -1119,16 +1119,16 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     match &data {
         Ok(data) => return Ok(Box::new(warp::reply::json(&data))),
-        Err(ApiError::InvalidParameters(msg)) => Err(warp::reject::custom(
-            Error::InvalidParameters {
-                error: msg.to_owned()
-            },
-        )),
-        Err(ApiError::Conflict(msg)) => Err(warp::reject::custom(Error::Conflict{
-            error: msg.to_owned()
+        Err(ApiError::InvalidParameters(msg)) => {
+            Err(warp::reject::custom(Error::InvalidParameters {
+                error: msg.to_owned(),
+            }))
+        }
+        Err(ApiError::Conflict(msg)) => Err(warp::reject::custom(Error::Conflict {
+            error: msg.to_owned(),
         })),
-        Err(ApiError::NotFound(msg)) => Err(warp::reject::custom(Error::NotFound{
-            error: msg.to_owned()
+        Err(ApiError::NotFound(msg)) => Err(warp::reject::custom(Error::NotFound {
+            error: msg.to_owned(),
         })),
         Err(ApiError::EventCreationError { .. }) => {
             Err(warp::reject::custom(Error::ExecutionError {
@@ -1136,7 +1136,7 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
             }))
         }
         Err(ApiError::NotEnoughPermissions(msg)) => {
-            Err(warp::reject::custom(Error::NotEnoughPermissions{
+            Err(warp::reject::custom(Error::NotEnoughPermissions {
                 error: msg.to_owned(),
             }))
         }

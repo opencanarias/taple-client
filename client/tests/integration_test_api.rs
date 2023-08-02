@@ -2,14 +2,11 @@ mod common;
 use std::time::Duration;
 
 use common::*;
-use taple_core::{
-    identifier::Derivable,
-    Event, SubjectData,
-};
-use taple_core::ApiModuleInterface;
 use futures::FutureExt;
-use ureq::Agent;
 use serial_test::serial;
+use taple_core::ApiModuleInterface;
+use taple_core::{identifier::Derivable, Event, SubjectData};
+use ureq::Agent;
 
 #[test]
 #[serial]

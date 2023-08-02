@@ -1,8 +1,8 @@
 use std::{sync::Arc, time::Duration};
 
+use futures::{future, FutureExt};
 use taple_core::{signature::Signature, SubjectData};
 use taple_core::{ApiModuleInterface, NodeAPI};
-use futures::{future, FutureExt};
 
 pub async fn do_task_with_timeout<Output>(
     future: future::BoxFuture<'static, Output>,

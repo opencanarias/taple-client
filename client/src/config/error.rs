@@ -1,5 +1,5 @@
-use thiserror::Error;
 use taple_core::ListenAddrErrors;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum SettingsError {
@@ -16,5 +16,5 @@ pub enum SettingsError {
     #[error("Folder creation error {0}")]
     FolderCreationError(#[from] std::io::Error),
     #[error("{0}")]
-    ListenAddrError(#[from] ListenAddrErrors)
+    ListenAddrError(#[from] ListenAddrErrors),
 }

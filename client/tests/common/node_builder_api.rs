@@ -1,29 +1,25 @@
-use taple_core::{
-    NodeAPI,
-    DatabaseSettings, NetworkSettings, NodeSettings, Taple, MemoryManager,
-};
 use taple_client::{Payload, PostEventBody};
+use taple_core::{DatabaseSettings, MemoryManager, NetworkSettings, NodeAPI, NodeSettings, Taple};
 extern crate env_logger;
-use taple_core::Event;
-use taple_core::event_content::{EventContent, Metadata};
-use taple_core::event_request::{
-    CreateRequest, EventRequest, EventRequestType, RequestPayload, FactRequest,
-};
-use taple_core::signature::{Signature, SignatureContent};
-use taple_core::SubjectData;
-use taple_core::{
-    TapleSettings,
-    identifier::derive::{digest::DigestDerivator, KeyDerivator},
-};
-use taple_client::handlers::{
-    __path_get_all_subjects_handler, __path_get_event_handler, __path_get_event_properties_handler,
-    __path_get_events_of_subject_handler,
-    __path_get_subject_handler,
-};
 use serde::Deserialize;
 use std::env;
+use std::net::SocketAddr;
 use std::sync::Arc;
-use std::{net::SocketAddr};
+use taple_client::handlers::{
+    __path_get_all_subjects_handler, __path_get_event_handler, __path_get_event_properties_handler,
+    __path_get_events_of_subject_handler, __path_get_subject_handler,
+};
+use taple_core::event_content::{EventContent, Metadata};
+use taple_core::event_request::{
+    CreateRequest, EventRequest, EventRequestType, FactRequest, RequestPayload,
+};
+use taple_core::signature::{Signature, SignatureContent};
+use taple_core::Event;
+use taple_core::SubjectData;
+use taple_core::{
+    identifier::derive::{digest::DigestDerivator, KeyDerivator},
+    TapleSettings,
+};
 use tokio::signal::unix::{signal, SignalKind};
 use utoipa::{
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},

@@ -71,7 +71,11 @@ async fn run() -> Result<(), Box<dyn Error>> {
     taple.start().await?;
     info!("Controller ID: {}", taple.controller_id().unwrap());
     if settings.http {
-        log::info!("HTTP server listen on {}:{}", settings.http_addr, settings.http_port);
+        log::info!(
+            "HTTP server listen on {}:{}",
+            settings.http_addr,
+            settings.http_port
+        );
         start_http_server(settings, taple, keys, derivator, shutdown_manager).await?;
     } else {
         log::warn!("HTTP server not enabled");
@@ -85,7 +89,7 @@ async fn start_http_server(
     taple: Taple<LevelDBManager, LDBCollection>,
     keys: KeyPair,
     derivator: KeyDerivator,
-    shutdown_manager: TapleShutdownManager
+    shutdown_manager: TapleShutdownManager,
 ) -> Result<(), Box<dyn Error>> {
     let swaggerui = settings.doc_ui.clone();
     let http_addr = format!("{}:{}", settings.http_addr, settings.http_port)

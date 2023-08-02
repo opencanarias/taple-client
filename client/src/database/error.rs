@@ -1,5 +1,5 @@
-use thiserror::Error;
 use leveldb::database;
+use thiserror::Error;
 
 #[allow(dead_code)]
 #[derive(Error, Debug)]

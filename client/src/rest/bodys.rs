@@ -23,8 +23,10 @@ where
     pub signature: SignatureBody,
 }
 
-impl<C: BorshSerialize + BorshDeserialize + Clone, T: for<'a> ToSchema<'a> + Clone + Debug + From<C>>
-    From<Signed<C>> for SignedBody<T>
+impl<
+        C: BorshSerialize + BorshDeserialize + Clone,
+        T: for<'a> ToSchema<'a> + Clone + Debug + From<C>,
+    > From<Signed<C>> for SignedBody<T>
 {
     fn from(value: Signed<C>) -> Self {
         Self {
@@ -42,8 +44,7 @@ impl<C: BorshSerialize + BorshDeserialize + Clone, T: for<'a> ToSchema<'a> + Clo
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignedRequestBody(pub SignedBody<EventRequestBody>);
 
-impl<'__s> utoipa::ToSchema<'__s> for SignedRequestBody
-{
+impl<'__s> utoipa::ToSchema<'__s> for SignedRequestBody {
     fn schema() -> (
         &'__s str,
         utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
@@ -55,7 +56,7 @@ impl<'__s> utoipa::ToSchema<'__s> for SignedRequestBody
             utoipa::openapi::ObjectBuilder::new()
                 .property(schema_event.0, schema_event.1)
                 .property(schema_signature.0, schema_signature.1)
-                .into()
+                .into(),
         )
     }
 }

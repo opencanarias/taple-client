@@ -316,9 +316,9 @@ impl ConfigGenerator {
         };
         if let Some(_) = matches.value_source(&id) {
             match &setting.param_type {
-                ParamType::Flag => {
-                    Some(AnyValue::new(matches.get_one::<bool>(&id).unwrap().clone().to_string()))
-                }
+                ParamType::Flag => Some(AnyValue::new(
+                    matches.get_one::<bool>(&id).unwrap().clone().to_string(),
+                )),
                 ParamType::Multivalued => {
                     let result: Vec<String> = matches.get_many(&id).unwrap().cloned().collect();
                     Some(AnyValue::new(result))
