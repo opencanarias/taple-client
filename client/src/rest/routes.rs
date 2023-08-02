@@ -209,7 +209,6 @@ pub fn with_body<T: DeserializeOwned + Send>(
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
-    println!("HANDLE REJECTION: {:?}", err);
     if let Some(ref err) = err.find::<Error>() {
         match err {
             Error::InternalServerError { error } => {

@@ -25,7 +25,8 @@ async fn main() {
 
 async fn run() -> Result<(), Box<dyn Error>> {
     let settings = ClientSettings::generate(&client_settings_builder().build())?;
-    info!("{:?}", settings);
+    // debug!("{:?}", settings); // Look! includes private key
+
     // Open DATABASE DIR
     let tempdir;
     let path = if settings.database_path.is_empty() {
@@ -70,10 +71,10 @@ async fn run() -> Result<(), Box<dyn Error>> {
     taple.start().await?;
     info!("Controller ID: {}", taple.controller_id().unwrap());
     if settings.http {
-        log::warn!("HTTP SERVER WILL LISTEN ON {}:{}", settings.http_addr, settings.http_port);
+        log::info!("HTTP server listen on {}:{}", settings.http_addr, settings.http_port);
         start_http_server(settings, taple, keys, derivator, shutdown_manager).await?;
     } else {
-        log::warn!("HTTP SERVER NOT ENABLED");
+        log::warn!("HTTP server not enabled");
         shutdown_manager.wait_for_shutdown().await;
     }
     Ok(())

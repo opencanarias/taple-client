@@ -3,22 +3,18 @@ name = "taple-client"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
-documentation.workspace = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
 name = "taple-client"
 path = "src/main.rs"
 
 [dependencies]
-# API
 env_logger = { workspace = true }
 log = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 borsh = { workspace = true }
-
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["signal"] }
 warp = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -26,20 +22,12 @@ thiserror = { workspace = true }
 tempfile = { workspace = true }
 hex = { workspace = true }
 home = { workspace = true }
-
-taple-core = { workspace = true, features = ["evaluation", "validation", "aproval"] }
-
+taple-core = { workspace = true, features = ["all"] }
 settings = { path = "../settings" }
-
-# LevelDB
 leveldb = { workspace = true }
-db-key = { workspace = true }  #Usar esta versión. Necesario para implementar custom keys para leveldb::Database
-url = { workspace = true }
-bincode = { workspace = true }
+db-key = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
 ureq = { workspace = true }
 futures = { workspace = true }
 serial_test = { workspace = true }
-tempfile = { workspace = true }
