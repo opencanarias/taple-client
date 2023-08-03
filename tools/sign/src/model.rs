@@ -71,17 +71,3 @@ pub struct TransferRequest {
 pub struct EOLRequest {
     pub subject_id: String,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SignatureBody {
-    pub signer: String, // KeyIdentifier
-    pub timestamp: u64,
-    pub value: String, // SignatureIdentifier,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SignedEventRequest {
-    #[serde(rename = "request")]
-    pub content: EventRequestTypeBody,
-    pub signature: SignatureBody,
-}
