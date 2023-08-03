@@ -2,10 +2,9 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use taple_core::{
-    request::StartRequest as TCreateRequest, request::EOLRequest as TEOLRequest,
-    request::FactRequest as TFactRequest,
-    request::TransferRequest as TTreansferRequest, DigestIdentifier, EventRequest,
-    KeyIdentifier, ValueWrapper,
+    request::EOLRequest as TEOLRequest, request::FactRequest as TFactRequest,
+    request::StartRequest as TCreateRequest, request::TransferRequest as TTreansferRequest,
+    DigestIdentifier, EventRequest, KeyIdentifier, ValueWrapper,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,18 +70,4 @@ pub struct TransferRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EOLRequest {
     pub subject_id: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SignatureBody {
-    pub signer: String, // KeyIdentifier
-    pub timestamp: u64,
-    pub value: String, // SignatureIdentifier,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SignedEventRequest {
-    #[serde(rename = "request")]
-    pub content: EventRequestTypeBody,
-    pub signature: SignatureBody
 }
