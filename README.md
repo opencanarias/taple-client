@@ -22,7 +22,7 @@ TAPLE Client is the reference application for connecting to the TAPLE DLT networ
 
 ## Build From Source
 
-Rust versión 1.66 or higher is required.
+Rust versión 1.67 or higher is required.
 
 ```bash
 $ git clone https://github.com/opencanarias/taple-client.git
