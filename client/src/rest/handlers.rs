@@ -518,7 +518,6 @@ pub async fn post_event_request_handler(
             creation_req.public_key = Some(public_key);
         }
     }
-    let signer = KeyIdentifier::new(keys.get_key_derivator(), &keys.public_key_bytes());
     let Ok(request) = body.request.try_into() else {
         return Err(warp::reject::custom(
             Error::InvalidParameters{error: "Invalid request".to_owned()},
@@ -533,7 +532,7 @@ pub async fn post_event_request_handler(
                 signature.unwrap()
             }
         }
-        None => Signature::new(&request, signer, &keys).expect("Error signing request"),
+        None => Signature::new(&request, &keys).expect("Error signing request"),
     };
     match node
         .external_request(Signed {
