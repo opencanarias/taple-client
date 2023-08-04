@@ -401,7 +401,7 @@ impl From<(DigestIdentifier, HashSet<KeyIdentifier>)> for PreauthorizedSubjectsR
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ErrorResponse {
     /// Error code
-    pub code: u32,
+    pub code: u16,
     /// Error message
     pub error: String,
 }

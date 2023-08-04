@@ -1,6 +1,3 @@
-use crate::rest::querys::AddKeysQuery;
-use crate::rest::querys::GetWithPaginationString;
-
 use super::handlers::{
     get_allowed_subjects_handler, get_approval_handler, get_approvals_handler, get_event_handler,
     get_events_of_subject_handler, get_subject_handler, get_subjects_handler,
@@ -14,11 +11,13 @@ use super::{
     error::Error,
     querys::{GetAllSubjectsQuery, GetWithPagination},
 };
+use crate::rest::querys::AddKeysQuery;
+use crate::rest::querys::GetWithPaginationString;
 use serde::de::DeserializeOwned;
 use taple_core::crypto::KeyPair;
 use taple_core::{KeyDerivator, NodeAPI};
 use warp::body::BodyDeserializeError;
-use warp::{hyper::StatusCode, reply::Response, Filter, Rejection, Reply};
+use warp::{http::Response, hyper::StatusCode, Filter, Rejection, Reply};
 
 pub fn routes(
     sender: NodeAPI,
@@ -209,180 +208,49 @@ pub fn with_body<T: DeserializeOwned + Send>(
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
-    if let Some(ref err) = err.find::<Error>() {
+    let (msg, status_code) = if let Some(ref err) = err.find::<Error>() {
         match err {
             Error::InternalServerError { error } => {
-                let error = ErrorResponse {
-                    code: 500,
-                    error: error.to_owned(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
-                return Ok(response);
+                (error.to_owned(), StatusCode::INTERNAL_SERVER_ERROR)
             }
-            Error::ExecutionError { source } => {
-                let error = ErrorResponse {
-                    code: 500,
-                    error: source.to_string(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::CONFLICT;
-                return Ok(response);
-            }
-            Error::InvalidParameters { error } => {
-                let error = ErrorResponse {
-                    code: 400,
-                    error: error.to_owned(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::BAD_REQUEST;
-                return Ok(response);
-            }
-            Error::NotEnoughPermissions { error } => {
-                let error = ErrorResponse {
-                    code: 403,
-                    error: error.to_owned(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::FORBIDDEN;
-                return Ok(response);
-            }
-            Error::NotFound { error } => {
-                let error = ErrorResponse {
-                    code: 404,
-                    error: error.to_owned(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::NOT_FOUND;
-                return Ok(response);
-            }
-            Error::Unauthorized { error } => {
-                let error = ErrorResponse {
-                    code: 401,
-                    error: error.to_owned(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::UNAUTHORIZED;
-                return Ok(response);
-            }
-            Error::BadRequest { error } => {
-                let error = ErrorResponse {
-                    code: 400,
-                    error: error.to_owned(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::BAD_REQUEST;
-                return Ok(response);
-            }
-            Error::Conflict { error } => {
-                let error = ErrorResponse {
-                    code: 409,
-                    error: error.to_owned(),
-                };
-                let json_response = warp::reply::json(&error);
-                let mut response = Response::new(json_response.into_response().into_body());
-                *response.status_mut() = StatusCode::CONFLICT;
-                return Ok(response);
-            }
+            Error::ExecutionError { source } => (source.to_string(), StatusCode::CONFLICT),
+            Error::InvalidParameters { error } => (error.to_string(), StatusCode::BAD_REQUEST),
+            Error::NotEnoughPermissions { error } => (error.to_string(), StatusCode::FORBIDDEN),
+            Error::NotFound { error } => (error.to_string(), StatusCode::NOT_FOUND),
+            Error::Unauthorized { error } => (error.to_string(), StatusCode::UNAUTHORIZED),
+            Error::BadRequest { error } => (error.to_string(), StatusCode::BAD_REQUEST),
+            Error::Conflict { error } => (error.to_string(), StatusCode::CONFLICT),
         }
     } else if err.is_not_found() {
-        let error = ErrorResponse {
-            code: 404,
-            error: "Not Found".to_owned(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::NOT_FOUND;
-        return Ok(response);
+        ("Not Found".to_owned(), StatusCode::NOT_FOUND)
     } else if let Some(ref err) = err.find::<BodyDeserializeError>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else if let Some(ref err) = err.find::<warp::reject::MethodNotAllowed>() {
-        let error = ErrorResponse {
-            code: 405,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
-        return Ok(response);
+        (err.to_string(), StatusCode::METHOD_NOT_ALLOWED)
     } else if let Some(ref err) = err.find::<warp::reject::InvalidHeader>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else if let Some(ref err) = err.find::<warp::reject::MissingCookie>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else if let Some(ref err) = err.find::<warp::reject::PayloadTooLarge>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else if let Some(ref err) = err.find::<warp::reject::MissingHeader>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else if let Some(ref err) = err.find::<warp::reject::InvalidQuery>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else if let Some(ref err) = err.find::<warp::reject::UnsupportedMediaType>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else if let Some(ref err) = err.find::<warp::reject::LengthRequired>() {
-        let error = ErrorResponse {
-            code: 400,
-            error: err.to_string(),
-        };
-        let json_response = warp::reply::json(&error);
-        let mut response = Response::new(json_response.into_response().into_body());
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        (err.to_string(), StatusCode::BAD_REQUEST)
     } else {
-        Err(err)
-    }
+        return Err(err);
+    };
+    let error = ErrorResponse {
+        code: status_code.as_u16(),
+        error: msg,
+    };
+    let json_response = warp::reply::json(&error);
+    Ok(Response::builder()
+        .header("Content-Type", "application/json")
+        .status(status_code)
+        .body(json_response.into_response().into_body()))
 }
