@@ -6,6 +6,7 @@ pub use self::config::{
     SettingsGenerator,
 };
 
+pub use database::leveldb;
 pub use rest::{
     bodys::*,
     error::Error,
