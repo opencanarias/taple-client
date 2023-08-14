@@ -195,20 +195,18 @@ impl<'a> LDBIterator<'a> {
 impl<'a> Iterator for LDBIterator<'a> {
     type Item = (String, Vec<u8>);
     fn next(&mut self) -> Option<(String, Vec<u8>)> {
-        loop {
-            let item = self.iter.next();
-            let Some(item) = item else {
+        let item = self.iter.next();
+        let Some(item) = item else {
                 return None;
             };
-            let key = {
-                let StringKey(value) = item.0;
-                if !value.starts_with(&self.table_name) {
-                    return None;
-                }
-                value.replace(&self.table_name, "")
-            };
-            return Some((key, item.1));
-        }
+        let key = {
+            let StringKey(value) = item.0;
+            if !value.starts_with(&self.table_name) {
+                return None;
+            }
+            value.replace(&self.table_name, "")
+        };
+        Some((key, item.1))
     }
 }
 
@@ -226,20 +224,18 @@ impl<'a> RevLDBIterator<'a> {
 impl<'a> Iterator for RevLDBIterator<'a> {
     type Item = (String, Vec<u8>);
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let item = self.iter.next();
-            let Some(item) = item else {
+        let item = self.iter.next();
+        let Some(item) = item else {
                 return None;
             };
-            let key = {
-                let StringKey(value) = item.0;
-                if !value.starts_with(&self.table_name) {
-                    return None;
-                }
-                value.replace(&self.table_name, "")
-            };
-            return Some((key, item.1));
-        }
+        let key = {
+            let StringKey(value) = item.0;
+            if !value.starts_with(&self.table_name) {
+                return None;
+            }
+            value.replace(&self.table_name, "")
+        };
+        Some((key, item.1))
     }
 }
 
