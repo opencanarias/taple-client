@@ -3,6 +3,7 @@ name = "taple-sign"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 taple-core = { workspace = true }

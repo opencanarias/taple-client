@@ -1,7 +1,5 @@
 <div align="center">
-<p><b>This is main branch of work and is not guaranteed to be stable. Released versions are in the "release*" branches</b></p>
-<br/>
-<p><img src="https://raw.githubusercontent.com/opencanarias/public-resources/master/images/taple-logo-readme.png"></p>
+<img src="https://raw.githubusercontent.com/opencanarias/public-resources/master/images/taple-logo-readme.png">
 </div>
 
 # TAPLE Client
@@ -22,8 +20,8 @@ TAPLE Client is the reference application for connecting to the TAPLE DLT networ
 [Discover](https://www.taple.es/docs/discover) | [Learn](https://www.taple.es/docs/learn) | [Build](https://www.taple.es/docs/build) | 
 [Code](https://github.com/search?q=topic%3Ataple+org%3Aopencanarias++fork%3Afalse+archived%3Afalse++is%3Apublic&type=repositories)
 
-## Build From Source
-Rust versión 1.67 or higher is required.
+## Build
+Minimium supported rust versión (MSRV) is 1.67.
 
 ```bash
 $ git clone https://github.com/opencanarias/taple-client.git
@@ -44,7 +42,7 @@ taple-client \
 
 Refer to official TAPLE-Client [documentation](https://www.taple.es/docs/learn/taple-client) and [tutorials](https://www.taple.es/docs/build/taple-client) to learn how to set up and run the application.
 
-## Docker images
+## Docker
 Prebuilt docker images are available at [Docker Hub](https://hub.docker.com/r/opencanarias/taple-client).
 
 If you want to build the image yourself, then you should do it in the following way:

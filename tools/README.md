@@ -4,7 +4,7 @@ TAPLE Tools are a group of utilities designed to facilitate the use of TAPLE Cli
 
 ## Build From Source
 
-Rust versión 1.67 or higher is required.
+Minimium supported rust versión (MSRV) is 1.67.
 
 ```bash
 $ git clone https://github.com/opencanarias/taple-client.git

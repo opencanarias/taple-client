@@ -11,6 +11,7 @@ homepage = "https://www.taple.es"
 repository = "https://github.com/opencanarias/taple-client"
 license = "AGPL-3.0-only"
 keywords = ["blockchain", "distributed-ledger", "taple", "sustainability"]
+rust-version = "1.67"
 
 [workspace.dependencies]
 #taple-core = { git = "https://github.com/opencanarias/taple-core", features =  ["all"] }
