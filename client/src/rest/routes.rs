@@ -204,7 +204,7 @@ pub fn with_derivator(
 
 pub fn with_body<T: DeserializeOwned + Send>(
 ) -> impl Filter<Extract = (T,), Error = warp::Rejection> + Clone {
-    warp::body::content_length_limit(1024 * 16).and(warp::body::json())
+    warp::body::content_length_limit(1024 * 100).and(warp::body::json())
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
