@@ -14,7 +14,7 @@ use tokio::signal::unix::{signal, SignalKind};
 use utoipa::OpenApi;
 use warp::Filter;
 
-use tempfile::tempdir as tempdirf;
+use tempfile::tempdir;
 
 #[test]
 fn basic_example() {
@@ -43,14 +43,12 @@ fn basic_example() {
             panic!("No MC available");
         };
 
-        // Open DATABASE DIR
-        let tempdir;
-        let path = if settings.database_path.is_empty() {
-            tempdir = tempdirf().unwrap();
-            tempdir.path().clone()
-        } else {
-            std::path::Path::new(&settings.database_path)
+        settings.database_path = {
+            let db_tempdir = tempdir().unwrap();
+            db_tempdir.path().to_str().unwrap().to_owned()
         };
+
+        let path = std::path::Path::new(&settings.database_path);
         let db = open_db(path);
         let leveldb = LevelDBManager::new(db);
 
