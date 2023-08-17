@@ -235,6 +235,7 @@ pub struct AuthorizeSubjectBody {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PostEventRequestBodyPreSignature {
+    #[serde(flatten)]
     /// Type of event request
     pub request: EventRequestBody,
     /// Signature of the issuer
