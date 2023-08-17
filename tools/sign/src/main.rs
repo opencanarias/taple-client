@@ -1,5 +1,6 @@
 use clap::Parser;
 
+use serde::{Deserialize, Serialize};
 use taple_core::signature::Signed;
 
 use taple_core::{signature::Signature, EventRequest};
@@ -18,6 +19,12 @@ struct Args {
     request: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignedRequest {
+    pub request: EventRequest,
+    pub signature: Signature,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
@@ -25,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let signature: Signature = Signature::new_from_pk_ed25519(&request, args.private_key)?;
 
-    let signed_request = Signed::<EventRequest>::new(request, signature);
+    let signed_request = SignedRequest { request, signature };
 
     let result: String = serde_json::to_string_pretty(&signed_request)?;
 
