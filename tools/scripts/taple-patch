@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TOOLS_IMAGE="opencanarias/taple-tools:0.2.1"
+TOOLS_IMAGE="opencanarias/taple-tools:0.2.2"
 TOOL="taple-patch"
 
 ARGS=()
