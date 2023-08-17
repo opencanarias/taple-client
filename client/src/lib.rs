@@ -1,17 +1,18 @@
 mod config;
-mod rest;
 mod database;
+mod rest;
 pub use self::config::{
     client_settings_builder, extract_from_map, extract_option, ClientSettings, SettingsError,
-    SettingsGenerator, 
+    SettingsGenerator,
 };
 
+pub use database::leveldb;
 pub use rest::{
     bodys::*,
     error::Error,
+    handlers,
     openapi::{serve_swagger, ApiDoc},
     querys::*,
     routes::*,
-    handlers
 };
 pub use settings::{ConfigGenerator, SettingSchemaBuilder};
