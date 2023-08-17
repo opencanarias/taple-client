@@ -3701,7 +3701,6 @@ dependencies = [
 [[package]]
 name = "taple-core"
 version = "0.3.0-dev"
-source = "git+https://github.com/opencanarias/taple-core#dfcfd323177086903cd3a898887a124c978ef618"
 dependencies = [
  "async-std",
  "async-trait",
