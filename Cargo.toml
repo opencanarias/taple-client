@@ -16,6 +16,8 @@ rust-version = "1.67"
 [workspace.dependencies]
 #taple-core = { git = "https://github.com/opencanarias/taple-core", features =  ["all"] }
 taple-core = { path = "../taple-core/core", features = ["all"] }
+taple-db-leveldb = { path = "../taple-core/db/leveldb" }
+taple-network-libp2p = { path = "../taple-core/network/libp2p" }
 env_logger = "0.10"
 log = "0.4"
 utoipa = "3"

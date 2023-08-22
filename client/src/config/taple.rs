@@ -1,6 +1,6 @@
 use settings::SettingsMap;
 use taple_core::{get_default_settings, DigestDerivator, KeyDerivator};
-pub use taple_core::{NetworkSettings, NodeSettings, TapleSettings};
+pub use taple_core::{NodeSettings, TapleSettings};
 
 use crate::config::create_path;
 
@@ -12,11 +12,6 @@ impl SettingsGenerator for TapleSettings {
     fn generate(data: &SettingsMap) -> Result<Self, SettingsError> {
         let default_settings = get_default_settings();
         Ok(TapleSettings {
-            network: NetworkSettings {
-                listen_addr: Vec::new(),
-                known_nodes: extract_list(&data, "known-node"),
-                external_address: extract_list(&data, "external-addresses"),
-            },
             node: NodeSettings {
                 key_derivator: extract_key_derivator(
                     &data,

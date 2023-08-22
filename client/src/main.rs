@@ -1,7 +1,5 @@
 extern crate env_logger;
-mod database;
 mod rest;
-use database::leveldb::{open_db, LDBCollection, LevelDBManager};
 use log::info;
 use rest::openapi::{serve_swagger, ApiDoc};
 use std::sync::Arc;
@@ -9,6 +7,8 @@ use std::{error::Error, net::SocketAddr};
 use taple_client::{client_settings_builder, ClientSettings, SettingsGenerator};
 use taple_core::crypto::{Ed25519KeyPair, KeyGenerator, KeyPair, Secp256k1KeyPair};
 use taple_core::{KeyDerivator, Taple, TapleShutdownManager};
+use taple_db_leveldb::leveldb::{open_db, LDBCollection, LevelDBManager};
+use taple_network_libp2p::network::{external_addresses, network_access_points, NetworkProcessor};
 use tempfile::tempdir as tempdirf;
 use tokio::signal::unix::{signal, SignalKind};
 use utoipa::OpenApi;
@@ -53,7 +53,8 @@ async fn run() -> Result<(), Box<dyn Error>> {
         panic!("No MC available");
     };
     ////////////////////
-    let mut taple = Taple::new(settings.taple.clone(), leveldb);
+    let mut taple: Taple<LevelDBManager, LDBCollection> =
+        Taple::new(settings.taple.clone(), leveldb);
     let shutdown_manager = taple.get_shutdown_manager();
     let signal_shutdown_manager = taple.get_shutdown_manager();
     let mut stream = signal(SignalKind::terminate())?;
@@ -68,7 +69,21 @@ async fn run() -> Result<(), Box<dyn Error>> {
             }
         };
     });
-    taple.start().await?;
+    let kp = Taple::<LevelDBManager, LDBCollection>::create_key_pair(
+        &settings.taple.node.key_derivator,
+        None,
+        settings.taple.node.secret_key.clone(),
+    )?;
+    let network_manager = NetworkProcessor::new(
+        settings.network.listen_addr.clone(),
+        network_access_points(&settings.network.known_nodes)?, // TODO: Provide Bootraps nodes per configuration
+        kp.clone(),
+        shutdown_manager.get_raw_sender().subscribe(),
+        external_addresses(&settings.network.external_address)?,
+    )
+    .await
+    .expect("Error en creación de la capa de red");
+    taple.start(network_manager).await?;
     info!("Controller ID: {}", taple.controller_id().unwrap());
     if settings.http {
         log::info!(

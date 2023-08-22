@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use settings::{ConfigGenerator, SettingSchemaBuilder};
 use settings::{ParamType, SettingsMap};
 use taple_core::{get_default_settings, DigestDerivator, KeyDerivator, ListenAddr, TapleSettings};
@@ -7,6 +8,19 @@ use crate::SettingsError;
 
 use super::{extract_boolean, extract_from_map, extract_list, SettingsGenerator};
 
+/// P2P network configuration parameters of a TAPLE node.
+#[derive(Debug, Deserialize, Clone)]
+pub struct NetworkSettings {
+    /// [Multiaddr](https://github.com/multiformats/multiaddr) to consider by the node.
+    pub listen_addr: Vec<ListenAddr>,
+    #[serde(rename = "knownnodes")]
+    /// List of bootstrap nodes to connect to.
+    pub known_nodes: Vec<String>,
+    #[serde(rename = "externaladdress")]
+    /// List of bootstrap nodes to connect to.
+    pub external_address: Vec<String>,
+}
+
 #[derive(Clone, Debug)]
 pub struct ClientSettings {
     pub taple: TapleSettings,
@@ -15,6 +29,7 @@ pub struct ClientSettings {
     pub http_port: u32,
     pub doc_ui: bool,
     pub database_path: String,
+    pub network: NetworkSettings,
 }
 
 impl SettingsGenerator for ClientSettings {
@@ -26,19 +41,8 @@ impl SettingsGenerator for ClientSettings {
         let ports_offset = extract_from_map(&data, "ports-offset", 0u32)?;
         let listen_addr = {
             let mut list: Vec<ListenAddr> = Vec::new();
-            let data = {
-                let tmp = extract_list(&data, "listen-addr");
-                if tmp.is_empty() {
-                    default_settings
-                        .network
-                        .listen_addr
-                        .iter()
-                        .map(|s| s.to_string().unwrap())
-                        .collect()
-                } else {
-                    tmp
-                }
-            };
+            let data = extract_list(&data, "listen-addr");
+
             for addr in data {
                 let mut value = ListenAddr::try_from(addr)?;
                 value.increment_port(ports_offset);
@@ -47,7 +51,6 @@ impl SettingsGenerator for ClientSettings {
             list
         };
         let mut taple_settings = TapleSettings::generate(data)?;
-        taple_settings.network.listen_addr = listen_addr;
         let database_path = create_database_path(&data)?;
         Ok(Self {
             taple: taple_settings,
@@ -56,6 +59,11 @@ impl SettingsGenerator for ClientSettings {
             http_port: extract_from_map(&data, "port", 3000u32)? + ports_offset,
             doc_ui: extract_from_map(&data, "doc", false)?,
             database_path: database_path,
+            network: NetworkSettings {
+                listen_addr,
+                known_nodes: extract_list(&data, "known-node"),
+                external_address: extract_list(&data, "external-addresses"),
+            },
         })
     }
 }

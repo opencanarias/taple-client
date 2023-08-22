@@ -24,6 +24,8 @@ tempfile = { workspace = true }
 hex = { workspace = true }
 home = { workspace = true }
 taple-core = { workspace = true, features = ["all"] }
+taple-db-leveldb = { workspace = true }
+taple-network-libp2p = { workspace = true }
 settings = { path = "../settings" }
 leveldb = { workspace = true }
 db-key = { workspace = true }
