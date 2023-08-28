@@ -20,7 +20,6 @@ pub fn create_path(name: &str) -> Result<String, SettingsError> {
         std::env::temp_dir()
     };
     let path = format!("{}/.taple/{}", path.display(), name);
-    std::fs::create_dir_all(&path)?;
     Ok(path)
 }
 
