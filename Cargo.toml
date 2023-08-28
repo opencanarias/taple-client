@@ -31,7 +31,7 @@ ureq = { version = "2.6.2", features = ["json", "charset"] }
 hex = "0.4.3"
 borsh = "0.10.3"
 config = "0.13.2"
-clap = { version = "4.1.3", features = ["string", "derive"] }
+clap = { version = "~4.2", features = ["string", "derive"] }
 toml = "0.6"
 lazy_static = "1.4"
 regex = "1.7.1"
