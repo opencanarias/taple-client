@@ -1,10 +1,12 @@
 use settings::SettingsMap;
-use taple_core::{DigestDerivator, KeyDerivator, get_default_settings};
+use taple_core::{get_default_settings, DigestDerivator, KeyDerivator};
 pub use taple_core::{NetworkSettings, NodeSettings, TapleSettings};
 
 use crate::config::create_path;
 
-use super::{error::SettingsError, extract_from_map, extract_option, SettingsGenerator, extract_list};
+use super::{
+    error::SettingsError, extract_from_map, extract_list, extract_option, SettingsGenerator,
+};
 
 impl SettingsGenerator for TapleSettings {
     fn generate(data: &SettingsMap) -> Result<Self, SettingsError> {
@@ -37,14 +39,18 @@ impl SettingsGenerator for TapleSettings {
 }
 
 fn create_contracts_build_path(data: &SettingsMap) -> Result<String, SettingsError> {
-    if let Some(path) = data.get::<String>("build-path") {
-        Ok(path.clone())
-    } else {
-        log::warn!("Contract build path was not defined");
-        let path = create_path("sc")?;
-        log::warn!("Contracts build path defaults to {}", path);
-        Ok(path)
-    }
+    let path = {
+        if let Some(path) = data.get::<String>("build-path") {
+            path.clone()
+        } else {
+            log::warn!("Contract build path was not defined");
+            let path = create_path("sc")?;
+            log::warn!("Contracts build path defaults to {}", path);
+            path
+        }
+    };
+    std::fs::create_dir_all(&path)?;
+    Ok(path)
 }
 
 fn extract_pass_votation<T: Into<String>>(data: &SettingsMap, key: T) -> Result<u8, SettingsError> {

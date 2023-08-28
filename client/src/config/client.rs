@@ -61,14 +61,18 @@ impl SettingsGenerator for ClientSettings {
 }
 
 fn create_database_path(data: &SettingsMap) -> Result<String, SettingsError> {
-    if let Some(path) = data.get::<String>("db-path") {
-        Ok(path.clone())
-    } else {
-        log::warn!("Database path was not defined");
-        let path = create_path("db")?;
-        log::warn!("Database defaults to {}", path);
-        Ok(path)
-    }
+    let path = {
+        if let Some(path) = data.get::<String>("db-path") {
+            path.clone()
+        } else {
+            log::warn!("Database path was not defined");
+            let path = create_path("db")?;
+            log::warn!("Database defaults to {}", path);
+            path
+        }
+    };
+    std::fs::create_dir_all(&path)?;
+    Ok(path)
 }
 
 pub fn client_settings_builder() -> ConfigGenerator {
