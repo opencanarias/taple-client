@@ -1,15 +1,13 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SettingsMap {
     map: HashMap<String, AnyValue>,
 }
 
 impl SettingsMap {
     pub fn new() -> Self {
-        Self {
-            map: HashMap::new(),
-        }
+        Self::default()
     }
 
     pub fn insert<T: std::any::Any + Send + Clone + Sync + 'static>(
@@ -26,11 +24,8 @@ impl SettingsMap {
 
     pub fn get<T: std::any::Any + Send + Clone + Sync + 'static>(&self, key: &str) -> Option<&T> {
         let Some(data) = self.map.get(key) else {
-      return None;
-    };
-        if let Some(_) = data.downcast_ref::<T>() {
-        } else {
-        }
+            return None;
+        };
         data.downcast_ref()
     }
 }

@@ -3,21 +3,21 @@ use std::{collections::HashSet, str::FromStr};
 use serde::Serialize;
 use serde_json::Value;
 use taple_core::{
-    crypto::{KeyMaterial, KeyPair},
+    crypto::KeyPair,
     identifier::{Derivable, DigestIdentifier},
     signature::{Signature, Signed},
     ApprovalState, KeyDerivator, KeyIdentifier,
 };
 use warp::Rejection;
 
-use taple_core::{ApiError, ApiModuleInterface, NodeAPI};
+use taple_core::{Api, ApiError};
 
-use crate::rest::querys::GetWithPaginationString;
-use crate::{rest::querys::AddKeysQuery, rest::querys::KeyAlgorithms};
+use crate::http::api::querys::GetWithPaginationString;
+use crate::{http::api::querys::AddKeysQuery, http::api::querys::KeyAlgorithms};
 
 use super::{
     bodys::{
-        AuthorizeSubjectBody, PatchVoteBody, PostEventRequestBodyPreSignature, SignatureBody,
+        self, AuthorizeSubjectBody, PatchVoteBody, PostEventRequestBodyPreSignature, SignatureBody,
         SignedBody,
     },
     error::Error,
@@ -106,7 +106,7 @@ use super::{
     )
 )]
 pub async fn get_approvals_handler(
-    node: NodeAPI,
+    node: Api,
     parameters: GetApprovalsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let status = match parameters.status {
@@ -129,7 +129,7 @@ pub async fn get_approvals_handler(
         .map(|result| {
             result
                 .into_iter()
-                .map(|r| ApprovalEntityResponse::from(r))
+                .map(ApprovalEntityResponse::from)
                 .collect::<Vec<ApprovalEntityResponse>>()
         });
     handle_data(data)
@@ -208,16 +208,16 @@ pub async fn get_approvals_handler(
 )]
 pub async fn get_approval_handler(
     id: String,
-    node: NodeAPI,
+    node: Api,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_approval(id)
             .await
-            .map(|r| ApprovalEntityResponse::from(r))
+            .map(ApprovalEntityResponse::from)
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data(result)
 }
@@ -310,7 +310,7 @@ pub async fn get_approval_handler(
 )]
 pub async fn patch_approval_handler(
     request_id: String,
-    node: NodeAPI,
+    node: Api,
     body: PatchVoteBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let acceptance = match body {
@@ -320,11 +320,11 @@ pub async fn patch_approval_handler(
     let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
         node.approval_request(id, acceptance)
             .await
-            .map(|data| ApprovalEntityResponse::from(data))
+            .map(ApprovalEntityResponse::from)
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data(result)
 }
@@ -357,18 +357,13 @@ pub async fn patch_approval_handler(
     )
 )]
 pub async fn get_allowed_subjects_handler(
-    node: NodeAPI,
+    node: Api,
     parameters: GetWithPaginationString,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = node
         .get_all_allowed_subjects_and_providers(parameters.from, parameters.quantity)
         .await
-        .map(|x| {
-            Vec::from_iter(
-                x.into_iter()
-                    .map(|s| PreauthorizedSubjectsResponse::from(s)),
-            )
-        });
+        .map(|x| Vec::from_iter(x.into_iter().map(PreauthorizedSubjectsResponse::from)));
     handle_data(result)
 }
 
@@ -404,7 +399,7 @@ pub async fn get_allowed_subjects_handler(
 )]
 pub async fn put_allowed_subjects_handler(
     id: String,
-    node: NodeAPI,
+    node: Api,
     body: AuthorizeSubjectBody,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = 'result: {
@@ -462,7 +457,7 @@ pub async fn put_allowed_subjects_handler(
     )
 )]
 pub async fn post_generate_keys_handler(
-    node: NodeAPI,
+    node: Api,
     parameters: AddKeysQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let derivator = parameters
@@ -502,13 +497,13 @@ pub async fn post_generate_keys_handler(
     )
 )]
 pub async fn post_event_request_handler(
-    node: NodeAPI,
+    node: Api,
     keys: KeyPair,
     derivator: KeyDerivator,
     mut body: PostEventRequestBodyPreSignature,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     // If event request is a creation one and it does not specify a public_key, then a random one must be generated
-    if let super::bodys::EventRequestBody::Create(creation_req) = &mut body.request {
+    if let bodys::EventRequestBody::Create(creation_req) = &mut body.request {
         if creation_req.public_key.is_none() {
             let public_key = node.add_keys(derivator).await;
             if public_key.is_err() {
@@ -596,16 +591,14 @@ pub async fn post_event_request_handler(
 )]
 pub async fn get_taple_request_handler(
     request_id: String,
-    node: NodeAPI,
+    node: Api,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
-        node.get_request(id)
-            .await
-            .map(|data| TapleRequestResponse::from(data))
+        node.get_request(id).await.map(TapleRequestResponse::from)
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data(result)
 }
@@ -640,16 +633,16 @@ pub async fn get_taple_request_handler(
 )]
 pub async fn get_taple_request_state_handler(
     request_id: String,
-    node: NodeAPI,
+    node: Api,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&request_id) {
         node.get_request(id)
             .await
-            .map(|data| TapleRequestStateResponse::from(data))
+            .map(TapleRequestStateResponse::from)
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data(result)
 }
@@ -713,7 +706,7 @@ pub async fn get_taple_request_state_handler(
     )
 )]
 pub async fn get_subjects_handler(
-    node: NodeAPI,
+    node: Api,
     parameters: GetAllSubjectsQuery,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     enum SubjectType {
@@ -724,9 +717,10 @@ pub async fn get_subjects_handler(
         Some(data) => match data.to_lowercase().as_str() {
             "all" => SubjectType::All,
             "governances" => {
-                if let Some(_) = &parameters.governanceid {
+                if parameters.governanceid.is_some() {
                     return handle_data::<SubjectDataResponse>(Err(ApiError::InvalidParameters(
-                        format!("governanceid can not be specified with subject_type=governances"),
+                        "governanceid can not be specified with subject_type=governances"
+                            .to_string(),
                     )));
                 }
                 SubjectType::Governances
@@ -761,7 +755,7 @@ pub async fn get_subjects_handler(
     }
     .map(|s| {
         s.into_iter()
-            .map(|x| SubjectDataResponse::from(x))
+            .map(SubjectDataResponse::from)
             .collect::<Vec<SubjectDataResponse>>()
     });
     handle_data(data)
@@ -818,18 +812,13 @@ pub async fn get_subjects_handler(
         (status = 500, description = "Internal Server Error"),
     )
 )]
-pub async fn get_subject_handler(
-    id: String,
-    node: NodeAPI,
-) -> Result<Box<dyn warp::Reply>, Rejection> {
+pub async fn get_subject_handler(id: String, node: Api) -> Result<Box<dyn warp::Reply>, Rejection> {
     let response = if let Ok(id) = DigestIdentifier::from_str(&id) {
-        node.get_subject(id)
-            .await
-            .map(|s| SubjectDataResponse::from(s))
+        node.get_subject(id).await.map(SubjectDataResponse::from)
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data(response)
 }
@@ -879,7 +868,7 @@ pub async fn get_subject_handler(
 )]
 pub async fn get_validation_proof_handle(
     id: String,
-    node: NodeAPI,
+    node: Api,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_validation_proof(id)
@@ -888,13 +877,13 @@ pub async fn get_validation_proof_handle(
                 proof: ValidationProofResponse::from(proof),
                 signatures: signatures
                     .into_iter()
-                    .map(|s| SignatureBody::from(s))
+                    .map(SignatureBody::from)
                     .collect::<Vec<SignatureBody>>(),
             })
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data(result)
 }
@@ -991,7 +980,7 @@ pub async fn get_validation_proof_handle(
 )]
 pub async fn get_events_of_subject_handler(
     id: String,
-    node: NodeAPI,
+    node: Api,
     parameters: GetWithPagination,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let result = if let Ok(id) = DigestIdentifier::from_str(&id) {
@@ -1003,9 +992,9 @@ pub async fn get_events_of_subject_handler(
                     .collect::<Vec<SignedEvent>>()
             })
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data::<Vec<SignedEvent>>(result)
 }
@@ -1101,14 +1090,14 @@ pub async fn get_events_of_subject_handler(
 pub async fn get_event_handler(
     id: String,
     sn: u64,
-    node: NodeAPI,
+    node: Api,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     let response = if let Ok(id) = DigestIdentifier::from_str(&id) {
         node.get_event(id, sn).await.map(|e| SignedEvent(e.into()))
     } else {
-        Err(ApiError::InvalidParameters(format!(
-            "ID specified is not a valid Digest Identifier"
-        )))
+        Err(ApiError::InvalidParameters(
+            "ID specified is not a valid Digest Identifier".to_string(),
+        ))
     };
     handle_data(response)
 }
@@ -1117,7 +1106,7 @@ pub fn handle_data<T: Serialize + std::fmt::Debug>(
     data: Result<T, ApiError>,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     match &data {
-        Ok(data) => return Ok(Box::new(warp::reply::json(&data))),
+        Ok(data) => Ok(Box::new(warp::reply::json(&data))),
         Err(ApiError::InvalidParameters(msg)) => {
             Err(warp::reject::custom(Error::InvalidParameters {
                 error: msg.to_owned(),

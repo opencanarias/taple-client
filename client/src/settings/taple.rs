@@ -1,56 +1,50 @@
-use settings::SettingsMap;
-use taple_core::{get_default_settings, DigestDerivator, KeyDerivator};
-pub use taple_core::{NetworkSettings, NodeSettings, TapleSettings};
+use easy_settings::SettingsMap;
+use taple_core::{DigestDerivator, KeyDerivator};
+pub use taple_core::{NetworkSettings, NodeSettings, Settings};
 
-use crate::config::create_path;
+use crate::settings::create_path;
 
-use super::{
-    error::SettingsError, extract_from_map, extract_list, extract_option, SettingsGenerator,
-};
+use super::{error::SettingsError, extract_from_map, extract_list, SettingsGenerator};
 
-impl SettingsGenerator for TapleSettings {
+impl SettingsGenerator for Settings {
     fn generate(data: &SettingsMap) -> Result<Self, SettingsError> {
-        let default_settings = get_default_settings();
-        Ok(TapleSettings {
+        let default_settings = Settings::default();
+        Ok(Settings {
             network: NetworkSettings {
                 listen_addr: Vec::new(),
-                known_nodes: extract_list(&data, "known-node"),
-                external_address: extract_list(&data, "external-addresses"),
+                known_nodes: extract_list(data, "known-node"),
+                external_address: extract_list(data, "external-addresses"),
             },
             node: NodeSettings {
                 key_derivator: extract_key_derivator(
-                    &data,
+                    data,
                     "id-key-derivator",
                     default_settings.node.key_derivator,
                 )?,
-                secret_key: extract_option(&data, "id-private-key")?,
+                secret_key: extract_from_map(data, "id-private-key", "".to_string())?,
                 digest_derivator: extract_digest_derivator(
-                    &data,
+                    data,
                     "digest-derivator",
                     default_settings.node.digest_derivator,
                 )?,
-                replication_factor: extract_from_map(&data, "msg-rep-factor", 0.25f64)?,
-                timeout: extract_from_map(&data, "msg-timeout", 3000u32)?,
-                passvotation: extract_pass_votation(&data, "approval-mode")?,
-                smartcontracts_directory: create_contracts_build_path(&data)?,
+                replication_factor: extract_from_map(data, "msg-rep-factor", 0.25f64)?,
+                timeout: extract_from_map(data, "msg-timeout", 3000u32)?,
+                passvotation: extract_pass_votation(data, "approval-mode")?,
+                smartcontracts_directory: create_contracts_build_path(data)?,
             },
         })
     }
 }
 
 fn create_contracts_build_path(data: &SettingsMap) -> Result<String, SettingsError> {
-    let path = {
-        if let Some(path) = data.get::<String>("build-path") {
-            path.clone()
-        } else {
-            log::warn!("Contract build path was not defined");
-            let path = create_path("sc")?;
-            log::warn!("Contracts build path defaults to {}", path);
-            path
-        }
-    };
-    std::fs::create_dir_all(&path)?;
-    Ok(path)
+    if let Some(path) = data.get::<String>("build-path") {
+        Ok(path.clone())
+    } else {
+        log::warn!("Contract build path was not defined");
+        let path = create_path("sc")?;
+        log::info!("Contracts build path defaults to {}", path);
+        Ok(path)
+    }
 }
 
 fn extract_pass_votation<T: Into<String>>(data: &SettingsMap, key: T) -> Result<u8, SettingsError> {

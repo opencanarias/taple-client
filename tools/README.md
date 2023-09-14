@@ -10,9 +10,9 @@ Minimium supported rust versión (MSRV) is 1.67.
 $ git clone https://github.com/opencanarias/taple-client.git
 $ cd taple-client
 $ sudo apt install -y libprotobuf-dev protobuf-compiler cmake
-$ cargo install --path tools/keygen
-$ cargo install --path tools/patch
-$ cargo install --path tools/sign
+$ cargo install --locked --path tools/keygen
+$ cargo install --locked --path tools/patch
+$ cargo install --locked --path tools/sign
 $ taple-keygen -h
 $ taple-sign -h
 $ taple-patch -h

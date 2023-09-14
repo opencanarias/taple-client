@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::rest::bodys::SignatureBody;
+use crate::http::api::bodys::SignatureBody;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use taple_core::identifier::Derivable;

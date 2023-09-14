@@ -3,9 +3,9 @@ mod error;
 mod taple;
 
 pub use self::client::{client_settings_builder, ClientSettings};
+use easy_settings::SettingsMap;
 pub use error::SettingsError;
-use settings::SettingsMap;
-pub use taple::TapleSettings;
+pub use taple::Settings;
 
 pub trait SettingsGenerator {
     fn generate(data: &SettingsMap) -> Result<Self, SettingsError>

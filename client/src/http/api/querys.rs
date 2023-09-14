@@ -46,9 +46,9 @@ pub enum KeyAlgorithms {
     Secp256k1,
 }
 
-impl Into<KeyDerivator> for KeyAlgorithms {
-    fn into(self) -> KeyDerivator {
-        match self {
+impl From<KeyAlgorithms> for KeyDerivator {
+    fn from(val: KeyAlgorithms) -> Self {
+        match val {
             KeyAlgorithms::Ed25519 => KeyDerivator::Ed25519,
             KeyAlgorithms::Secp256k1 => KeyDerivator::Secp256k1,
         }

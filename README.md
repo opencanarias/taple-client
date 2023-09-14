@@ -28,7 +28,7 @@ $ git clone https://github.com/opencanarias/taple-client.git
 $ cd taple-client
 $ sudo apt install -y libprotobuf-dev protobuf-compiler cmake
 $ rustup target add wasm32-unknown-unknown
-$ cargo install --path client
+$ cargo install --locked --path client
 $ taple-client --version
 ```
 

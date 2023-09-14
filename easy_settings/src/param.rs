@@ -38,7 +38,7 @@ impl SettingSchemaBuilder {
         if id.is_empty() {
             return Err(Error::EmptyString);
         }
-        if !check_if_valid_env(&id.replace("-", "_")) {
+        if !check_if_valid_env(&id.replace('-', "_")) {
             return Err(Error::InvalidStringForEnv(id));
         }
         Ok(Self {
@@ -59,7 +59,7 @@ impl SettingSchemaBuilder {
         SettingSchema {
             id: id.clone(),
             short: self.short.take(),
-            env: id.replace("-", "_").to_uppercase(),
+            env: id.replace('-', "_").to_uppercase(),
             param_type: self.param_type.unwrap_or(ParamType::Set),
             help: self.help.unwrap_or(id),
             hidden: self.hidden,
@@ -153,10 +153,7 @@ impl SettingSchema {
             ParamType::Set => result.action(ArgAction::Set),
             ParamType::Multivalued => result.action(ArgAction::Append),
         };
-        let result = result
-            .long(id.clone())
-            .help(self.help.clone())
-            .hide(self.hidden);
+        let result = result.long(id).help(self.help.clone()).hide(self.hidden);
         if let Some(default) = &self.default {
             result.default_value(default)
         } else {
@@ -165,7 +162,8 @@ impl SettingSchema {
     }
 }
 
-pub struct ConfigGenerator {
+#[derive(Default)]
+pub struct SettingsBuilder {
     data: LinkedHashSet<SettingSchema>,
     toml_filename: Option<String>,
     program_name: Option<String>,
@@ -176,18 +174,9 @@ pub struct ConfigGenerator {
     prefix: Option<String>,
 }
 
-impl ConfigGenerator {
+impl SettingsBuilder {
     pub fn new() -> Self {
-        Self {
-            data: LinkedHashSet::new(),
-            toml_filename: None,
-            program_name: None,
-            author: None,
-            about: None,
-            usage: None,
-            prefix: None,
-            version: None,
-        }
+        Self::default()
     }
 
     pub fn usage<T: Into<String>>(mut self, usage: T) -> Self {
@@ -241,11 +230,7 @@ impl ConfigGenerator {
         if !check_if_valid_env(&group) {
             return Err(Error::InvalidStringForEnv(group));
         }
-        let description = if let Some(description) = description {
-            Some(description.into())
-        } else {
-            None
-        };
+        let description = description.map(|description| description.into());
         let prefix = if let Some(data) = prefix {
             let data = data.into();
             if !check_if_valid_env(&data) {
@@ -269,7 +254,7 @@ impl ConfigGenerator {
         if !check_if_valid_env(&prefix) {
             return Err(Error::InvalidStringForEnv(prefix));
         }
-        self.prefix = Some(prefix.into());
+        self.prefix = Some(prefix);
         Ok(self)
     }
 
@@ -314,7 +299,7 @@ impl ConfigGenerator {
         } else {
             setting.id.clone()
         };
-        if let Some(_) = matches.value_source(&id) {
+        if matches.value_source(&id).is_some() {
             match &setting.param_type {
                 ParamType::Flag => Some(AnyValue::new(
                     matches.get_one::<bool>(&id).unwrap().clone().to_string(),
@@ -372,11 +357,8 @@ impl ConfigGenerator {
             }
             if let Ok(value) = std::env::var(&setting.env) {
                 if let ParamType::Multivalued = setting.param_type {
-                    let value = value.split(";");
-                    result.insert(
-                        setting.id,
-                        value.map(|s| String::from(s)).collect::<Vec<String>>(),
-                    );
+                    let value = value.split(';');
+                    result.insert(setting.id, value.map(String::from).collect::<Vec<String>>());
                 } else {
                     result.insert(setting.id, value);
                 }
@@ -394,11 +376,9 @@ impl ConfigGenerator {
                             }
                         }
                     }
-                } else {
-                    if let Some(value) = tmp.get(&setting.id) {
-                        if let Some(value) = Self::get_string_from_value(value) {
-                            result.insert(setting.id, value);
-                        }
+                } else if let Some(value) = tmp.get(&setting.id) {
+                    if let Some(value) = Self::get_string_from_value(value) {
+                        result.insert(setting.id, value);
                     }
                 }
             }

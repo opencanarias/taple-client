@@ -1,20 +1,20 @@
-use settings::{ConfigGenerator, SettingSchemaBuilder};
-use settings::{ParamType, SettingsMap};
-use taple_core::{get_default_settings, DigestDerivator, KeyDerivator, ListenAddr, TapleSettings};
+use easy_settings::{ParamType, SettingsMap};
+use easy_settings::{SettingSchemaBuilder, SettingsBuilder};
+use taple_core::{DigestDerivator, KeyDerivator, ListenAddr, Settings};
 
-use crate::config::create_path;
-use crate::SettingsError;
+use crate::settings::create_path;
+use crate::settings::SettingsError;
 
 use super::{extract_boolean, extract_from_map, extract_list, SettingsGenerator};
 
 #[derive(Clone, Debug)]
 pub struct ClientSettings {
-    pub taple: TapleSettings,
+    pub taple: Settings,
     pub http: bool,
     pub http_addr: String,
     pub http_port: u32,
-    pub doc_ui: bool,
-    pub database_path: String,
+    pub doc: bool,
+    pub db_path: String,
 }
 
 impl SettingsGenerator for ClientSettings {
@@ -22,12 +22,12 @@ impl SettingsGenerator for ClientSettings {
     where
         Self: Sized,
     {
-        let default_settings = get_default_settings();
-        let ports_offset = extract_from_map(&data, "ports-offset", 0u32)?;
+        let default_settings = Settings::default();
+        let ports_offset = extract_from_map(data, "ports-offset", 0u32)?;
         let listen_addr = {
             let mut list: Vec<ListenAddr> = Vec::new();
             let data = {
-                let tmp = extract_list(&data, "listen-addr");
+                let tmp = extract_list(data, "listen-addr");
                 if tmp.is_empty() {
                     default_settings
                         .network
@@ -46,37 +46,33 @@ impl SettingsGenerator for ClientSettings {
             }
             list
         };
-        let mut taple_settings = TapleSettings::generate(data)?;
+        let mut taple_settings = Settings::generate(data)?;
         taple_settings.network.listen_addr = listen_addr;
-        let database_path = create_database_path(&data)?;
+        let database_path = create_database_path(data)?;
         Ok(Self {
             taple: taple_settings,
             http: extract_boolean(data, "http", false)?,
-            http_addr: extract_from_map(&data, "addr", "0.0.0.0".into())?,
-            http_port: extract_from_map(&data, "port", 3000u32)? + ports_offset,
-            doc_ui: extract_from_map(&data, "doc", false)?,
-            database_path: database_path,
+            http_addr: extract_from_map(data, "addr", "0.0.0.0".into())?,
+            http_port: extract_from_map(data, "port", 3000u32)? + ports_offset,
+            doc: extract_from_map(data, "doc", false)?,
+            db_path: database_path,
         })
     }
 }
 
 fn create_database_path(data: &SettingsMap) -> Result<String, SettingsError> {
-    let path = {
-        if let Some(path) = data.get::<String>("db-path") {
-            path.clone()
-        } else {
-            log::warn!("Database path was not defined");
-            let path = create_path("db")?;
-            log::warn!("Database defaults to {}", path);
-            path
-        }
-    };
-    std::fs::create_dir_all(&path)?;
-    Ok(path)
+    if let Some(path) = data.get::<String>("db-path") {
+        Ok(path.clone())
+    } else {
+        log::warn!("Database path was not defined");
+        let path = create_path("db")?;
+        log::info!("Database defaults to {}", path);
+        Ok(path)
+    }
 }
 
-pub fn client_settings_builder() -> ConfigGenerator {
-    let default_settings = taple_core::get_default_settings();
+pub fn client_settings_builder() -> SettingsBuilder {
+    let default_settings = Settings::default();
     fn pass_votation_conversion(pass_votation: u8) -> String {
         match pass_votation {
             0 => String::from("never"),
@@ -100,8 +96,8 @@ pub fn client_settings_builder() -> ConfigGenerator {
             DigestDerivator::SHA3_512 => "SHA3_512".into(),
         }
     }
-    ConfigGenerator::new()
-        .about("Node for a TAPLE network")
+    SettingsBuilder::new()
+        .about(env!("CARGO_PKG_DESCRIPTION"))
         .program_name(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author("Open Canarias")

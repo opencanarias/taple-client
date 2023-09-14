@@ -16,6 +16,7 @@ utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 borsh = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }
+tokio-util = { workspace = true }
 warp = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -24,11 +25,11 @@ tempfile = { workspace = true }
 hex = { workspace = true }
 home = { workspace = true }
 taple-core = { workspace = true, features = ["all"] }
-settings = { path = "../settings" }
+easy_settings = { path = "../easy_settings" }
 leveldb = { workspace = true }
 db-key = { workspace = true }
+futures = { workspace = true }
 
 [dev-dependencies]
-ureq = { workspace = true }
-futures = { workspace = true }
+reqwest = { workspace = true }
 serial_test = { workspace = true }

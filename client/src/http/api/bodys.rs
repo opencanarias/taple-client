@@ -128,13 +128,15 @@ impl TryInto<StartRequest> for CreateRequestBody {
     fn try_into(self) -> Result<StartRequest, Self::Error> {
         Ok(StartRequest {
             governance_id: DigestIdentifier::from_str(&self.governance_id).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for governance id"))
+                ApiError::InvalidParameters(
+                    "Invalid DigestIdentifier for governance id".to_string(),
+                )
             })?,
             schema_id: self.schema_id,
             namespace: self.namespace,
             name: self.name,
             public_key: KeyIdentifier::from_str(&self.public_key.unwrap()).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid KeyIdentifier for public key"))
+                ApiError::InvalidParameters("Invalid KeyIdentifier for public key".to_string())
             })?,
         })
     }
@@ -152,7 +154,7 @@ impl TryInto<EOLRequest> for EOLRequestBody {
     fn try_into(self) -> Result<EOLRequest, Self::Error> {
         Ok(EOLRequest {
             subject_id: DigestIdentifier::from_str(&self.subject_id).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for subject id"))
+                ApiError::InvalidParameters("Invalid DigestIdentifier for subject id".to_string())
             })?,
         })
     }
@@ -180,10 +182,10 @@ impl TryInto<TransferRequest> for TransferRequestBody {
     fn try_into(self) -> Result<TransferRequest, Self::Error> {
         Ok(TransferRequest {
             subject_id: DigestIdentifier::from_str(&self.subject_id).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for subject id"))
+                ApiError::InvalidParameters("Invalid DigestIdentifier for subject id".to_string())
             })?,
             public_key: KeyIdentifier::from_str(&self.public_key).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid KeyIdentifier for public key"))
+                ApiError::InvalidParameters("Invalid KeyIdentifier for public key".to_string())
             })?,
         })
     }
@@ -220,7 +222,7 @@ impl TryInto<FactRequest> for FactRequestBody {
     fn try_into(self) -> Result<FactRequest, Self::Error> {
         Ok(FactRequest {
             subject_id: DigestIdentifier::from_str(&self.subject_id).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid DigestIdentifier for subject id"))
+                ApiError::InvalidParameters("Invalid DigestIdentifier for subject id".to_string())
             })?,
             payload: ValueWrapper(self.payload),
         })
@@ -267,11 +269,13 @@ impl TryInto<Signature> for SignatureBody {
     fn try_into(self) -> Result<Signature, Self::Error> {
         Ok(Signature {
             signer: KeyIdentifier::from_str(&self.signer).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid KeyIdentifier for signature signer"))
+                ApiError::InvalidParameters(
+                    "Invalid KeyIdentifier for signature signer".to_string(),
+                )
             })?,
             timestamp: TimeStamp(self.timestamp),
             value: SignatureIdentifier::from_str(&self.value).map_err(|_| {
-                ApiError::InvalidParameters(format!("Invalid SignatureIdentifier for signature"))
+                ApiError::InvalidParameters("Invalid SignatureIdentifier for signature".to_string())
             })?,
         })
     }
