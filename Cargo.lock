@@ -3836,7 +3836,7 @@ dependencies = [
 [[package]]
 name = "taple-core"
 version = "0.3.0-dev"
-source = "git+https://github.com/opencanarias/taple-core#6796424edd95a5c004ac5651ec712a59d7b8f5ae"
+source = "git+https://github.com/opencanarias/taple-core#4e0d6583e637c167f5bb9baa12b4def423840a16"
 dependencies = [
  "async-std",
  "async-trait",
@@ -3865,6 +3865,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-stream",
+ "tokio-util",
  "unsigned-varint",
  "wasmtime",
 ]
