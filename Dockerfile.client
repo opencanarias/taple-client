@@ -2,7 +2,7 @@ FROM rust:1.67-slim-buster as builder
 RUN apt update; apt install -y build-essential libprotobuf-dev protobuf-compiler cmake
 WORKDIR /app
 COPY . .
-RUN cargo install --path client
+RUN cargo install --locked --path client
 
 FROM rust:1.67-slim-buster
 RUN apt update; apt install -y build-essential libprotobuf-dev protobuf-compiler cmake

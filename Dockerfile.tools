@@ -2,9 +2,9 @@ FROM rust:1.67-slim-buster as builder
 RUN apt update; apt install -y build-essential libprotobuf-dev protobuf-compiler cmake
 WORKDIR /app
 COPY . .
-RUN cargo install --path tools/keygen
-RUN cargo install --path tools/sign
-RUN cargo install --path tools/patch
+RUN cargo install --locked --path tools/keygen
+RUN cargo install --locked --path tools/sign
+RUN cargo install --locked --path tools/patch
 
 FROM debian:buster-slim
 WORKDIR /home
