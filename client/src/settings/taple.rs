@@ -37,14 +37,18 @@ impl SettingsGenerator for Settings {
 }
 
 fn create_contracts_build_path(data: &SettingsMap) -> Result<String, SettingsError> {
-    if let Some(path) = data.get::<String>("build-path") {
-        Ok(path.clone())
-    } else {
-        log::warn!("Contract build path was not defined");
-        let path = create_path("sc")?;
-        log::info!("Contracts build path defaults to {}", path);
-        Ok(path)
-    }
+    let path = {
+        if let Some(path) = data.get::<String>("build-path") {
+            path.clone()
+        } else {
+            log::warn!("Contract build path was not defined");
+            let path = create_path("sc")?;
+            log::warn!("Contracts build path defaults to {}", path);
+            path
+        }
+    };
+    std::fs::create_dir_all(&path)?;
+    Ok(path)
 }
 
 fn extract_pass_votation<T: Into<String>>(data: &SettingsMap, key: T) -> Result<u8, SettingsError> {
