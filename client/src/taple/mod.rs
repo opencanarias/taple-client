@@ -8,6 +8,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::ClientSettings;
 
+const BUFFER_SIZE: usize = 1000;
+
 pub fn build(
     settings: &ClientSettings,
     cancellation_token: CancellationToken,
@@ -23,8 +25,8 @@ pub fn build(
         KeyPair::from_hex(derivator, secret_key).expect("Key derivated")
     };
 
-    let (sender, _receiver) = mpsc::channel(10000);
-    let (notification_tx, _notification_rx) = mpsc::channel(1000);
+    let (sender, _receiver) = mpsc::channel(BUFFER_SIZE);
+    let (notification_tx, _notification_rx) = mpsc::channel(BUFFER_SIZE);
     let network = NetworkProcessor::new(
         settings.taple.network.listen_addr.clone(),
         network_access_points(&settings.taple.network.known_nodes).unwrap(),
