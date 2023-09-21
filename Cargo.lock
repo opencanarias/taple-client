@@ -3824,6 +3824,8 @@ dependencies = [
  "serde_json",
  "serial_test",
  "taple-core",
+ "taple-db-leveldb",
+ "taple-network-libp2p",
  "tempfile",
  "thiserror",
  "tokio",
@@ -3836,7 +3838,6 @@ dependencies = [
 [[package]]
 name = "taple-core"
 version = "0.3.0-dev"
-source = "git+https://github.com/opencanarias/taple-core#4e0d6583e637c167f5bb9baa12b4def423840a16"
 dependencies = [
  "async-std",
  "async-trait",
@@ -3871,6 +3872,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "taple-db-leveldb"
+version = "0.3.0-dev"
+dependencies = [
+ "borsh",
+ "db-key",
+ "leveldb",
+ "taple-core",
+ "tempfile",
+]
+
+[[package]]
 name = "taple-keygen"
 version = "0.3.0-dev"
 dependencies = [
@@ -3880,6 +3892,24 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "taple-core",
+]
+
+[[package]]
+name = "taple-network-libp2p"
+version = "0.3.0-dev"
+dependencies = [
+ "async-trait",
+ "futures",
+ "instant",
+ "libp2p",
+ "log",
+ "rand 0.8.5",
+ "taple-core",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "unsigned-varint",
 ]
 
 [[package]]

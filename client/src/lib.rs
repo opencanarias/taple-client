@@ -1,10 +1,8 @@
-mod database;
 mod http;
 pub mod settings;
 mod taple;
 
 use ::futures::Future;
-use database::leveldb::{LDBCollection, LevelDBManager};
 use settings::ClientSettings;
 
 use std::error::Error;
@@ -12,7 +10,7 @@ use std::error::Error;
 use taple_core::{Node, Notification};
 use tokio_util::sync::CancellationToken;
 
-use database::leveldb;
+use taple_db_leveldb::leveldb::{LDBCollection, LevelDBManager};
 
 pub struct Client {
     taple_node: Node<LevelDBManager, LDBCollection>,
