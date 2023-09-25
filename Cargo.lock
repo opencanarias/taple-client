@@ -3808,7 +3808,7 @@ dependencies = [
 
 [[package]]
 name = "taple-client"
-version = "0.3.0-dev"
+version = "0.3.0"
 dependencies = [
  "borsh",
  "db-key",
@@ -3835,8 +3835,9 @@ dependencies = [
 
 [[package]]
 name = "taple-core"
-version = "0.3.0-dev"
-source = "git+https://github.com/opencanarias/taple-core#4e0d6583e637c167f5bb9baa12b4def423840a16"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d13351708a18d75b3ef0e1c697afc1a59a1bbc2908520d59d6412d0b9fc4fbe5"
 dependencies = [
  "async-std",
  "async-trait",
@@ -3872,7 +3873,7 @@ dependencies = [
 
 [[package]]
 name = "taple-keygen"
-version = "0.3.0-dev"
+version = "0.3.0"
 dependencies = [
  "clap",
  "hex",
@@ -3884,7 +3885,7 @@ dependencies = [
 
 [[package]]
 name = "taple-patch"
-version = "0.3.0-dev"
+version = "0.3.0"
 dependencies = [
  "clap",
  "json-patch",
@@ -3895,7 +3896,7 @@ dependencies = [
 
 [[package]]
 name = "taple-sign"
-version = "0.3.0-dev"
+version = "0.3.0"
 dependencies = [
  "borsh",
  "clap",

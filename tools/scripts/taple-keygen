@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TOOLS_IMAGE="opencanarias/taple-tools:0.2.0"
+TOOLS_IMAGE="opencanarias/taple-tools:0.3"
 TOOL="taple-keygen"
 
 ARGS=()
