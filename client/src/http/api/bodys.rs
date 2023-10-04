@@ -251,6 +251,7 @@ pub struct SignatureBody {
     timestamp: u64,
     /// Signature value
     value: String, // SignatureIdentifier,
+    content_hash: String
 }
 
 impl From<Signature> for SignatureBody {
@@ -259,6 +260,7 @@ impl From<Signature> for SignatureBody {
             signer: value.signer.to_str(),
             timestamp: value.timestamp.0,
             value: value.value.to_str(),
+            content_hash: value.content_hash.to_str()
         }
     }
 }
@@ -275,6 +277,9 @@ impl TryInto<Signature> for SignatureBody {
             })?,
             timestamp: TimeStamp(self.timestamp),
             value: SignatureIdentifier::from_str(&self.value).map_err(|_| {
+                ApiError::InvalidParameters("Invalid SignatureIdentifier for signature".to_string())
+            })?,
+            content_hash: DigestIdentifier::from_str(&self.content_hash).map_err(|_| {
                 ApiError::InvalidParameters("Invalid SignatureIdentifier for signature".to_string())
             })?,
         })
