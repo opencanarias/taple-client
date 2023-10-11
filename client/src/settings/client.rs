@@ -246,7 +246,7 @@ pub fn client_settings_builder() -> SettingsBuilder {
         .add_setting(
             SettingSchemaBuilder::new("digest-derivator")
                 .unwrap()
-                .help("Digest derivator to use by the TAPLE")
+                .help("Digest derivator to use when signing")
                 .with_default(digest_derivator_conversion(
                     default_settings.node.digest_derivator,
                 ))
@@ -261,9 +261,9 @@ pub fn client_settings_builder() -> SettingsBuilder {
                 .build(),
         )
         .add_setting(
-            SettingSchemaBuilder::new("subjects-key-derivator")
+            SettingSchemaBuilder::new("key-derivator")
                 .unwrap()
-                .help("Key derivator to use by TAPLE when creating new subjects")
+                .help("Key derivator to use when creating new key pairs")
                 .with_default(key_derivator_conversion(
                     default_settings.node.key_derivator,
                 ))
