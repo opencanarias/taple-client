@@ -18,7 +18,7 @@ struct Args {
     request: String,
 
     /// Key derivator to use.
-    #[arg(value_enum, long, default_value_t = KeyDerivator::Ed25519)]
+    #[arg(value_enum, long, long = "id-key-derivator", default_value_t = KeyDerivator::Ed25519)]
     derivator: KeyDerivator,
 
     /// Digest derivator to use
