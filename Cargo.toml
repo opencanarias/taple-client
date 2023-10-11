@@ -2,7 +2,7 @@
 members = ["easy_settings", "client", "tools/keygen", "tools/patch", "tools/sign"]
 
 [workspace.package]
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Open Canarias S.L.<taple@opencanarias.com>"]
 edition = "2021"
 description = "TAPLE Client official implementation"

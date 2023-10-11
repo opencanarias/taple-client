@@ -3808,7 +3808,7 @@ dependencies = [
 
 [[package]]
 name = "taple-client"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "borsh",
  "db-key",
@@ -3873,7 +3873,7 @@ dependencies = [
 
 [[package]]
 name = "taple-keygen"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "clap",
  "hex",
@@ -3885,7 +3885,7 @@ dependencies = [
 
 [[package]]
 name = "taple-patch"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "clap",
  "json-patch",
@@ -3896,7 +3896,7 @@ dependencies = [
 
 [[package]]
 name = "taple-sign"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "borsh",
  "clap",
