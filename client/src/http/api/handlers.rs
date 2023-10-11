@@ -6,7 +6,7 @@ use taple_core::{
     crypto::KeyPair,
     identifier::{Derivable, DigestIdentifier},
     signature::{Signature, Signed},
-    ApprovalState, KeyDerivator, KeyIdentifier,
+    ApprovalState, KeyDerivator, KeyIdentifier, DigestDerivator,
 };
 use warp::Rejection;
 
@@ -500,6 +500,7 @@ pub async fn post_event_request_handler(
     node: Api,
     keys: KeyPair,
     derivator: KeyDerivator,
+    digest_derivator: DigestDerivator,
     mut body: PostEventRequestBodyPreSignature,
 ) -> Result<Box<dyn warp::Reply>, Rejection> {
     // If event request is a creation one and it does not specify a public_key, then a random one must be generated
@@ -527,7 +528,7 @@ pub async fn post_event_request_handler(
                 signature.unwrap()
             }
         }
-        None => Signature::new(&request, &keys).expect("Error signing request"),
+        None => Signature::new(&request, &keys, digest_derivator).expect("Error signing request"),
     };
     match node
         .external_request(Signed {

@@ -27,7 +27,12 @@ pub fn build(
         .parse::<SocketAddr>()
         .unwrap();
 
-    let client_api = http::api::routes(taple_api, keys, settings.taple.node.key_derivator);
+    let client_api = http::api::routes(
+        taple_api,
+        keys,
+        settings.subjects_key_derivator,
+        settings.taple.node.digest_derivator,
+    );
 
     if settings.doc {
         let openapi_json = warp::path!("doc" / "json")
