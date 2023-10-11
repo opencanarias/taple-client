@@ -63,7 +63,7 @@ fn extract_pass_votation<T: Into<String>>(data: &SettingsMap, key: T) -> Result<
     }
 }
 
-fn extract_key_derivator<T: Into<String>>(
+pub fn extract_key_derivator<T: Into<String>>(
     data: &SettingsMap,
     key: T,
     default: KeyDerivator,

@@ -5,6 +5,7 @@ use taple_core::{DigestDerivator, KeyDerivator, ListenAddr, Settings};
 use crate::settings::create_path;
 use crate::settings::SettingsError;
 
+use super::taple::extract_key_derivator;
 use super::{extract_boolean, extract_from_map, extract_list, SettingsGenerator};
 
 #[derive(Clone, Debug)]
@@ -15,6 +16,7 @@ pub struct ClientSettings {
     pub http_port: u32,
     pub doc: bool,
     pub db_path: String,
+    pub subjects_key_derivator: KeyDerivator
 }
 
 impl SettingsGenerator for ClientSettings {
@@ -56,6 +58,11 @@ impl SettingsGenerator for ClientSettings {
             http_port: extract_from_map(data, "port", 3000u32)? + ports_offset,
             doc: extract_from_map(data, "doc", false)?,
             db_path: database_path,
+            subjects_key_derivator: extract_key_derivator(
+                data,
+                "subjects-key-derivator",
+                KeyDerivator::Ed25519,
+            )?,
         })
     }
 }
@@ -239,7 +246,6 @@ pub fn client_settings_builder() -> SettingsBuilder {
         .add_setting(
             SettingSchemaBuilder::new("digest-derivator")
                 .unwrap()
-                .hide(true)
                 .help("Digest derivator to use by the TAPLE")
                 .with_default(digest_derivator_conversion(
                     default_settings.node.digest_derivator,
@@ -252,6 +258,16 @@ pub fn client_settings_builder() -> SettingsBuilder {
                     "SHA3_256".into(),
                     "SHA3_512".into(),
                 ]))
+                .build(),
+        )
+        .add_setting(
+            SettingSchemaBuilder::new("subjects-key-derivator")
+                .unwrap()
+                .help("Key derivator to use by TAPLE when creating new subjects")
+                .with_default(key_derivator_conversion(
+                    default_settings.node.key_derivator,
+                ))
+                .param_type(ParamType::Enum(vec!["ed25519".into(), "secp256k1".into()]))
                 .build(),
         )
 }

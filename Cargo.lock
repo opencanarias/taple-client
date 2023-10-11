@@ -3835,9 +3835,9 @@ dependencies = [
 
 [[package]]
 name = "taple-core"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d13351708a18d75b3ef0e1c697afc1a59a1bbc2908520d59d6412d0b9fc4fbe5"
+checksum = "9e775b81135ce78fe6070837a0de89a706c7c86070974eb4e5026c5d2a61ec09"
 dependencies = [
  "async-std",
  "async-trait",

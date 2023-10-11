@@ -10,6 +10,7 @@ use super::api::querys::*;
 use super::api::responses::ErrorResponse;
 use serde::de::DeserializeOwned;
 use taple_core::crypto::KeyPair;
+use taple_core::DigestDerivator;
 use taple_core::{Api, KeyDerivator};
 use warp::body::BodyDeserializeError;
 use warp::{http::Response, hyper::StatusCode, Filter, Rejection, Reply};
@@ -20,6 +21,7 @@ pub fn routes(
     taple_api: Api,
     keys: KeyPair,
     derivator: KeyDerivator,
+    digest_derivator: DigestDerivator,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     let root = warp::path(API_BASE_PATH);
 
@@ -27,7 +29,12 @@ pub fn routes(
         get_subject(taple_api.clone())
             .or(get_all_subjects(taple_api.clone()))
             .or(get_subject(taple_api.clone()))
-            .or(post_event_request(taple_api.clone(), keys, derivator))
+            .or(post_event_request(
+                taple_api.clone(),
+                keys,
+                derivator,
+                digest_derivator,
+            ))
             .or(get_events_of_subject(taple_api.clone()))
             .or(get_event(taple_api.clone()))
             .or(patch_approval(taple_api.clone()))
@@ -102,12 +109,14 @@ pub fn post_event_request(
     taple_api: Api,
     keys: KeyPair,
     derivator: KeyDerivator,
+    digest_derivator: DigestDerivator,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("event-requests")
         .and(warp::post())
         .and(with_taple_api(taple_api))
         .and(with_keys(keys))
         .and(with_derivator(derivator))
+        .and(with_digest_derivator(digest_derivator))
         .and(with_body())
         .and_then(post_event_request_handler)
 }
@@ -193,6 +202,12 @@ pub fn with_keys(
 pub fn with_derivator(
     derivator: KeyDerivator,
 ) -> impl Filter<Extract = (KeyDerivator,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || derivator)
+}
+
+pub fn with_digest_derivator(
+    derivator: DigestDerivator,
+) -> impl Filter<Extract = (DigestDerivator,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || derivator)
 }
 
