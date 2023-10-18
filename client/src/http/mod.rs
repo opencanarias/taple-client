@@ -32,6 +32,7 @@ pub fn build(
         keys,
         settings.subjects_key_derivator,
         settings.taple.node.digest_derivator,
+        settings.payload_size
     );
 
     if settings.doc {

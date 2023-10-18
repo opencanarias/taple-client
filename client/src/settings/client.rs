@@ -14,6 +14,7 @@ pub struct ClientSettings {
     pub http: bool,
     pub http_addr: String,
     pub http_port: u32,
+    pub payload_size: u64,
     pub doc: bool,
     pub db_path: String,
     pub subjects_key_derivator: KeyDerivator
@@ -56,6 +57,7 @@ impl SettingsGenerator for ClientSettings {
             http: extract_boolean(data, "http", false)?,
             http_addr: extract_from_map(data, "addr", "0.0.0.0".into())?,
             http_port: extract_from_map(data, "port", 3000u32)? + ports_offset,
+            payload_size: extract_from_map(data, "payload-size", 1024 * 100)?,
             doc: extract_from_map(data, "doc", false)?,
             db_path: database_path,
             subjects_key_derivator: extract_key_derivator(
@@ -171,6 +173,11 @@ pub fn client_settings_builder() -> SettingsBuilder {
                     .help("Flag to activate OpenAPI documentation endpoint ")
                     .param_type(ParamType::Flag)
                     .build(),
+                SettingSchemaBuilder::new("payload-size")
+                    .unwrap()
+                    .help("Maximun payload size accepted by the HTTP server")
+                    .hide(true)
+                    .build()
             ],
         )
         .unwrap()
@@ -212,10 +219,12 @@ pub fn client_settings_builder() -> SettingsBuilder {
             "experimental",
             Some("sc"),
             Some("Unstable configurations"),
-            vec![SettingSchemaBuilder::new("build-path")
+            vec![
+                SettingSchemaBuilder::new("build-path")
                 .unwrap()
                 .help("Path in which contracts are compiled")
-                .build()],
+                .build(),
+            ],
         )
         .unwrap()
         .add_setting(
