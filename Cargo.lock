@@ -3808,7 +3808,7 @@ dependencies = [
 
 [[package]]
 name = "taple-client"
-version = "0.3.0-dev"
+version = "0.4.0-dev"
 dependencies = [
  "borsh",
  "db-key",
@@ -3836,7 +3836,7 @@ dependencies = [
 [[package]]
 name = "taple-core"
 version = "0.4.0-dev"
-source = "git+https://github.com/opencanarias/taple-core?branch=feat/1543#e0b93e0084feb5b5dda65fbaa3e47ecba840b428"
+source = "git+https://github.com/opencanarias/taple-core?branch=main#60f2f8197e9c9d6b1a969f69adf685bd23ed616d"
 dependencies = [
  "async-std",
  "async-trait",
@@ -3872,7 +3872,7 @@ dependencies = [
 
 [[package]]
 name = "taple-keygen"
-version = "0.3.0-dev"
+version = "0.4.0-dev"
 dependencies = [
  "clap",
  "hex",
@@ -3884,7 +3884,7 @@ dependencies = [
 
 [[package]]
 name = "taple-patch"
-version = "0.3.0-dev"
+version = "0.4.0-dev"
 dependencies = [
  "clap",
  "json-patch",
@@ -3895,7 +3895,7 @@ dependencies = [
 
 [[package]]
 name = "taple-sign"
-version = "0.3.0-dev"
+version = "0.4.0-dev"
 dependencies = [
  "borsh",
  "clap",
