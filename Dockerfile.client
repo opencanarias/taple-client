@@ -1,20 +1,26 @@
+ARG TAPLE_SC_BUILD_PATH="/app/contracts"
+
 FROM rust:1.70-slim-buster as builder
 RUN apt-get update && apt-get install --no-install-recommends -y build-essential libprotobuf-dev protobuf-compiler cmake \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
+RUN cargo install --locked --path tools/sc-build
 RUN cargo install --locked --path client
 
 FROM rust:1.70-slim-buster
+ARG TAPLE_SC_BUILD_PATH
 RUN apt-get update && apt-get install --no-install-recommends -y build-essential libprotobuf-dev protobuf-compiler cmake \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 RUN rustup target add wasm32-unknown-unknown
 WORKDIR /app
 COPY --from=builder /usr/local/cargo/bin/taple-client /usr/local/bin/taple-client
-RUN mkdir -p "contracts" && mkdir -p "db"
-ENV TAPLE_SC_BUILD_PATH "/app/contracts"
+COPY --from=builder /usr/local/cargo/bin/taple-sc-build /usr/local/bin/taple-sc-build
+RUN taple-sc-build TAPLE_SC_BUILD_PATH
+RUN mkdir -p "db"
+ENV TAPLE_SC_BUILD_PATH TAPLE_SC_BUILD_PATH
 ENV TAPLE_DB_PATH "/app/db"
 
 CMD ["taple-client"]

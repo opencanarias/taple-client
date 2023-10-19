@@ -1,0 +1,13 @@
+[package]
+name = "taple-sc-build"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+clap = { workspace = true }
+# serde = { workspace = true }
+# serde_json = { workspace = true }
+# json-patch = { workspace = true }
+thiserror = { workspace = true }

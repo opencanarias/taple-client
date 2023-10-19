@@ -47,7 +47,7 @@ fn create_contracts_build_path(data: &SettingsMap) -> Result<String, SettingsErr
             path
         }
     };
-    std::fs::create_dir_all(&path)?;
+    // std::fs::create_dir_all(&path)?;
     Ok(path)
 }
 

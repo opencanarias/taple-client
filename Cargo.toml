@@ -1,5 +1,5 @@
 [workspace]
-members = ["easy_settings", "client", "tools/keygen", "tools/patch", "tools/sign"]
+members = ["easy_settings", "client", "tools/keygen", "tools/patch", "tools/sign", "tools/sc-build"]
 
 [workspace.package]
 version = "0.4.0-dev"
@@ -15,8 +15,8 @@ rust-version = "1.67"
 
 [workspace.dependencies]
 #taple-core = { version="0.3", features =  ["all"] }
-taple-core = { git = "https://github.com/opencanarias/taple-core", features =  ["all"], branch = "main" }
-#taple-core = { path = "../taple-core/core", features = ["all"] }
+taple-core = { git = "https://github.com/opencanarias/taple-core", features =  ["all"], branch = "feat/1709" }
+# taple-core = { path = "../taple-core/core", features = ["all"] }
 env_logger = "0.10"
 log = "0.4"
 utoipa = "3"
