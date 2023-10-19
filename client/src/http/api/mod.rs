@@ -22,86 +22,102 @@ pub fn routes(
     keys: KeyPair,
     derivator: KeyDerivator,
     digest_derivator: DigestDerivator,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     let root = warp::path(API_BASE_PATH);
 
     root.and(
-        get_subject(taple_api.clone())
-            .or(get_all_subjects(taple_api.clone()))
-            .or(get_subject(taple_api.clone()))
+        get_subject(
+            taple_api.clone(),
+            format_json
+        )
+            .or(get_all_subjects(taple_api.clone(), format_json))
+            .or(get_subject(taple_api.clone(), format_json))
             .or(post_event_request(
                 taple_api.clone(),
                 keys,
                 derivator,
                 digest_derivator,
+                format_json
             ))
-            .or(get_events_of_subject(taple_api.clone()))
-            .or(get_event(taple_api.clone()))
-            .or(patch_approval(taple_api.clone()))
-            .or(post_preauthorized_subjects(taple_api.clone()))
-            .or(get_preauthorized_subjects(taple_api.clone()))
-            .or(get_events_of_subject(taple_api.clone()))
-            .or(get_validation_proof(taple_api.clone()))
-            .or(post_generate_keys(taple_api.clone()))
-            .or(get_event_request(taple_api.clone()))
-            .or(get_approval(taple_api.clone()))
-            .or(get_pending_approvals(taple_api.clone()))
-            .or(get_event_request_state(taple_api))
+            .or(get_events_of_subject(taple_api.clone(), format_json))
+            .or(get_event(taple_api.clone(), format_json))
+            .or(patch_approval(taple_api.clone(), format_json))
+            .or(post_preauthorized_subjects(taple_api.clone(), format_json))
+            .or(get_preauthorized_subjects(taple_api.clone(), format_json))
+            .or(get_events_of_subject(taple_api.clone(), format_json))
+            .or(get_validation_proof(taple_api.clone(), format_json))
+            .or(post_generate_keys(taple_api.clone(), format_json))
+            .or(get_event_request(taple_api.clone(), format_json))
+            .or(get_approval(taple_api.clone(), format_json))
+            .or(get_pending_approvals(taple_api.clone(), format_json))
+            .or(get_event_request_state(taple_api, format_json))
             .recover(handle_rejection),
     )
 }
 
 pub fn get_approval(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("approval-requests" / String)
         .and(warp::get())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and_then(get_approval_handler)
 }
 
 pub fn get_pending_approvals(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("approval-requests")
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetApprovalsQuery>())
+        .and(with_format_body(format_json))
         .and_then(get_approvals_handler)
 }
 
 pub fn get_event_request(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("event-requests" / String)
         .and(warp::get())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and_then(get_taple_request_handler)
 }
 
 pub fn get_event_request_state(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("event-requests" / String / "state")
         .and(warp::get())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and_then(get_taple_request_state_handler)
 }
 
-pub fn get_subject(taple_api: Api) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn get_subject(taple_api: Api, format_json: bool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("subjects" / String)
         .and(warp::get())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and_then(get_subject_handler)
 }
 
 pub fn get_all_subjects(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("subjects")
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetAllSubjectsQuery>())
+        .and(with_format_body(format_json))
         .and_then(get_subjects_handler)
 }
 
@@ -110,6 +126,7 @@ pub fn post_event_request(
     keys: KeyPair,
     derivator: KeyDerivator,
     digest_derivator: DigestDerivator,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("event-requests")
         .and(warp::post())
@@ -117,73 +134,87 @@ pub fn post_event_request(
         .and(with_keys(keys))
         .and(with_derivator(derivator))
         .and(with_digest_derivator(digest_derivator))
+        .and(with_format_body(format_json))
         .and(with_body())
         .and_then(post_event_request_handler)
 }
 
 pub fn patch_approval(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("approval-requests" / String)
         .and(warp::patch())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and(with_body())
         .and_then(patch_approval_handler)
 }
 
 pub fn post_generate_keys(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("keys")
         .and(warp::post())
         .and(with_taple_api(taple_api))
         .and(warp::query::<AddKeysQuery>())
+        .and(with_format_body(format_json))
         .and_then(post_generate_keys_handler)
 }
 
 pub fn post_preauthorized_subjects(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("allowed-subjects" / String)
         .and(warp::put())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and(with_body())
         .and_then(put_allowed_subjects_handler)
 }
 
 pub fn get_preauthorized_subjects(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("allowed-subjects")
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetWithPaginationString>())
+        .and(with_format_body(format_json))
         .and_then(get_allowed_subjects_handler)
 }
 
 pub fn get_events_of_subject(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("subjects" / String / "events")
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetWithPagination>())
+        .and(with_format_body(format_json))
         .and_then(get_events_of_subject_handler)
 }
 
-pub fn get_event(taple_api: Api) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn get_event(taple_api: Api, format_json: bool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("subjects" / String / "events" / u64)
         .and(warp::get())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and_then(get_event_handler)
 }
 
 pub fn get_validation_proof(
     taple_api: Api,
+    format_json: bool
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("subjects" / String / "validation")
         .and(warp::get())
         .and(with_taple_api(taple_api))
+        .and(with_format_body(format_json))
         .and_then(get_validation_proof_handle)
 }
 
@@ -214,6 +245,12 @@ pub fn with_digest_derivator(
 pub fn with_body<T: DeserializeOwned + Send>(
 ) -> impl Filter<Extract = (T,), Error = warp::Rejection> + Clone {
     warp::body::content_length_limit(1024 * 100).and(warp::body::json())
+}
+
+pub fn with_format_body(
+    format_json: bool
+) -> impl Filter<Extract = (bool,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || format_json)
 }
 
 // TODO: refactor errors
