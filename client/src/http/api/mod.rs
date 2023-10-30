@@ -58,6 +58,7 @@ pub fn get_approval(
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and_then(get_approval_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_pending_approvals(
@@ -68,6 +69,7 @@ pub fn get_pending_approvals(
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetApprovalsQuery>())
         .and_then(get_approvals_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_event_request(
@@ -77,6 +79,7 @@ pub fn get_event_request(
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and_then(get_taple_request_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_event_request_state(
@@ -86,6 +89,7 @@ pub fn get_event_request_state(
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and_then(get_taple_request_state_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_subject(taple_api: Api) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -93,6 +97,7 @@ pub fn get_subject(taple_api: Api) -> impl Filter<Extract = impl Reply, Error = 
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and_then(get_subject_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_all_subjects(
@@ -103,6 +108,7 @@ pub fn get_all_subjects(
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetAllSubjectsQuery>())
         .and_then(get_subjects_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn post_event_request(
@@ -159,6 +165,7 @@ pub fn get_preauthorized_subjects(
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetWithPaginationString>())
         .and_then(get_allowed_subjects_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_events_of_subject(
@@ -169,6 +176,7 @@ pub fn get_events_of_subject(
         .and(with_taple_api(taple_api))
         .and(warp::query::<GetWithPagination>())
         .and_then(get_events_of_subject_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_event(taple_api: Api) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -176,6 +184,7 @@ pub fn get_event(taple_api: Api) -> impl Filter<Extract = impl Reply, Error = Re
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and_then(get_event_handler)
+        .with(warp::compression::gzip())
 }
 
 pub fn get_validation_proof(
@@ -185,6 +194,7 @@ pub fn get_validation_proof(
         .and(warp::get())
         .and(with_taple_api(taple_api))
         .and_then(get_validation_proof_handle)
+        .with(warp::compression::gzip())
 }
 
 pub fn with_taple_api(
